@@ -1,5 +1,5 @@
 CAPI=2:
-# Copyright 2026 Google LLC (OpenTitan project).
+# Copyright 2026 Google LLC (chipsalliance project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 name: "lowrisc:dv:axi_agent:0.1"
@@ -37,11 +37,23 @@ filesets:
       - axi_reset_monitor_ar.svh: {is_include_file: true}
       - axi_reset_monitor_r.svh: {is_include_file: true}
 
+      - axi_monitor_aw.svh: {is_include_file: true}
+      - axi_monitor_w.svh: {is_include_file: true}
+      - axi_monitor_b.svh: {is_include_file: true}
+      - axi_monitor_ar.svh: {is_include_file: true}
+      - axi_monitor_r.svh: {is_include_file: true}
+
       - axi_mgr_write_request_driver.svh: {is_include_file: true}
       - axi_mgr_write_data_driver.svh: {is_include_file: true}
       - axi_mgr_write_response_driver.svh: {is_include_file: true}
       - axi_mgr_read_request_driver.svh: {is_include_file: true}
       - axi_mgr_read_data_driver.svh: {is_include_file: true}
+
+      - axi_sub_write_request_driver.svh: {is_include_file: true}
+      - axi_sub_write_data_driver.svh: {is_include_file: true}
+      - axi_sub_write_response_driver.svh: {is_include_file: true}
+      - axi_sub_read_request_driver.svh: {is_include_file: true}
+      - axi_sub_read_data_driver.svh: {is_include_file: true}
 
       - axi_response_router.svh: {is_include_file: true}
 
@@ -49,6 +61,7 @@ filesets:
       - axi_reg_adapter.svh: {is_include_file: true}
 
       - axi_mgr_agent.svh: {is_include_file: true}
+      - axi_sub_agent.svh: {is_include_file: true}
 
       - seq_lib/axi_mgr_txn_request_seq.svh: {is_include_file: true}
       - seq_lib/axi_mgr_write_data_seq.svh: {is_include_file: true}
@@ -56,8 +69,15 @@ filesets:
       - seq_lib/axi_mgr_write_response_seq.svh: {is_include_file: true}
       - seq_lib/axi_mgr_read_data_seq.svh: {is_include_file: true}
 
+      - seq_lib/axi_sub_txn_accept_seq.svh: {is_include_file: true}
+      - seq_lib/axi_sub_write_data_accept_seq.svh: {is_include_file: true}
+      - seq_lib/axi_sub_write_response_seq.svh: {is_include_file: true}
+      - seq_lib/axi_sub_read_data_seq.svh: {is_include_file: true}
+
       - seq_lib/axi_mgr_write_fixed_vseq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_write_burst_vseq.svh: {is_include_file: true}
       - seq_lib/axi_mgr_read_fixed_vseq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_read_burst_vseq.svh: {is_include_file: true}
 
       - seq_lib/axi_mgr_register_layer_vseq.svh: {is_include_file: true}
 

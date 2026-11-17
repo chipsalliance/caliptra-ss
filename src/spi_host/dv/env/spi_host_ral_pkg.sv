@@ -1129,10 +1129,10 @@ package spi_host_ral_pkg;
         csr_excl = csr_excl_item::type_id::create("csr_excl");
         this.csr_excl = csr_excl;
       end
-      set_hdl_path_root("tb.dut");
-      set_hdl_path_root("tb.dut", "RTL");
-      set_hdl_path_root("tb.dut", "BkdrRegPathRtl");
-      set_hdl_path_root("tb.dut", "BkdrRegPathRtlShadow");
+      set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host");
+      set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "RTL");
+      set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "BkdrRegPathRtl");
+      set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "BkdrRegPathRtlShadow");
       // create registers
       intr_state =
           (spi_host_reg_intr_state::

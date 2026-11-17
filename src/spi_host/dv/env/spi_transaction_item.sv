@@ -37,11 +37,9 @@ class spi_transaction_item extends uvm_sequence_item;
 
   // num dummy cycles
   int num_dummy                       = 0;
-  //num_addr_bytes
+  // num_addr_bytes
   int num_cmd_bytes                   = 4;
   // max num devices
-  int max_spi_device                  = 1;
-  // device ID
   int max_spi_devices                 = 1;
   rand int csid;
   // num segments
@@ -84,7 +82,7 @@ class spi_transaction_item extends uvm_sequence_item;
               AltCmd    := alt_weight
     };
 
-    read_weight + write_weight == 100;
+    read_weight + write_weight <= 100;
   }
 
   constraint csid_c {
@@ -125,6 +123,7 @@ class spi_transaction_item extends uvm_sequence_item;
 
 
   function void generate_segments();
+    segments.delete();
     seg_type = Command;
 
     for (int i = 0; i < num_segments; i++) begin
@@ -162,7 +161,32 @@ class spi_transaction_item extends uvm_sequence_item;
 
   function void do_copy(uvm_object rhs);
     spi_transaction_item rhs_;
-    `downcast(rhs, rhs_);
+    `downcast(rhs_, rhs)
     super.do_copy(rhs);
+    read_weight     = rhs_.read_weight;
+    write_weight    = rhs_.write_weight;
+    alt_weight      = rhs_.alt_weight;
+    std_en          = rhs_.std_en;
+    dual_en         = rhs_.dual_en;
+    quad_en         = rhs_.quad_en;
+    rx_only_weight  = rhs_.rx_only_weight;
+    tx_only_weight  = rhs_.tx_only_weight;
+    spi_len_min     = rhs_.spi_len_min;
+    spi_len_max     = rhs_.spi_len_max;
+    spi_num_seg_min = rhs_.spi_num_seg_min;
+    spi_num_seg_max = rhs_.spi_num_seg_max;
+    num_dummy       = rhs_.num_dummy;
+    num_cmd_bytes   = rhs_.num_cmd_bytes;
+    max_spi_devices = rhs_.max_spi_devices;
+    csid            = rhs_.csid;
+    num_segments    = rhs_.num_segments;
+    cmd             = rhs_.cmd;
+    seg_type        = rhs_.seg_type;
+    segments.delete();
+    foreach (rhs_.segments[i]) begin
+      spi_segment_item seg_c;
+      `downcast(seg_c, rhs_.segments[i].clone())
+      segments.push_back(seg_c);
+    end
   endfunction // do_copy
 endclass

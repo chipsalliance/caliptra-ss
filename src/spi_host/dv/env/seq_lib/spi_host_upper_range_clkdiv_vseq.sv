@@ -72,6 +72,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
     // 2. Verify actual unforced (fast_mode = 0) upper-range Bidir (TX + RX) transfer
     // at clkdiv = 16'h0100 (256 -> half-SCK period = 257 core clocks).
     cfg.clk_rst_vif.wait_clks(10);
+    cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b0);
     prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
     prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
     csr_wr(.ptr(ral.csid), .value(32'h0));
@@ -87,7 +88,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
         bit [7:0] rx_byte = 8'h3C;
         @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
         for (int b = 7; b >= 0; b--) begin
-          cfg.m_spi_agent_cfg.vif.sio_out[1] = rx_byte[b];
+          cfg.m_spi_agent_cfg.vif.sio_out[1] <= rx_byte[b];
           if (b == 7) begin
             @(posedge cfg.m_spi_agent_cfg.vif.sck);
             t_edge1 = $realtime();
@@ -97,7 +98,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
             @(negedge cfg.m_spi_agent_cfg.vif.sck);
           end
         end
-        cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+        cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
       end
       begin
         program_command_reg(cmd);
@@ -163,7 +164,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
         bit [7:0] rx_byte = 8'hC3;
         @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
         for (int b = 7; b >= 0; b--) begin
-          cfg.m_spi_agent_cfg.vif.sio_out[1] = rx_byte[b];
+          cfg.m_spi_agent_cfg.vif.sio_out[1] <= rx_byte[b];
           if (b == 7) begin
             @(posedge cfg.m_spi_agent_cfg.vif.sck);
             t_edge1 = $realtime();
@@ -173,7 +174,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
             @(negedge cfg.m_spi_agent_cfg.vif.sck);
           end
         end
-        cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+        cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
       end
       begin
         program_command_reg(cmd);
@@ -218,12 +219,15 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
     if (cfg.en_scb) begin
       // 5a. Divider / lead-time fault control (transfer runs at clkdiv=0x0100 while expected is clkdiv=0x0200)
       begin
-        spi_host_scb_neg_catcher lead_catcher  = spi_host_scb_neg_catcher::type_id::create("upper_lead_catcher");
-        spi_host_scb_neg_catcher trail_catcher = spi_host_scb_neg_catcher::type_id::create("upper_trail_catcher");
-        lead_catcher.match_pattern  = "*Lead-time check failed*";
-        trail_catcher.match_pattern = "*Trail-time check failed*";
+        spi_host_scb_neg_catcher lead_catcher    = spi_host_scb_neg_catcher::type_id::create("upper_lead_catcher");
+        spi_host_scb_neg_catcher trail_catcher   = spi_host_scb_neg_catcher::type_id::create("upper_trail_catcher");
+        spi_host_scb_neg_catcher csnidle_catcher = spi_host_scb_neg_catcher::type_id::create("upper_csnidle_catcher");
+        lead_catcher.match_pattern    = "*Lead-time check failed*";
+        trail_catcher.match_pattern   = "*Trail-time check failed*";
+        csnidle_catcher.match_pattern = "*Two-sided ConfigSwitch CSNIDLE check failed*";
         uvm_report_cb::add(null, lead_catcher);
         uvm_report_cb::add(null, trail_catcher);
+        uvm_report_cb::add(null, csnidle_catcher);
 
         csr_wr(.ptr(ral.csid),       .value(32'h0));
         csr_wr(.ptr(ral.configopts), .value(32'h0000_0200)); // Expected half-period 513 > actual 257
@@ -237,12 +241,13 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
         program_command_reg(cmd);
         @(posedge cfg.m_spi_agent_cfg.vif.csb[0]);
         csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(500));
-        cfg.clk_rst_vif.wait_clks(300);
+        cfg.clk_rst_vif.wait_clks(600);
 
         uvm_report_cb::delete(null, lead_catcher);
         uvm_report_cb::delete(null, trail_catcher);
-        `DV_CHECK_GE(lead_catcher.caught_err_cnt + trail_catcher.caught_err_cnt, 1,
-                     "Expected upper-range clkdiv timing fault control to trigger Lead/Trail check error")
+        uvm_report_cb::delete(null, csnidle_catcher);
+        `DV_CHECK_GE(lead_catcher.caught_err_cnt + trail_catcher.caught_err_cnt + csnidle_catcher.caught_err_cnt, 1,
+                     "Expected upper-range clkdiv timing fault control to trigger Lead/Trail/CSNIDLE check error")
       end
 
       // 5b. TX and RX mismatch fault controls at unforced clkdiv = 16'h0100
@@ -276,10 +281,10 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
             bit [7:0] rx_drv = 8'hA4;
             @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
             for (int b = 7; b >= 0; b--) begin
-              cfg.m_spi_agent_cfg.vif.sio_out[1] = rx_drv[b];
+              cfg.m_spi_agent_cfg.vif.sio_out[1] <= rx_drv[b];
               @(negedge cfg.m_spi_agent_cfg.vif.sck);
             end
-            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+            cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
           end
         join_none
         wait_ready_for_command();
@@ -307,6 +312,7 @@ class spi_host_upper_range_clkdiv_vseq extends spi_host_speed_vseq;
 
     // 6. Follow with a clean unforced transfer at clkdiv = 16'h0002 to verify recovery
     // and complete 1->0 toggle across upper clkdiv bits after testing 0xFFFF and 0x0100.
+    cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b1);
     csr_wr(.ptr(ral.csid),         .value(32'h0));
     csr_wr(.ptr(ral.configopts),   .value(32'h0111_0002));
     csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0002));

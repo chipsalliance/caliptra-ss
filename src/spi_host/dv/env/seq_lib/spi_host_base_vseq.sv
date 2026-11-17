@@ -267,17 +267,15 @@ class spi_host_base_vseq extends dv_base_vseq #(
                                  );
   endtask
 
-  // Start sequences on the spi_agent (configured as a Device) that will respond to host bus activity.
-  // Currently we use "spi_device_cmd_rsp_seq", which discards write-data, and responds with random data for reads.
+  // Start reactive SPI device responder sequence ONLY when explicitly enabled via
+  // cfg.en_reactive_device_rsp (default 0 because tb.sv connects dual NOR flash models /
+  // directed peripheral responders; validated in spi_host_closure_vseq per Comment #18).
   virtual task start_agent_reactive_seqs();
-/*
-    fork
-      for( int i = 0; i < SPI_HOST_NUM_CS; i++) begin
-        m_spi_device_seq[i] = spi_device_cmd_rsp_seq::type_id::create($sformatf("spi_host[%0d]",i));
-        m_spi_device_seq[i].start(p_sequencer.spi_sequencer_h);
-      end
-    join
-*/
+    if (!cfg.en_reactive_device_rsp || p_sequencer.spi_sequencer_h == null) begin
+      return;
+    end
+    m_spi_device_seq[0] = spi_device_cmd_rsp_seq::type_id::create("spi_device_reactive_rsp_seq");
+    m_spi_device_seq[0].start(p_sequencer.spi_sequencer_h);
   endtask : start_agent_reactive_seqs
 
   // Call this function to cleanup the above started reactive-sequences, such as if we
@@ -324,17 +322,24 @@ class spi_host_base_vseq extends dv_base_vseq #(
     csr_wr(.ptr(ral.intr_enable), .value({TL_DW{1'b1}}));
     csr_rd(.ptr(ral.intr_state), .value(intr_state));
     csr_wr(.ptr(ral.intr_state), .value(intr_state));
-    // Exercise configopts subreg logic and toggle register bits
-    csr_wr(.ptr(ral.configopts), .value(32'hFFFFFFFF));
-    csr_wr(.ptr(ral.configopts), .value(32'h00000000));
-    csr_wr(.ptr(ral.configopts), .value(32'h5A5A5A5A));
-    csr_wr(.ptr(ral.configopts), .value(32'hA5A5A5A5));
-    csr_wr(.ptr(ral.configopts), .value(32'h00000000));
-    csr_wr(.ptr(ral.configopts_1), .value(32'hFFFFFFFF));
-    csr_wr(.ptr(ral.configopts_1), .value(32'h00000000));
-    csr_wr(.ptr(ral.configopts_1), .value(32'h5A5A5A5A));
-    csr_wr(.ptr(ral.configopts_1), .value(32'hA5A5A5A5));
-    csr_wr(.ptr(ral.configopts_1), .value(32'h00000000));
+    // Exercise configopts subreg toggle bits once per test rather than repeating 10 bus writes
+    // on every re-initialization call (Comment #23)
+    if (!cfg.did_configopts_toggle_init) begin
+      cfg.did_configopts_toggle_init = 1'b1;
+      csr_wr(.ptr(ral.configopts),   .value(32'hFFFFFFFF));
+      csr_wr(.ptr(ral.configopts),   .value(32'h00000000));
+      csr_wr(.ptr(ral.configopts),   .value(32'h5A5A5A5A));
+      csr_wr(.ptr(ral.configopts),   .value(32'hA5A5A5A5));
+      csr_wr(.ptr(ral.configopts),   .value(32'h00000000));
+      csr_wr(.ptr(ral.configopts_1), .value(32'hFFFFFFFF));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h00000000));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h5A5A5A5A));
+      csr_wr(.ptr(ral.configopts_1), .value(32'hA5A5A5A5));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h00000000));
+    end else begin
+      csr_wr(.ptr(ral.configopts),   .value(32'h00000000));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h00000000));
+    end
   endtask : spi_host_init
 
   // In addition to un/setting sw_rst also triggers a uvm_event (and uvm_object)
@@ -343,19 +348,19 @@ class spi_host_base_vseq extends dv_base_vseq #(
     uvm_reg_data_t control_reg;
     csr_spinwait_ctrl_object spinwait_ctrl_obj;
     spinwait_ctrl_obj = csr_spinwait_ctrl_object::type_id::create("spinwait_ctrl_obj");
-    ral.control.sw_rst.set(1'b1);
-    csr_update(ral.control);
+    csr_utils_pkg::wait_no_outstanding_access();
+    control_reg = ral.control.get_mirrored_value();
+    control_reg[30] = 1'b1;
+    csr_wr(.ptr(ral.control), .value(control_reg));
 
     spinwait_ctrl_obj.stop = 1;
     start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
     `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to SW_RST=1", UVM_DEBUG)
     // make sure data completely drained from fifo then release reset
     wait_for_fifos_empty(AllFifos);
-    // Backdoor read to avoid writing something different to what's there
     csr_rd(.ptr(ral.control), .value(control_reg));
-    control_reg[30] = 0; // SW reset field
+    control_reg[30] = 1'b0; // SW reset field
     csr_wr(.ptr(ral.control), .value(control_reg));
-    ral.control.sw_rst.set(1'b0);
     spinwait_ctrl_obj.stop = 0;
     start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
     `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to SW_RST=0", UVM_DEBUG)
@@ -601,7 +606,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
                             output uvm_status_e status);
     axi_reg_op_item ext_item = axi_reg_op_item::type_id::create("ext_item");
     ext_item.m_rw.byte_en = mask;
+    csr_utils_pkg::increment_outstanding_access();
     ral.txdata.write(.status(status), .offset(0), .value(data), .extension(ext_item));
+    csr_utils_pkg::decrement_outstanding_access();
   endtask : write_txdata
 
   // Helper task to write a CSR with an explicit byte-enable mask
@@ -611,7 +618,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
                                  output uvm_status_e status);
     axi_reg_op_item ext_item = axi_reg_op_item::type_id::create("ext_item");
     ext_item.m_rw.byte_en = mask;
+    csr_utils_pkg::increment_outstanding_access();
     csr.write(.status(status), .value(data), .extension(ext_item));
+    csr_utils_pkg::decrement_outstanding_access();
   endtask : write_csr_with_be
 
   // Create TL access(es) to either TXFIFO/RXFIFO to write/read data.
@@ -662,7 +671,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
     end else if (rw == READ) begin
       // Read a single 32-bit word
       uvm_status_e status;
+      csr_utils_pkg::increment_outstanding_access();
       ral.rxdata.read(status, 0, data);
+      csr_utils_pkg::decrement_outstanding_access();
       data_q = {<<8{data}};
     end
   endtask : access_data_fifo
@@ -790,17 +801,29 @@ class spi_host_base_vseq extends dv_base_vseq #(
   endtask
 
   virtual task run_csr_mem_rw_with_rand_reset_vseq(int num_times = 1);
+    bit orig_en_scb        = cfg.en_scb;
+    bit orig_en_mon        = cfg.m_spi_agent_cfg.en_monitor;
+    bit orig_en_mon_chk    = cfg.m_spi_agent_cfg.en_monitor_checks;
+    bit orig_plain_samp    = cfg.m_spi_agent_cfg.enable_plain_sampling;
+
     for (int i = 1; i <= num_times; i++) begin
-      int unsigned in_flight_axi_cnt = 0;
-      int unsigned overlap_cnt       = 0;
-      bit          stream_active     = 1'b0;
-      bit          late_overlapped   = 1'b0;
-      uvm_status_e wr_cancel_status  = UVM_IS_OK;
-      uvm_status_e rd_cancel_status  = UVM_IS_OK;
+      int unsigned in_flight_axi_cnt        = 0;
+      int unsigned bus_accepted_overlap_cnt = 0;
+      int unsigned ral_call_overlap_cnt     = 0;
+      bit          stream_active            = 1'b0;
+      bit          late_overlapped          = 1'b0;
+      uvm_status_e wr_cancel_status         = UVM_IS_OK;
+      uvm_status_e rd_cancel_status         = UVM_IS_OK;
       uvm_reg_data_t dummy_rdata;
 
       `uvm_info(`gfn, $sformatf("Running csr_mem_rw_with_rand_reset iteration %0d/%0d",
                                 i, num_times), UVM_LOW)
+
+      // Disable scoreboard during raw random CSR/FIFO reset-interruption phases (Steps 1-4)
+      cfg.en_scb                                = 1'b0;
+      cfg.m_spi_agent_cfg.en_monitor            = 1'b0;
+      cfg.m_spi_agent_cfg.en_monitor_checks     = 1'b0;
+      cfg.m_spi_agent_cfg.enable_plain_sampling = 1'b0;
 
       // Enable legal multi-cycle BREADY/RREADY backpressure so accepted AXI requests await
       // responses across reset without forcing any internal RTL or interface signals.
@@ -816,7 +839,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
         end
         begin
           wait (in_flight_axi_cnt > 0 && cfg.m_axi_agent_cfg.write_response_vif.bvalid === 1'b1);
-          if (in_flight_axi_cnt > 0) overlap_cnt++;
+          if (in_flight_axi_cnt > 0 && cfg.m_axi_agent_cfg.write_response_vif.bvalid === 1'b1) begin
+            bus_accepted_overlap_cnt++;
+          end
           apply_reset("HARD");
           ral.reset("HARD");
         end
@@ -833,7 +858,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
         end
         begin
           wait (in_flight_axi_cnt > 0 && cfg.m_axi_agent_cfg.read_data_vif.rvalid === 1'b1);
-          if (in_flight_axi_cnt > 0) overlap_cnt++;
+          if (in_flight_axi_cnt > 0 && cfg.m_axi_agent_cfg.read_data_vif.rvalid === 1'b1) begin
+            bus_accepted_overlap_cnt++;
+          end
           apply_reset("HARD");
           ral.reset("HARD");
         end
@@ -841,8 +868,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
       `DV_CHECK_EQ(rd_cancel_status, UVM_NOT_OK,
                    "Accepted AXI read interrupted by reset must complete with UVM_NOT_OK")
 
-      // 3. Concurrent randomized CSR and TXDATA/RXDATA read/write stream overlapped with
-      // randomized HARD reset assertion delay (exercising both pre-VALID and during-backpressure overlap)
+      // 3. Concurrent randomized CSR and TXDATA/RXDATA RAL call-lifetime stream overlapped with
+      // randomized HARD reset assertion delay (classified separately from bus-accepted overlaps
+      // per Comment #13).
       stream_active = 1'b1;
       fork
         begin : csr_mem_traffic_thread
@@ -872,32 +900,51 @@ class spi_host_base_vseq extends dv_base_vseq #(
           if (stream_active && in_flight_axi_cnt == 0) begin
             wait (in_flight_axi_cnt > 0 || !stream_active);
           end
-          if (in_flight_axi_cnt > 0) overlap_cnt++;
+          if (in_flight_axi_cnt > 0) ral_call_overlap_cnt++;
           apply_reset("HARD");
           ral.reset("HARD");
         end
       join
       axi_response_accept_item::s_force_backpressure = 1'b0;
-      `DV_CHECK_EQ(overlap_cnt, 3,
-                   "Expected all 3 resets to overlap in-flight CSR/memory AXI accesses")
+      `DV_CHECK_EQ(bus_accepted_overlap_cnt, 2,
+                   "Expected both accepted AXI write (AW/W->B) and read (AR->R) bus transactions to overlap HARD reset")
+      `DV_CHECK_EQ(ral_call_overlap_cnt, 1,
+                   "Expected concurrent CSR/FIFO RAL call stream to overlap HARD reset")
 
       // 4. Negative control for overlap detector: deliberately late reset after traffic finishes
       begin
         uvm_status_e st;
+        bit late_bus_overlap;
         in_flight_axi_cnt++;
         ral.configopts.write(.status(st), .value(32'h0102_0003));
         in_flight_axi_cnt--;
         `DV_CHECK_EQ(st, UVM_IS_OK)
         cfg.clk_rst_vif.wait_clks(2);
-        late_overlapped = (in_flight_axi_cnt > 0);
+        late_overlapped  = (in_flight_axi_cnt > 0);
+        late_bus_overlap = (cfg.m_axi_agent_cfg.write_response_vif.bvalid === 1'b1) ||
+                           (cfg.m_axi_agent_cfg.read_data_vif.rvalid === 1'b1);
         `DV_CHECK_EQ(late_overlapped, 1'b0,
-                     "Overlap detector must flag a deliberately late reset as non-overlapping")
+                     "RAL-call overlap detector must flag a deliberately late reset as non-overlapping")
+        `DV_CHECK_EQ(late_bus_overlap, 1'b0,
+                     "Bus-accepted overlap detector must flag a deliberately late reset as non-overlapping")
         apply_reset("HARD");
         ral.reset("HARD");
       end
 
-      // 5. Post-reset hw_reset CSR check and full end-to-end SPI Bidir (TX + RX) recovery check
+      // 5. Post-reset hw_reset CSR check and full end-to-end SPI Bidir (TX + RX) recovery check.
+      // Explicitly enable SPI monitor, plain sampling, and scoreboard checking even when launched
+      // under imported csr_tests_mode (+en_scb=0) so TX and RX recovery payloads are verified
+      // end-to-end by spi_host_scoreboard (Comment #13).
       run_csr_vseq(.csr_test_type("hw_reset"), .do_rand_wr_and_reset(0));
+      apply_reset("HARD");
+      ral.reset("HARD");
+      cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b0);
+      cfg.en_scb                                = 1'b1;
+      cfg.m_spi_agent_cfg.en_monitor            = 1'b1;
+      cfg.m_spi_agent_cfg.en_monitor_checks     = 1'b1;
+      cfg.m_spi_agent_cfg.enable_plain_sampling = 1'b1;
+      cfg.clk_rst_vif.wait_clks(2);
+
       spi_host_init();
       program_spi_host_regs();
       csr_wr(.ptr(ral.csid),       .value(32'h0));
@@ -924,10 +971,10 @@ class spi_host_base_vseq extends dv_base_vseq #(
           begin
             @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
             for (int b = 7; b >= 0; b--) begin
-              cfg.m_spi_agent_cfg.vif.sio_out[1] = exp_rx_byte[b];
+              cfg.m_spi_agent_cfg.vif.sio_out[1] <= exp_rx_byte[b];
               @(negedge cfg.m_spi_agent_cfg.vif.sck);
             end
-            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+            cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
           end
           begin
             program_command_reg(cmd);
@@ -940,12 +987,17 @@ class spi_host_base_vseq extends dv_base_vseq #(
         `DV_CHECK_EQ(st, UVM_IS_OK)
         `DV_CHECK_EQ(rdata[7:0], exp_rx_byte, "Post-reset recovery Bidir RXDATA mismatch")
         cfg.clk_rst_vif.wait_clks(10);
-        if (cfg.en_scb) begin
-          `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
-                       "Expected scoreboard TX check on post-reset recovery transfer")
-          `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
-                       "Expected scoreboard RX check on post-reset recovery transfer")
-        end
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected scoreboard TX check on post-reset recovery transfer")
+        `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                     "Expected scoreboard RX check on post-reset recovery transfer")
+      end
+      cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b1);
+      if (i < num_times) begin
+        cfg.en_scb                                = orig_en_scb;
+        cfg.m_spi_agent_cfg.en_monitor            = orig_en_mon;
+        cfg.m_spi_agent_cfg.en_monitor_checks     = orig_en_mon_chk;
+        cfg.m_spi_agent_cfg.enable_plain_sampling = orig_plain_samp;
       end
     end
   endtask

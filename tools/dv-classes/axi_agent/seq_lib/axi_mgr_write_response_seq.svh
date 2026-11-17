@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,6 @@ class axi_mgr_write_response_seq extends uvm_sequence #(axi_response_accept_item
                                                         uvm_sequence_item);
   `uvm_object_utils(axi_mgr_write_response_seq)
 
-  // Typed write response (null if the sequence saw a reset and received an axi_status_item)
   axi_write_response_item rsp;
 
   // This sequence uses late randomisation, so doesn't randomise the request until it is scheduled
@@ -37,8 +36,8 @@ endfunction
 task axi_mgr_write_response_seq::body();
   axi_response_accept_item item = axi_response_accept_item::type_id::create("item");
   uvm_sequence_item base_response_item;
-  rsp = null;
 
+  rsp = null;
   start_item(item);
 
   if (!item.randomize() with {

@@ -6,7 +6,7 @@
   name: spi_host
 
   // Top level dut name (sv module).
-  dut: caliptra_ss_spi_host
+  dut: spi_host_axi
 
   // Top level testbench name (sv module).
   tb: tb
@@ -38,7 +38,6 @@
     "-ld /usr/bin/g++",
     "-LDFLAGS -B/usr/bin",
     "-CFLAGS -B/usr/bin",
-    "-pvalue+tb.dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.EnableAlertTriggerSVA=0",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/caliptra_prim/rtl",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/integration/rtl",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/libs/rtl",
@@ -46,9 +45,8 @@
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/axi/rtl"
   ]
 
-  // Coverage exclusion
+  // Single-sourced VCS coverage exclusion file (stale Xcelium .vRefine reference removed per Comment #24)
   vcs_cov_excl_files: ["{self_dir}/../config/cov_waivers.el"]
-  xcelium_cov_refine_files: ["{self_dir}/cov/spi_host_unr_excl.vRefine"]
 
   // Default iterations for all tests - each test entry can override this.
   reseed: 10
@@ -60,14 +58,19 @@
   run_opts: ["+ral_verbosity=UVM_HIGH",
              // Enable cdc instrumentation.
              "+cdc_instrumentation_enabled=1",
-             "+disable_assert_final_checks=1",
-             "-assert disable_hier=tb.dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A"]
+             "+disable_assert_final_checks=1"]
 
   // List of test specifications.
   tests: [
     {
       name: spi_host_smoke
       uvm_test_seq: spi_host_smoke_vseq
+    }
+    {
+      name: spi_host_closure
+      uvm_test_seq: spi_host_closure_vseq
+      reseed: 2
+      run_opts: ["+test_timeout_ns=1_000_000_000"]
     }
     {
       name: spi_host_speed
@@ -144,6 +147,36 @@
       name: all
       tests: [
         "spi_host_smoke",
+        "spi_host_closure",
+        "spi_host_dual_cs",
+        "spi_host_flash",
+        "spi_host_speed",
+        "spi_host_upper_range_clkdiv",
+        "spi_host_performance",
+        "spi_host_sw_reset",
+        "spi_host_overflow_underflow",
+        "spi_host_error_cmd",
+        "spi_host_event",
+        "spi_host_passthrough_mode",
+        "spi_host_status_stall",
+        "spi_host_idlecsbactive",
+        "spi_host_stress_all",
+        "spi_host_spien",
+        "spi_host_csr_hw_reset",
+        "spi_host_csr_rw",
+        "spi_host_csr_bit_bash",
+        "spi_host_csr_aliasing",
+        "spi_host_same_csr_outstanding",
+        "spi_host_csr_mem_rw_with_rand_reset",
+        "spi_host_intr_test"
+      ]
+    }
+    {
+      name: nightly
+      en_sim_modes: ["cov"]
+      tests: [
+        "spi_host_smoke",
+        "spi_host_closure",
         "spi_host_dual_cs",
         "spi_host_flash",
         "spi_host_speed",

@@ -279,8 +279,8 @@
         }
         { bits: "20",
           name: "RXWM",
-          desc: '''If high, the number of 32-bits in the RX FIFO now exceeds the
-                   !!CONTROL.RX_WATERMARK entries (32b each).'''
+          desc: '''If high, the number of 32-bit words in the RX FIFO is greater than or
+                   equal to (`>=`) !!CONTROL.RX_WATERMARK entries (32b each).'''
           resval: "0x0"
         },
         { bits: "19:16",
@@ -315,7 +315,10 @@
         desc: '''Configuration options register.
 
                  Contains options for controlling each peripheral. One register per
-                 cs_n line
+                 cs_n line. Software must not modify CONFIGOPTS[cs] between chained
+                 !!COMMAND.CSAAT = 1 segments targeting the same chip select; close the
+                 active transaction with a !!COMMAND.CSAAT = 0 segment so cs_n deasserts
+                 before updating CONFIGOPTS[cs].
               '''
         count: "NumCS",
         swaccess: "rw",
@@ -346,11 +349,10 @@
             desc: '''Full cycle.  Modifies the CPHA sampling behaviour to allow
                       for longer device logic setup times.  Rather than sampling the SD
                       bus a half cycle after shifting out data, the data is sampled
-                      a full cycle after shifting data out.  This means that if
-                      CPHA = 0, data is shifted out on the trailing edge, and
-                      sampled a full cycle later.  If CPHA = 1, data is shifted and
-                      sampled with the trailing edge, also separated by a
-                      full cycle.''',
+                      a full cycle after shifting data out.  When CPHA = 0, data is
+                      shifted out on the trailing edge and sampled a full cycle later.
+                      Note: Full-cycle receive sampling (FULLCYC = 1) is only supported
+                      when CPHA = 0; FULLCYC = 1 with CPHA = 1 is not supported.''',
             resval: 0
           },
           { bits: "27:24",
@@ -436,7 +438,9 @@
                    This allows the creation of longer, more complete SPI transactions,
                    consisting of several separate segments for issuing instructions,
                    pausing for dummy cycles, and transmitting or receiving data from
-                   the device.''',
+                   the device. Software must close an open transaction with
+                   !!COMMAND.CSAAT = 0 before modifying !!CONFIGOPTS for the same chip
+                   select.''',
           resval: "0x0"
         },
         { bits: "8:0",
@@ -507,7 +511,10 @@
       }
     },
     { name: "ERROR_ENABLE",
-      desc: "Controls which classes of errors raise an interrupt."
+      desc: '''Controls which classes of errors raise an `intr_error_o` interrupt.
+               Clearing a bit in ERROR_ENABLE suppresses the error interrupt only;
+               any asserted bit in !!ERROR_STATUS still unconditionally halts core
+               command execution until cleared.'''
       swaccess: "rw",
       hwaccess: "hro",
       fields: [
@@ -565,14 +572,20 @@
         },
         { bits: "4",
           name: "CSIDINVAL",
-          desc: '''Indicates a command was attempted with an invalid value for !!CSID.''',
+          desc: '''Indicates a command was attempted with an invalid value for !!CSID.
+                   Because the offending descriptor is still enqueued in the command
+                   FIFO (with !!CSID clamped to 0), firmware must issue
+                   !!CONTROL.SW_RST to flush the queue before clearing !!ERROR_STATUS;
+                   clearing CSIDINVAL via W1C without !!CONTROL.SW_RST allows the
+                   retained descriptor to execute on CS0.''',
           resval: "0x0"
         },
         { bits: "3",
           name: "CMDINVAL",
           desc: '''Indicates an invalid command segment, meaning either an invalid value of
                    !!COMMAND.SPEED or a request for bidirectional data transfer at dual or quad
-                   speed''',
+                   speed. Firmware must issue !!CONTROL.SW_RST to flush the offending
+                   descriptor from the command queue before clearing !!ERROR_STATUS.''',
              resval: "0x0"
         },
         { bits: "2",
@@ -624,9 +637,9 @@
         { bits: "2",
           name: "RXWM",
           desc: '''Assert to send a spi_event interrupt whenever the number of 32-bit words in
-                   the RX FIFO is greater than !!CONTROL.RX_WATERMARK. To prevent the
-                   reassertion of this interrupt, read more data from the RX FIFO, or
-                   increase !!CONTROL.RX_WATERMARK.''',
+                   the RX FIFO is greater than or equal to (`>=`) !!CONTROL.RX_WATERMARK. To
+                   prevent the reassertion of this interrupt, read more data from the RX FIFO,
+                   or increase !!CONTROL.RX_WATERMARK.''',
           resval: "0x0"
         },
         { bits: "1",

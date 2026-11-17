@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -64,9 +64,9 @@ interface axi_write_response_if (input clk_i, input rst_ni);
   logic [2:0]  bresp_mask;
   logic [15:0] buser_mask;
 
-  assign bid_mask   = (32'b1 << id_w_width) - 1;
-  assign bresp_mask = (3'b1 << bresp_width) - 1;
-  assign buser_mask = (16'b1 << user_resp_width) - 1;
+  assign bid_mask   = (id_w_width >= 32) ? '1 : ((32'b1 << id_w_width) - 1);
+  assign bresp_mask = (bresp_width >= 3) ? '1 : ((3'b1 << bresp_width) - 1);
+  assign buser_mask = (user_resp_width >= 16) ? '1 : ((16'b1 << user_resp_width) - 1);
 
   clocking mon_cb @(posedge clk_i);
     input bvalid;
@@ -149,5 +149,32 @@ interface axi_write_response_if (input clk_i, input rst_ni);
 
     user_resp_width = width;
   endfunction
+
+  // Enable/disable protocol assertions
+  bit en_assert = 1'b1;
+  function void set_en_assert(bit enable);
+    en_assert = enable;
+  endfunction
+
+  // AXI4 Protocol Assertions (B Channel)
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    !$isunknown(bvalid))
+  else `uvm_error($sformatf("%m"), "BVALID is X/Z out of reset.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    bvalid |-> !$isunknown(bready))
+  else `uvm_error($sformatf("%m"), "BREADY is X/Z when BVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    bvalid |-> !$isunknown({bid, bresp, buser}))
+  else `uvm_error($sformatf("%m"), "B payload contains X/Z when BVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (bvalid && !bready) |=> bvalid)
+  else `uvm_error($sformatf("%m"), "BVALID deasserted before BREADY handshake.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (bvalid && !bready) |=> $stable({bid, bresp, buser}))
+  else `uvm_error($sformatf("%m"), "B payload changed while BVALID was high and BREADY was low.")
 
 endinterface

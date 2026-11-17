@@ -39,7 +39,23 @@ class spi_monitor extends dv_reactive_monitor #(
   endfunction
 
   virtual task run_phase(uvm_phase phase);
-    forever collect_trans();
+    fork
+      forever collect_trans();
+      monitor_csb_onehot();
+    join
+  endtask
+
+  virtual protected task monitor_csb_onehot();
+    forever begin
+      @(cfg.vif.csb);
+      if (cfg.en_monitor && cfg.en_monitor_checks &&
+          (cfg.vif.rst_n === 1'b1) && !$isunknown(cfg.vif.csb)) begin
+        if (!$onehot0(~cfg.vif.csb)) begin
+          `uvm_error(`gfn, $sformatf("Multiple chip-select lines active simultaneously: csb=0b%b",
+                                     cfg.vif.csb))
+        end
+      end
+    end
   endtask
 
   // collect transactions
@@ -52,9 +68,12 @@ class spi_monitor extends dv_reactive_monitor #(
 
     cfg.vif.sck_polarity = cfg.sck_polarity[active_csb];
     cfg.vif.sck_phase = cfg.sck_phase[active_csb];
-    host_item   = spi_item::type_id::create("host_item", this);
-    device_item = spi_item::type_id::create("device_item", this);
+    host_item            = spi_item::type_id::create("host_item", this);
+    device_item          = spi_item::type_id::create("device_item", this);
     plain_item           = spi_item::type_id::create("plain_item", this);
+    host_item.csb_sel    = active_csb;
+    device_item.csb_sel  = active_csb;
+    plain_item.csb_sel   = active_csb;
     cfg.ongoing_flash_cmd = null;
 
     // Currently only used in spi_host where the SPI bus is sampled without
@@ -129,10 +148,17 @@ class spi_monitor extends dv_reactive_monitor #(
     // for mode 1 and 3, get the leading edges out of the way
     cfg.wait_sck_edge(LeadingEdge, active_csb);
     forever begin : loop_forever
-      // wait for the sampling edge
+      // wait for the nominal half-cycle sampling edge
       cfg.wait_sck_edge(SamplingEdge, active_csb);
-      if(cfg.enable_plain_sampling) begin
+      if (cfg.enable_plain_sampling) begin
         plain_item.plain_data_q.push_back(cfg.vif.sio[3:0]);
+        if (!cfg.sck_phase[active_csb]) begin
+          // CPHA == 0: capture full-cycle peripheral MISO at the trailing SCK edge
+          cfg.wait_sck_edge(DrivingEdge, active_csb);
+          plain_item.plain_fullcyc_data_q.push_back(cfg.vif.sio[3:0]);
+        end else begin
+          plain_item.plain_fullcyc_data_q.push_back(cfg.vif.sio[3:0]);
+        end
       end
     end
   endtask

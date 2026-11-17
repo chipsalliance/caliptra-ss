@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -75,10 +75,10 @@ interface axi_read_data_if (input clk_i, input rst_ni);
   logic [2:0]    rresp_mask;
   logic [527:0]  ruser_mask;
 
-  assign rid_mask   = (32'b1 << id_r_width) - 1;
-  assign rdata_mask = (1024'b1 << data_width) - 1;
-  assign rresp_mask = (3'b1 << rresp_width) - 1;
-  assign ruser_mask = (528'b1 << (user_data_width + user_resp_width)) - 1;
+  assign rid_mask   = (id_r_width >= 32) ? '1 : ((32'b1 << id_r_width) - 1);
+  assign rdata_mask = (data_width >= 1024) ? '1 : ((1024'b1 << data_width) - 1);
+  assign rresp_mask = (rresp_width >= 3) ? '1 : ((3'b1 << rresp_width) - 1);
+  assign ruser_mask = ((user_data_width + user_resp_width) >= 528) ? '1 : ((528'b1 << (user_data_width + user_resp_width)) - 1);
 
   clocking mon_cb @(posedge clk_i);
     input rvalid;
@@ -207,5 +207,32 @@ interface axi_read_data_if (input clk_i, input rst_ni);
 
     user_resp_width = width;
   endfunction
+
+  // Enable/disable protocol assertions
+  bit en_assert = 1'b1;
+  function void set_en_assert(bit enable);
+    en_assert = enable;
+  endfunction
+
+  // AXI4 Protocol Assertions (R Channel)
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    !$isunknown(rvalid))
+  else `uvm_error($sformatf("%m"), "RVALID is X/Z out of reset.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    rvalid |-> !$isunknown(rready))
+  else `uvm_error($sformatf("%m"), "RREADY is X/Z when RVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    rvalid |-> !$isunknown({rid, rdata, rresp, rlast, ruser}))
+  else `uvm_error($sformatf("%m"), "R payload contains X/Z when RVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (rvalid && !rready) |=> rvalid)
+  else `uvm_error($sformatf("%m"), "RVALID deasserted before RREADY handshake.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (rvalid && !rready) |=> $stable({rid, rdata, rresp, rlast, ruser}))
+  else `uvm_error($sformatf("%m"), "R payload changed while RVALID was high and RREADY was low.")
 
 endinterface

@@ -29,6 +29,7 @@ interface spi_if
   bit         sck_phase;
 
   bit         en_chk = 1;
+  bit         en_flash_model = 1'b1;
   string      msg_id = "spi_if";
 
   int unsigned clk_cycle;
@@ -38,6 +39,10 @@ interface spi_if
   function automatic void disconnect(bit set_disconnect = 1);
     disconnected = set_disconnect;
   endfunction : disconnect
+
+  function automatic void set_flash_model_en(bit en = 1'b1);
+    en_flash_model = en;
+  endfunction : set_flash_model_en
 
   // Force/release selected SPI data lanes to high-Z (1'bz) using constant bit-selects
   // (per IEEE 1800-2017 10.6.2) for 4-state floating-lane scoreboard negative/positive controls.

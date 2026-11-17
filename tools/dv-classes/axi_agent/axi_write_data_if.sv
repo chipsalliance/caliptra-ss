@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -58,9 +58,9 @@ interface axi_write_data_if (input clk_i, input rst_ni);
   logic [127:0]  wstrb_mask;
   logic [511:0]  wuser_mask;
 
-  assign wdata_mask  = (1024'b1 << data_width) - 1;
-  assign wstrb_mask = (128'b1 << ((data_width + 7) / 8)) - 1;
-  assign wuser_mask = (512'b1 << user_data_width) - 1;
+  assign wdata_mask = (data_width >= 1024) ? '1 : ((1024'b1 << data_width) - 1);
+  assign wstrb_mask = (((data_width + 7) / 8) >= 128) ? '1 : ((128'b1 << ((data_width + 7) / 8)) - 1);
+  assign wuser_mask = (user_data_width >= 512) ? '1 : ((512'b1 << user_data_width) - 1);
 
   clocking mon_cb @(posedge clk_i);
     input wvalid;
@@ -147,5 +147,32 @@ interface axi_write_data_if (input clk_i, input rst_ni);
 
     user_data_width = width;
   endfunction
+
+  // Enable/disable protocol assertions
+  bit en_assert = 1'b1;
+  function void set_en_assert(bit enable);
+    en_assert = enable;
+  endfunction
+
+  // AXI4 Protocol Assertions (W Channel)
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    !$isunknown(wvalid))
+  else `uvm_error($sformatf("%m"), "WVALID is X/Z out of reset.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    wvalid |-> !$isunknown(wready))
+  else `uvm_error($sformatf("%m"), "WREADY is X/Z when WVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    wvalid |-> !$isunknown({wdata, wstrb, wlast, wuser}))
+  else `uvm_error($sformatf("%m"), "W payload contains X/Z when WVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (wvalid && !wready) |=> wvalid)
+  else `uvm_error($sformatf("%m"), "WVALID deasserted before WREADY handshake.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (wvalid && !wready) |=> $stable({wdata, wstrb, wlast, wuser}))
+  else `uvm_error($sformatf("%m"), "W payload changed while WVALID was high and WREADY was low.")
 
 endinterface

@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -84,9 +84,9 @@ interface axi_read_request_if (input clk_i, input rst_ni);
   logic [63:0]  araddr_mask;
   logic [127:0] aruser_mask;
 
-  assign arid_mask   = (32'b1 << id_r_width) - 1;
-  assign araddr_mask = (64'b1 << addr_width) - 1;
-  assign aruser_mask = (128'b1 << user_req_width) - 1;
+  assign arid_mask   = (id_r_width >= 32) ? '1 : ((32'b1 << id_r_width) - 1);
+  assign araddr_mask = (addr_width >= 64) ? '1 : ((64'b1 << addr_width) - 1);
+  assign aruser_mask = (user_req_width >= 128) ? '1 : ((128'b1 << user_req_width) - 1);
 
   clocking mon_cb @(posedge clk_i);
     input arvalid;
@@ -217,4 +217,31 @@ interface axi_read_request_if (input clk_i, input rst_ni);
 
     user_req_width = width;
   endfunction
+  // Enable/disable protocol assertions
+  bit en_assert = 1'b1;
+  function void set_en_assert(bit enable);
+    en_assert = enable;
+  endfunction
+
+  // AXI4 Protocol Assertions (AR Channel)
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    !$isunknown(arvalid))
+  else `uvm_error($sformatf("%m"), "ARVALID is X/Z out of reset.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    arvalid |-> !$isunknown(arready))
+  else `uvm_error($sformatf("%m"), "ARREADY is X/Z when ARVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    arvalid |-> !$isunknown({arid, araddr, arregion, arlen, arsize, arburst, arlock, arcache, arprot, arqos, aruser}))
+  else `uvm_error($sformatf("%m"), "AR payload contains X/Z when ARVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (arvalid && !arready) |=> arvalid)
+  else `uvm_error($sformatf("%m"), "ARVALID deasserted before ARREADY handshake.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (arvalid && !arready) |=> $stable({arid, araddr, arregion, arlen, arsize, arburst, arlock, arcache, arprot, arqos, aruser}))
+  else `uvm_error($sformatf("%m"), "AR payload changed while ARVALID was high and ARREADY was low.")
+
 endinterface

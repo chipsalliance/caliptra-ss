@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -33,6 +33,13 @@ class axi_mgr_agent extends uvm_agent;
 
   // The read data channel (R)
   local axi_reset_monitor_r      m_reset_monitor_r;
+
+  // Passive transaction and coverage monitors for the five channels
+  local axi_monitor_aw m_monitor_aw;
+  local axi_monitor_w  m_monitor_w;
+  local axi_monitor_b  m_monitor_b;
+  local axi_monitor_ar m_monitor_ar;
+  local axi_monitor_r  m_monitor_r;
   local axi_mgr_read_data_driver m_read_data_driver;
   local read_data_sequencer_t    m_read_data_sequencer;
 
@@ -75,6 +82,13 @@ class axi_mgr_agent extends uvm_agent;
 
   // Get the reset_monitor for the read data channel (R). Can only be called after build_phase.
   extern function axi_reset_monitor_r get_read_data_reset_monitor();
+
+  // Get the transaction/coverage monitors for the five channels. Can only be called after build_phase.
+  extern function axi_monitor_aw get_write_request_monitor();
+  extern function axi_monitor_w  get_write_data_monitor();
+  extern function axi_monitor_b  get_write_response_monitor();
+  extern function axi_monitor_ar get_read_request_monitor();
+  extern function axi_monitor_r  get_read_data_monitor();
 
   // Get the sequencer for the write request channel (AW). Can only be called after build_phase, and
   // the agent must be active.
@@ -136,6 +150,13 @@ function void axi_mgr_agent::build_phase(uvm_phase phase);
   m_reset_monitor_ar = axi_reset_monitor_ar::type_id::create("m_reset_monitor_ar", this);
   m_reset_monitor_r  = axi_reset_monitor_r::type_id::create("m_reset_monitor_r", this);
 
+  // Generate a transaction & coverage monitor for each of the five channels.
+  m_monitor_aw = axi_monitor_aw::type_id::create("m_monitor_aw", this);
+  m_monitor_w  = axi_monitor_w::type_id::create("m_monitor_w", this);
+  m_monitor_b  = axi_monitor_b::type_id::create("m_monitor_b", this);
+  m_monitor_ar = axi_monitor_ar::type_id::create("m_monitor_ar", this);
+  m_monitor_r  = axi_monitor_r::type_id::create("m_monitor_r", this);
+
   if (get_is_active() == UVM_ACTIVE) begin
     // Create routers for write and read responses
     m_write_response_router = axi_response_router::type_id::create("m_write_response_router", this);
@@ -183,6 +204,23 @@ function void axi_mgr_agent::connect_phase(uvm_phase phase);
   m_reset_monitor_ar.set_vif(m_cfg.read_request_vif);
   m_reset_monitor_r.set_vif(m_cfg.read_data_vif);
 
+  m_cfg.write_request_vif.set_en_assert(m_cfg.en_assert);
+  m_cfg.write_data_vif.set_en_assert(m_cfg.en_assert);
+  m_cfg.write_response_vif.set_en_assert(m_cfg.en_assert);
+  m_cfg.read_request_vif.set_en_assert(m_cfg.en_assert);
+  m_cfg.read_data_vif.set_en_assert(m_cfg.en_assert);
+
+  m_monitor_aw.set_vif(m_cfg.write_request_vif);
+  m_monitor_aw.set_en_cov(m_cfg.en_cov);
+  m_monitor_w.set_vif(m_cfg.write_data_vif);
+  m_monitor_w.set_en_cov(m_cfg.en_cov);
+  m_monitor_b.set_vif(m_cfg.write_response_vif);
+  m_monitor_b.set_en_cov(m_cfg.en_cov);
+  m_monitor_ar.set_vif(m_cfg.read_request_vif);
+  m_monitor_ar.set_en_cov(m_cfg.en_cov);
+  m_monitor_r.set_vif(m_cfg.read_data_vif);
+  m_monitor_r.set_en_cov(m_cfg.en_cov);
+
   // If the agent is active, connect drivers to interfaces and sequencers
   if (get_is_active() == UVM_ACTIVE) begin
     m_write_request_driver.set_vif(m_cfg.write_request_vif);
@@ -202,10 +240,12 @@ function void axi_mgr_agent::connect_phase(uvm_phase phase);
 
     // Connect the write response router to reset events from the AW channel (which will match the
     // events from W and B)
+    m_write_response_router.set_write_request_vif(m_cfg.write_request_vif);
     m_reset_monitor_aw.m_analysis_port.connect(m_write_response_router.reset_imp);
 
     // Connect the read response router to reset events from the AR channel (which will match the
     // events from R)
+    m_read_response_router.set_read_request_vif(m_cfg.read_request_vif);
     m_reset_monitor_ar.m_analysis_port.connect(m_read_response_router.reset_imp);
   end
 endfunction
@@ -309,6 +349,7 @@ task axi_mgr_agent::run_layered_register_vseq();
                             m_read_request_sequencer,
                             m_read_data_sequencer);
   layer_vseq.set_response_routers(m_read_response_router, m_write_response_router);
+  layer_vseq.set_cfg(m_cfg);
 
   layer_vseq.start(null);
 
@@ -318,4 +359,29 @@ endtask
 
 function axi_mgr_agent::layered_reg_sequencer_t axi_mgr_agent::get_register_layering_sequencer();
   return m_layered_reg_sequencer;
+endfunction
+
+function axi_monitor_aw axi_mgr_agent::get_write_request_monitor();
+  if (m_monitor_aw == null) `uvm_fatal(get_full_name(), "m_monitor_aw is null.")
+  return m_monitor_aw;
+endfunction
+
+function axi_monitor_w axi_mgr_agent::get_write_data_monitor();
+  if (m_monitor_w == null) `uvm_fatal(get_full_name(), "m_monitor_w is null.")
+  return m_monitor_w;
+endfunction
+
+function axi_monitor_b axi_mgr_agent::get_write_response_monitor();
+  if (m_monitor_b == null) `uvm_fatal(get_full_name(), "m_monitor_b is null.")
+  return m_monitor_b;
+endfunction
+
+function axi_monitor_ar axi_mgr_agent::get_read_request_monitor();
+  if (m_monitor_ar == null) `uvm_fatal(get_full_name(), "m_monitor_ar is null.")
+  return m_monitor_ar;
+endfunction
+
+function axi_monitor_r axi_mgr_agent::get_read_data_monitor();
+  if (m_monitor_r == null) `uvm_fatal(get_full_name(), "m_monitor_r is null.")
+  return m_monitor_r;
 endfunction

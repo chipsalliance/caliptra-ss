@@ -8,6 +8,7 @@ class spi_host_virtual_sequencer extends dv_base_virtual_sequencer #(
   );
 
   spi_sequencer  spi_sequencer_h;
+  axi_mgr_agent  axi_agent_h;
 
   `uvm_component_utils(spi_host_virtual_sequencer)
   `uvm_component_new

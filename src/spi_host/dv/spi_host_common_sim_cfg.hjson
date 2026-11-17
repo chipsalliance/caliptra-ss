@@ -85,8 +85,6 @@
   run_opts: ["+UVM_NO_RELNOTES",
              "+UVM_VERBOSITY={expand_uvm_verbosity_{verbosity}}"]
 
-  sw_build_cmd: []
-
   // Default list of things to export to shell
   exports: [
     { dv_root: "{dv_root}" },
@@ -137,7 +135,7 @@
   vcs_unr_cfg_file: "{dv_root}/tools/vcs/unr.cfg"
   vcs_xprop_cfg_file: "{dv_root}/tools/vcs/xprop.cfg"
   vcs_fsm_reset_cov_cfg_file: "{dv_root}/tools/vcs/fsm_reset_cov.cfg"
-  vcs_cov_excl_files: ["{self_dir}/../config/cov_waivers.el"]
+  vcs_cov_excl_files: []
 
   // Build-specific coverage cfg files for VCS.
   default_vcs_cov_cfg_file: "-cm_hier {dv_root}/tools/vcs/cover.cfg+{dv_root}/tools/vcs/common_cov_excl.cfg"

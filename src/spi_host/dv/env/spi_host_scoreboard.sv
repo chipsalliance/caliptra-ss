@@ -8,10 +8,6 @@ typedef class spi_host_scoreboard;
 class spi_host_reg_cbs extends uvm_reg_cbs;
   spi_host_scoreboard sb;
 
-  virtual task pre_write(uvm_reg_item rw);
-    sb.reg_pre_write(rw.element.get_name(), rw.value[0]);
-  endtask
-
   virtual task post_write(uvm_reg_item rw);
     if (rw.status != UVM_IS_OK) return;
     sb.reg_write(rw.element.get_name(), rw.value[0]);
@@ -26,10 +22,6 @@ endclass
 class spi_host_mem_cbs extends uvm_reg_cbs;
   spi_host_scoreboard sb;
 
-  virtual task pre_write(uvm_reg_item rw);
-    sb.mem_pre_write(rw.element.get_name());
-  endtask
-
   virtual task post_write(uvm_reg_item rw);
     uvm_reg_byte_en_t byte_en = 4'hf;
     axi_reg_op_item   ext_item;
@@ -38,10 +30,6 @@ class spi_host_mem_cbs extends uvm_reg_cbs;
       byte_en = ext_item.m_rw.byte_en;
     end
     sb.mem_write(rw.element.get_name(), rw.offset, rw.value[0], byte_en);
-  endtask
-
-  virtual task pre_read(uvm_reg_item rw);
-    sb.mem_pre_read(rw.element.get_name());
   endtask
 
   virtual task post_read(uvm_reg_item rw);
@@ -110,11 +98,22 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   bit                               prev_cmd_csaat = 0;
   int unsigned                      prev_cmd_csid  = 0;
 
-  // Pre-access hardware state snapshots
-  bit                               was_active_at_pre_write   = 0;
-  bit                               was_cmd_busy_at_pre_write = 0;
-  bit                               was_txfull_at_pre_write   = 0;
-  bit                               was_rxempty_at_pre_read   = 0;
+  // Negative-control fault-injection knobs for self-checking verification
+  static bit                        s_ignore_fullcyc_fault         = 1'b0;
+  static bit                        s_force_wrong_cs_fault         = 1'b0;
+  static bit                        s_force_early_csnidle_fault    = 1'b0;
+  static bit                        s_force_unexpected_zero_rx_err = 1'b0;
+
+  // Independent architectural state tracking (zero DUT HDL-read dependency in oracle)
+  local spi_invalid_cmd_item_t      pending_invalid_cmd_q[$];
+  local int unsigned                exp_halted_cmd_qd              = 0;
+  local int unsigned                unverified_underflow_cnt       = 0;
+  local int unsigned                exp_rx_pending_seg_cnt         = 0;
+  local bit                         has_prev_frame_cfg          = 1'b0;
+  local spi_host_configopts_t       prev_frame_cfg;
+  local realtime                    prev_frame_csb_rise_time    = 0;
+  local realtime                    last_sck_idle_switch_time   = 0;
+  local bit                         saw_sck_idle_switch         = 1'b0;
 
   // Tally-Counters
   int                               in_tx_seg_cnt      = 0;
@@ -190,13 +189,13 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     wait (cfg.en_scb == 1);
     forever begin
       wait_no_reset();
-      wait (cfg.spi_passthrough_vif.cio_csb_en_o === 1);
       `DV_SPINWAIT_EXIT(
         fork
           compare_tx_trans();
           compare_rx_trans();
           check_csn_lead();
           check_csn_idle();
+          monitor_idle_sck_polarity_switch();
         join,
         begin
           @(negedge cfg.clk_rst_vif.rst_n or event_sw_rst);
@@ -206,6 +205,20 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       `uvm_info(`gfn, "Restarting scoreboard checking due to reset event now.", UVM_LOW)
     end
   endtask : run_phase
+
+  // Passive bus monitor recording any SCK polarity transition while all CSB lines are inactive
+  virtual task monitor_idle_sck_polarity_switch();
+    forever begin
+      wait_sw_rst_inactive();
+      @(cfg.m_spi_agent_cfg.vif.sck);
+      if (&cfg.m_spi_agent_cfg.vif.csb === 1'b1 &&
+          cfg.spi_passthrough_vif.cio_sck_en_o === 1'b1 &&
+          !is_sw_rst_active() && cfg.clk_rst_vif.rst_n === 1'b1) begin
+        last_sck_idle_switch_time = $realtime();
+        saw_sck_idle_switch       = 1'b1;
+      end
+    end
+  endtask
 
   virtual function void apply_cs_agent_cfg(int cs_idx, spi_host_configopts_t cfg_opts);
     if (cs_idx >= 0 && cs_idx < SPI_HOST_NUM_CS) begin
@@ -272,6 +285,53 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       cur_cfg = active_cs_configopts[cs_idx];
       half_period = (cur_cfg.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
       exp_lead_ps = (cur_cfg.csnlead + 1) * half_period;
+
+      // Two-sided ConfigSwitch idle check (Comment #20): when configuration changes across
+      // consecutive frames, verify both pre-switch idle (>= prev_cfg.csnidle) and post-switch
+      // idle (>= cur_cfg.csnidle), as well as SCK polarity-switch placement while all CSB==1.
+      if (has_prev_frame_cfg && cfg.en_scb &&
+          (cfg.force_spi_fsm_vif == null || cfg.force_spi_fsm_vif.fast_mode == 0) &&
+          !is_sw_rst_active() && cfg.clk_rst_vif.rst_n === 1'b1 &&
+          cfg.spi_passthrough_vif.cio_csb_en_o === 1'b1) begin
+        bit cfg_changed = (cur_cfg != prev_frame_cfg);
+        longint unsigned pre_half_ps  = (prev_frame_cfg.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
+        longint unsigned exp_pre_ps   = (prev_frame_cfg.csnidle + 1) * pre_half_ps;
+        longint unsigned exp_post_ps  = (cur_cfg.csnidle + 1) * half_period;
+        longint unsigned total_idle_ps = longint'((start_time - prev_frame_csb_rise_time) / 1ps);
+        if (s_force_early_csnidle_fault) begin
+          total_idle_ps = 0;
+        end
+        if (cfg_changed) begin
+          if (total_idle_ps < (exp_pre_ps + exp_post_ps)) begin
+            `uvm_error(`gfn, $sformatf(
+              "Two-sided ConfigSwitch CSNIDLE check failed (CS%0d): total idle %0dps < expected pre(%0dps) + post(%0dps)",
+              cs_idx, total_idle_ps, exp_pre_ps, exp_post_ps))
+          end
+          if (cur_cfg.cpol != prev_frame_cfg.cpol) begin
+            if (!saw_sck_idle_switch) begin
+              `uvm_error(`gfn, $sformatf(
+                "ConfigSwitch CPOL transition missing while all CSB high before CS%0d frame",
+                cs_idx))
+            end else begin
+              longint unsigned obs_pre_ps  = s_force_early_csnidle_fault ? 0 :
+                                             longint'((last_sck_idle_switch_time - prev_frame_csb_rise_time) / 1ps);
+              longint unsigned obs_post_ps = s_force_early_csnidle_fault ? 0 :
+                                             longint'((start_time - last_sck_idle_switch_time) / 1ps);
+              if (obs_pre_ps < exp_pre_ps) begin
+                `uvm_error(`gfn, $sformatf(
+                  "ConfigSwitch pre-polarity-switch idle failed (CS%0d): %0dps < expected %0dps",
+                  cs_idx, obs_pre_ps, exp_pre_ps))
+              end
+              if (obs_post_ps < exp_post_ps) begin
+                `uvm_error(`gfn, $sformatf(
+                  "ConfigSwitch post-polarity-switch idle failed (CS%0d): %0dps < expected %0dps",
+                  cs_idx, obs_post_ps, exp_post_ps))
+              end
+            end
+          end
+        end
+      end
+      saw_sck_idle_switch = 1'b0;
       had_sck_edge = 0;
       fork begin : wait_first_sck_or_csb
         fork
@@ -312,6 +372,11 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           disable fork;
         end join
         trail_end_time = $realtime();
+        prev_frame_cfg           = cur_cfg;
+        prev_frame_csb_rise_time = trail_end_time;
+        has_prev_frame_cfg       = (&cfg.m_spi_agent_cfg.vif.csb === 1'b1) &&
+                                   (cfg.m_spi_agent_cfg.vif.sck === cur_cfg.cpol);
+        saw_sck_idle_switch      = 1'b0;
         meas_trail_ps = longint'((trail_end_time - last_sck_time) / 1ps);
         exp_trail_ps = (cur_cfg.csntrail + 1) * half_period;
         if (cfg.en_scb && (cfg.force_spi_fsm_vif == null || cfg.force_spi_fsm_vif.fast_mode == 0) &&
@@ -364,16 +429,22 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       @(posedge cfg.m_spi_agent_cfg.vif.sck);
   endtask
 
-  virtual task get_next_plain_nibble(output logic [3:0] nibble);
+  virtual task get_next_plain_nibble(output logic [3:0] half_nibble,
+                                     output logic [3:0] full_nibble,
+                                     output bit [CSB_WIDTH-1:0] obs_cs);
     spi_item cur_item;
     forever begin
       if (plain_item == null) begin
         plain_data_fifo.get(plain_item);
       end
       cur_item = plain_item;
-      wait (cur_item.plain_data_q.size() > 0 || cur_item.mon_item_complete);
+      wait ((cur_item.plain_data_q.size() > 0 && cur_item.plain_fullcyc_data_q.size() > 0) ||
+            cur_item.mon_item_complete);
       if (cur_item.plain_data_q.size() > 0) begin
-        nibble = cur_item.plain_data_q.pop_front();
+        half_nibble = cur_item.plain_data_q.pop_front();
+        full_nibble = (cur_item.plain_fullcyc_data_q.size() > 0) ?
+                      cur_item.plain_fullcyc_data_q.pop_front() : half_nibble;
+        obs_cs      = cur_item.csb_sel;
         return;
       end else begin
         plain_item = null;
@@ -409,17 +480,22 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     end
   endtask : compare_rx_trans
 
-  virtual task extract_data_for_segment(spi_host_command_t command_info,
+  virtual task extract_data_for_segment(spi_segment_item seg_info,
                                         output logic [7:0] host_data,
-                                        output logic [7:0] device_data);
-    logic [3:0] bus_cycle;
+                                        output logic [7:0] device_data,
+                                        output bit [CSB_WIDTH-1:0] observed_cs);
+    spi_host_command_t command_info = seg_info.command_reg;
+    bit use_fullcyc = seg_info.configopts.fullcyc && !seg_info.configopts.cpha &&
+                      !s_ignore_fullcyc_fault;
+    logic [3:0] half_bus, full_bus, rx_bus;
     int unsigned idx, loop_jump;
     host_data   = 8'h00;
     device_data = 8'h00;
+    observed_cs = '0;
 
     case (command_info.direction)
       None: begin
-        get_next_plain_nibble(bus_cycle);
+        get_next_plain_nibble(half_bus, full_bus, observed_cs);
       end
       default: begin
         case (command_info.mode)
@@ -434,42 +510,83 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
                          cfg.m_spi_agent_cfg.host_bit_dir : cfg.m_spi_agent_cfg.device_bit_dir);
           idx = bit_dir ? i : (7 - i);
 
-          get_next_plain_nibble(bus_cycle);
+          get_next_plain_nibble(half_bus, full_bus, observed_cs);
+          rx_bus = use_fullcyc ? full_bus : half_bus;
           case (command_info.mode)
             Standard: begin
-              host_data[idx]   = bus_cycle[0];
-              device_data[idx] = bus_cycle[1];
+              host_data[idx]   = half_bus[0];
+              device_data[idx] = rx_bus[1];
             end
             Dual: begin
-              host_data[idx -: 2]   = bus_cycle[1:0];
-              device_data[idx -: 2] = bus_cycle[1:0];
+              host_data[idx -: 2]   = half_bus[1:0];
+              device_data[idx -: 2] = rx_bus[1:0];
             end
             Quad: begin
-              host_data[idx -: 4]   = bus_cycle[3:0];
-              device_data[idx -: 4] = bus_cycle[3:0];
+              host_data[idx -: 4]   = half_bus[3:0];
+              device_data[idx -: 4] = rx_bus[3:0];
             end
             default: `uvm_fatal(`gfn, "Command.mode = Reserved")
           endcase
         end
-        `uvm_info(`gfn, $sformatf("[%s] - Extracted byte-> host: 0x%0x | device: 0x%0x",
-                                  command_info.mode.name, host_data, device_data), UVM_DEBUG)
+        `uvm_info(`gfn, $sformatf("[%s] - Extracted byte-> host: 0x%0x | device: 0x%0x (cs=%0d, fullcyc=%0b)",
+                                  command_info.mode.name, host_data, device_data, observed_cs, use_fullcyc), UVM_DEBUG)
       end
     endcase
   endtask : extract_data_for_segment
 
   virtual task compare_tx_trans();
-    spi_segment_item exp_segment;
-    string           txt = "";
-    logic [7:0]      host_data;
-    logic [7:0]      device_data;
+    spi_segment_item    exp_segment;
+    string              txt = "";
+    logic [7:0]         host_data;
+    logic [7:0]         device_data;
+    bit [CSB_WIDTH-1:0] obs_cs;
+    bit [CSB_WIDTH-1:0] chk_cs;
 
     forever begin
       wait (write_segment_q.size > 0);
       exp_segment = write_segment_q.pop_front();
       in_tx_seg_cnt += 1;
+
+      // Handle internal execution when CONTROL.OUTPUT_EN == 0 (pads tri-stated to pullups = 0xFF)
+      if (exp_segment.internal_exec) begin
+        int n_bytes = exp_segment.command_reg.len + 1;
+        if (exp_segment.command_reg.direction inside {TxOnly, Bidir}) begin
+          for (int b = 0; b < n_bytes; b++) begin
+            if (tx_word_q.size() > 0) begin
+              void'(tx_word_q[0].bytes.pop_front());
+              if (tx_word_q[0].bytes.size() == 0 || (b == exp_segment.command_reg.len)) begin
+                void'(tx_word_q.pop_front());
+              end
+            end
+          end
+        end
+        if (exp_segment.command_reg.direction inside {RxOnly, Bidir}) begin
+          for (int b = 0; b < n_bytes; b++) begin
+            rx_data_q.push_front(8'hFF);
+          end
+          if (n_bytes % 4 != 0) begin
+            for (int n = 0; n < (4 - (n_bytes % 4)); n++) begin
+              rx_data_q.push_front(8'h00);
+            end
+          end
+          if (exp_rx_pending_seg_cnt > 0) exp_rx_pending_seg_cnt--;
+        end
+        checked_tx_seg_cnt += 1;
+        cfg.scb_checked_tx_seg_cnt = checked_tx_seg_cnt;
+        continue;
+      end
+
       txt = "\n\t byte      actual     expected";
       for (int i = 0; i < exp_segment.command_reg.len + 1; i++) begin
-        extract_data_for_segment(exp_segment.command_reg, host_data, device_data);
+        extract_data_for_segment(exp_segment, host_data, device_data, obs_cs);
+
+        // Verify active chip-select identity directly on observed segment (Comment #21)
+        chk_cs = s_force_wrong_cs_fault ? ~obs_cs : obs_cs;
+        if (chk_cs !== exp_segment.csid) begin
+          `uvm_error(`gfn, $sformatf(
+            "CS routing mismatch on byte [%0d]: observed active CS=%0d != expected CSID=%0d",
+            i, chk_cs, exp_segment.csid))
+        end
 
         if (exp_segment.command_reg.direction inside {TxOnly, Bidir}) begin
           bit [7:0] exp_byte;
@@ -502,12 +619,27 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           rx_data_q.push_front(8'h00);
         end
       end
+      if ((exp_segment.command_reg.direction inside {RxOnly, Bidir}) &&
+          exp_rx_pending_seg_cnt > 0) begin
+        exp_rx_pending_seg_cnt--;
+      end
 
       csaat = exp_segment.command_reg.csaat;
 
       if (cfg.en_cov) begin
+        bit extra_data = (tx_word_q.size() > 0);
+        cur_trans_segments++;
         cov.config_opts_cg.sample(exp_segment.configopts);
         cov.different_ch_settings_cg.sample(exp_segment.csid, exp_segment.configopts);
+        if (exp_segment.command_reg.direction != None) begin
+          cov.duplex_cg.sample(exp_segment.command_reg.direction);
+        end
+        cov.command_cg.sample(exp_segment.command_reg);
+        cov.command_segment_cg.sample(exp_segment.command_reg);
+        cov.segment_speed_cg.sample(prev_mode, exp_segment.command_reg.mode);
+        cov.num_segment_cg.sample(cur_trans_segments, exp_segment.command_reg.len, extra_data);
+        prev_mode = exp_segment.command_reg.mode;
+        if (!exp_segment.command_reg.csaat) cur_trans_segments = 0;
       end
 
       if (cfg.force_spi_fsm_vif == null || cfg.force_spi_fsm_vif.fast_mode == 0) begin
@@ -527,14 +659,13 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     end
   endtask : compare_tx_trans
 
+  // Architectural stall check derived from independent scoreboard queues (no DUT HDL-read oracle)
   virtual function bit is_core_stalled();
-    uvm_hdl_data_t tx_st, rx_st;
-    spi_host_status_t st;
-    if (uvm_hdl_read("tb.dut.tx_stall", tx_st) && uvm_hdl_read("tb.dut.rx_stall", rx_st)) begin
-      return (bit'(tx_st) || bit'(rx_st));
-    end
-    st = spi_host_status_t'(ral.status.get_mirrored_value());
-    return (st.txstall || st.rxstall);
+    int unread_rx_words = (rx_data_q.size() / 4) > read_segment_q.size() ?
+                          ((rx_data_q.size() / 4) - read_segment_q.size()) : 0;
+    bit tx_empty_stall = (tx_word_q.size() == 0) && (in_tx_seg_cnt > checked_tx_seg_cnt);
+    bit rx_full_stall  = (unread_rx_words >= SPI_HOST_RX_DEPTH);
+    return (tx_empty_stall || rx_full_stall || spi_status_reg.txstall || spi_status_reg.rxstall);
   endfunction
 
   virtual task check_csaat(bit csaat, bit [CSB_WIDTH-1:0] csid = 0,
@@ -651,6 +782,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       return;
     end
     if (spi_ctrl_reg.spien && (sw_error_bits == 6'b0)) begin
+      exp_halted_cmd_qd = 0;
       while (staged_cmd_q.size() > 0) begin
         spi_segment_item seg = staged_cmd_q.pop_front();
         if (spi_ctrl_reg.output_en) begin
@@ -674,68 +806,47 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
                                     seg.csid, seg.convert2string()), UVM_DEBUG)
         end else begin
           // Core executes internally with external pads tri-stated (cio_csb_en_o == 0);
-          // consume any TX FIFO bytes that u_spi_core drains internally.
-          if (seg.command_reg.direction inside {TxOnly, Bidir}) begin
-            for (int b = 0; b < seg.command_reg.len + 1; b++) begin
-              if (tx_word_q.size() > 0) begin
-                void'(tx_word_q[0].bytes.pop_front());
-                if (tx_word_q[0].bytes.size() == 0 || (b == seg.command_reg.len)) begin
-                  void'(tx_word_q.pop_front());
-                end
-              end
-            end
-          end
-          prev_cmd_csaat = seg.command_reg.csaat;
-          prev_cmd_csid  = seg.csid;
+          // enqueue with internal_exec=1 so TX drain and 0xFF RX capture occur in FIFO segment order.
+          seg.internal_exec = 1'b1;
+          prev_cmd_csaat    = seg.command_reg.csaat;
+          prev_cmd_csid     = seg.csid;
+          write_segment_q.push_back(seg);
         end
       end
     end
   endfunction
 
-  virtual function void reg_pre_write(string name, uvm_reg_data_t value);
-    if (name == "control" || name == "sw_rst") begin
-      if (cfg.force_spi_fsm_vif != null) begin
-        was_active_at_pre_write = (cfg.force_spi_fsm_vif.fsm_state != 3'h0 &&
-                                   cfg.force_spi_fsm_vif.fsm_state != 3'h7);
-      end else begin
-        uvm_hdl_data_t active_val;
-        if (uvm_hdl_read("tb.dut.active", active_val)) begin
-          was_active_at_pre_write = bit'(active_val);
-        end else begin
-          was_active_at_pre_write = bit'(get_field_val(ral.status.active, ral.status.get_mirrored_value()));
-        end
-      end
-    end else if (name == "command") begin
-      uvm_hdl_data_t busy_val;
-      if (uvm_hdl_read("tb.dut.command_busy", busy_val)) begin
-        was_cmd_busy_at_pre_write = bit'(busy_val);
-      end else begin
-        was_cmd_busy_at_pre_write = ((staged_cmd_q.size() + write_segment_q.size()) >= SPI_HOST_CMD_DEPTH);
-      end
+  // Independent architectural status helpers (zero DUT HDL-read dependency in oracle)
+  virtual function bit is_exp_active();
+    return spi_ctrl_reg.spien && (sw_error_bits == 6'b0) &&
+           ((write_segment_q.size() > 0) || (in_tx_seg_cnt > checked_tx_seg_cnt) ||
+            (&cfg.m_spi_agent_cfg.vif.csb === 1'b0));
+  endfunction
+
+  virtual function bit is_exp_cmd_busy();
+    int unsigned unretired_cmds = staged_cmd_q.size() + write_segment_q.size() +
+                                  ((in_tx_seg_cnt > checked_tx_seg_cnt) ?
+                                   (in_tx_seg_cnt - checked_tx_seg_cnt) : 0);
+    if (!spi_ctrl_reg.spien || (sw_error_bits != 6'b0)) begin
+      return (staged_cmd_q.size() >= SPI_HOST_CMD_DEPTH);
+    end else begin
+      // 1 active slot in u_spi_core + SPI_HOST_CMD_DEPTH slots in u_cmd_queue
+      return (unretired_cmds >= (SPI_HOST_CMD_DEPTH + 1));
     end
   endfunction
 
-  virtual function void mem_pre_write(string name);
-    if (name == "txdata") begin
-      uvm_hdl_data_t txready_val;
-      if (uvm_hdl_read("tb.dut.tx_ready", txready_val)) begin
-        was_txfull_at_pre_write = !bit'(txready_val);
-      end else begin
-        was_txfull_at_pre_write = (tx_word_q.size() >= (SPI_HOST_TX_DEPTH + 1));
-      end
-    end
+  virtual function bit is_exp_tx_full();
+    return (tx_word_q.size() >= (SPI_HOST_TX_DEPTH + 1));
   endfunction
 
-  virtual function void mem_pre_read(string name);
-    if (name == "rxdata") begin
-      uvm_hdl_data_t rxvalid_val;
-      if (uvm_hdl_read("tb.dut.rx_valid", rxvalid_val)) begin
-        was_rxempty_at_pre_read = !bit'(rxvalid_val);
-      end else begin
-        was_rxempty_at_pre_read = (rx_data_q.size() == 0 && write_segment_q.size() == 0 &&
-                                   staged_cmd_q.size() == 0 && in_tx_seg_cnt == checked_tx_seg_cnt);
-      end
-    end
+  virtual function bit is_exp_rx_empty();
+    int avail_rx_bytes = int'(rx_data_q.size()) - int'(read_segment_q.size() * 4);
+    if (avail_rx_bytes >= 4) return 1'b0;
+    if (exp_rx_pending_seg_cnt == 0) return 1'b1;
+    if (!spi_ctrl_reg.spien || (sw_error_bits != 6'b0)) return 1'b1;
+    // Active RX segment in flight: compare_rx_trans() awaits the 4 serial bytes independently
+    // without consulting any DUT STATUS register oracle (Comment #12).
+    return 1'b0;
   endfunction
 
   // Callback methods implementation: Register Write
@@ -743,6 +854,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     `uvm_info(`gfn, $sformatf("Reg Write callback: %s = 0x%0h", name, value), UVM_HIGH)
     case (name)
       "control", "sw_rst": begin
+        bit was_exp_active = is_exp_active();
         if (name == "sw_rst") begin
           spi_ctrl_reg.sw_rst = bit'(value);
         end else begin
@@ -755,18 +867,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         end
 
         if (cfg.en_cov) begin
-          uvm_hdl_data_t active_val;
-          bit active;
-          if (spi_ctrl_reg.sw_rst) begin
-            active = was_active_at_pre_write;
-          end else if (cfg.force_spi_fsm_vif != null) begin
-            active = (cfg.force_spi_fsm_vif.fsm_state != 3'h0 &&
-                      cfg.force_spi_fsm_vif.fsm_state != 3'h7);
-          end else if (uvm_hdl_read("tb.dut.active", active_val)) begin
-            active = bit'(active_val);
-          end else begin
-            active = bit'(get_field_val(ral.status.active, ral.status.get_mirrored_value()));
-          end
+          bit active = was_exp_active ||
+                       ((cfg.force_spi_fsm_vif != null) &&
+                        (cfg.force_spi_fsm_vif.fsm_state != 3'h0 &&
+                         cfg.force_spi_fsm_vif.fsm_state != 3'h7));
           cov.control_cg.sample(spi_ctrl_reg, active);
         end
 
@@ -821,7 +925,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         host_wr_segment.csid                  = cmd_csid[CSB_WIDTH-1:0];
         host_wr_segment.configopts            = spi_configopts_per_cs[cmd_csid];
 
-        cmd_busy   = was_cmd_busy_at_pre_write;
+        cmd_busy   = is_exp_cmd_busy();
         csid_inval = !cmd_busy && (spi_ctrl_reg.csid >= SPI_HOST_NUM_CS);
         cmd_inval  = !cmd_busy && (!(spi_cmd_reg.mode inside {Standard, Dual, Quad}) ||
                                    (spi_cmd_reg.mode != Standard && spi_cmd_reg.direction == Bidir));
@@ -830,34 +934,53 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         if (cmd_inval)  sw_error_bits[3] = 1'b1;
         if (csid_inval) sw_error_bits[4] = 1'b1;
 
-        // Per RTL spi_host.sv:189-263, commands written while !command_busy enter u_cmd_queue
-        // regardless of CONTROL.OUTPUT_EN; invalid CSID clamps csid to 0 while setting enb_error.
+        if (!cmd_busy && (!spi_ctrl_reg.spien || (sw_error_bits != 6'b0))) begin
+          if (exp_halted_cmd_qd < SPI_HOST_CMD_DEPTH) exp_halted_cmd_qd++;
+        end
+
+        // Confirmed Design Contract (Harry Callahan, Option A, Nov 12, 2026 - Comment #2):
+        // RTL spi_host.sv:189-263 clamps out-of-range CSID (>= NumCS) to '0 and enqueues
+        // command_valid into u_cmd_queue while setting ERROR_STATUS.CSIDINVAL (halting u_spi_core
+        // via enb_error). Firmware must issue CONTROL.SW_RST to flush the queue; if CSIDINVAL is
+        // cleared via W1C without SW_RST, the retained descriptor executes on clamped CS0.
         if (cfg.en_scb && !cmd_busy && !cmd_inval) begin
           spi_segment_item wr_segment;
           `downcast(wr_segment, host_wr_segment.clone());
+          if (wr_segment.command_reg.direction inside {RxOnly, Bidir}) begin
+            exp_rx_pending_seg_cnt++;
+          end
           staged_cmd_q.push_back(wr_segment);
           host_wr_segment = spi_segment_item::type_id::create("host_wr_segment");
           promote_staged_commands();
         end
+
+        // Queue negative-command outcome entries for invalid_cmd_outcome_cg (sampled once the
+        // resulting ERROR_STATUS outcome is verified on readback; legal transfer covergroups are
+        // sampled strictly on completed checked transfers in compare_tx_trans() per Comment #8).
         if (cfg.en_cov) begin
-          uvm_hdl_data_t tx_qd_val;
-          bit extra_data;
-          void'(uvm_hdl_read("tb.dut.tx_qd", tx_qd_val));
-          extra_data = (cur_tx_fifo_bytes > (spi_cmd_reg.len + 1)) ||
-                       (tx_qd_val * 4 > (spi_cmd_reg.len + 1)) || (tx_qd_val > 1);
-          if (!cmd_busy && !cmd_inval && !csid_inval &&
-              (spi_cmd_reg.direction inside {TxOnly, Bidir})) begin
-            int bytes_sent = spi_cmd_reg.len + 1;
-            cur_tx_fifo_bytes = (cur_tx_fifo_bytes > bytes_sent) ? (cur_tx_fifo_bytes - bytes_sent) : 0;
+          spi_invalid_cmd_item_t inv_item;
+          inv_item.direction = spi_cmd_reg.direction;
+          if (cmd_busy) begin
+            inv_item.kind   = InvalidCmdBusy;
+            inv_item.err_en = spi_error_enable_reg.cmdbusy;
+            pending_invalid_cmd_q.push_back(inv_item);
           end
-          cur_trans_segments++;
-          cov.duplex_cg.sample(spi_cmd_reg.direction);
-          cov.command_cg.sample(spi_cmd_reg);
-          cov.command_segment_cg.sample(spi_cmd_reg);
-          cov.segment_speed_cg.sample(prev_mode, spi_cmd_reg.mode);
-          cov.num_segment_cg.sample(cur_trans_segments, spi_cmd_reg.len, extra_data);
-          prev_mode = spi_cmd_reg.mode;
-          if (!spi_cmd_reg.csaat) cur_trans_segments = 0;
+          if (csid_inval) begin
+            inv_item.kind   = InvalidCmdCsidInval;
+            inv_item.err_en = spi_error_enable_reg.csidinval;
+            pending_invalid_cmd_q.push_back(inv_item);
+          end
+          if (cmd_inval) begin
+            if (spi_cmd_reg.mode == RsvdSpd) begin
+              inv_item.kind = InvalidCmdRsvdSpd;
+            end else if (spi_cmd_reg.mode == Dual) begin
+              inv_item.kind = InvalidCmdDualBidir;
+            end else begin
+              inv_item.kind = InvalidCmdQuadBidir;
+            end
+            inv_item.err_en = spi_error_enable_reg.cmdinval;
+            pending_invalid_cmd_q.push_back(inv_item);
+          end
         end
       end
       "intr_enable": begin
@@ -866,17 +989,23 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         void'(ral.intr_enable.predict(.value(value), .kind(UVM_PREDICT_DIRECT)));
       end
       "intr_state": begin
+        // error [0] is Event-type (W1C); spi_event [1] is Status-type (RO, not cleared by W1C)
         bit [NumSpiHostIntr-1:0] cur_state = `gmv(ral.intr_state);
-        bit [NumSpiHostIntr-1:0] new_state = cur_state & ~value[NumSpiHostIntr-1:0];
+        bit [NumSpiHostIntr-1:0] new_state;
+        new_state[0] = cur_state[0] & ~value[0];
+        new_state[1] = cur_state[1];
         void'(ral.intr_state.predict(.value(new_state), .kind(UVM_PREDICT_DIRECT)));
       end
       "intr_test": begin
-        spi_intr_test_reg.spi_event  = bit'(get_field_val(ral.intr_test.spi_event, value));
-        spi_intr_test_reg.error      = bit'(get_field_val(ral.intr_test.error, value));
+        bit [31:0] intr_en = `gmv(ral.intr_enable);
+        bit [NumSpiHostIntr-1:0] cur_state = `gmv(ral.intr_state);
+        bit [NumSpiHostIntr-1:0] intr_exp;
+        spi_intr_test_reg.spi_event = bit'(get_field_val(ral.intr_test.spi_event, value));
+        spi_intr_test_reg.error     = bit'(get_field_val(ral.intr_test.error, value));
+        intr_exp[0] = cur_state[0] | value[0];
+        intr_exp[1] = cur_state[1] | value[1];
+        void'(ral.intr_state.predict(.value(intr_exp), .kind(UVM_PREDICT_DIRECT)));
         if (cfg.en_cov) begin
-          bit [31:0] intr_en = `gmv(ral.intr_enable);
-          bit [NumSpiHostIntr-1:0] intr_exp = value | `gmv(ral.intr_state);
-          void'(ral.intr_state.predict(.value(intr_exp), .kind(UVM_PREDICT_DIRECT)));
           foreach (intr_exp[i]) begin
             cov.intr_test_cg.sample(i, value[i], intr_en[i], intr_exp[i]);
           end
@@ -932,6 +1061,23 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
          end
        end
       "error_status": begin
+        if (cfg.en_scb) begin
+          bit quiescent = (write_segment_q.size() == 0) && (in_tx_seg_cnt == checked_tx_seg_cnt);
+          // Compare deterministic CSR-input errors (accessinval[5], csidinval[4], cmdinval[3]) always,
+          // and full 6-bit ERROR_STATUS vector whenever quiescent (Comment #12).
+          if (quiescent && (value[5:0] !== sw_error_bits)) begin
+            `uvm_error(`gfn, $sformatf(
+              "ERROR_STATUS mismatch on read: actual=0x%02h != predicted=0x%02h",
+              value[5:0], sw_error_bits))
+          end else if (!quiescent && (value[5:3] !== sw_error_bits[5:3])) begin
+            `uvm_error(`gfn, $sformatf(
+              "ERROR_STATUS[5:3] mismatch on read: actual=0x%0h != predicted=0x%0h",
+              value[5:3], sw_error_bits[5:3]))
+          end
+        end
+        if (value[2] && sw_error_bits[2]) begin
+          unverified_underflow_cnt = 0;
+        end
         sw_error_bits = value[5:0];
         spi_error_status_reg.accessinval = bit'(get_field_val(ral.error_status.accessinval, value));
         spi_error_status_reg.csidinval   = bit'(get_field_val(ral.error_status.csidinval, value));
@@ -943,7 +1089,19 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         if (|(value & (ral.error_enable.get_mirrored_value() | 32'h20))) begin
           void'(ral.intr_state.error.predict(.value(1'b1), .kind(UVM_PREDICT_DIRECT)));
         end
-        if (cfg.en_cov) cov.error_status_cg.sample(spi_error_status_reg, spi_error_enable_reg);
+        if (cfg.en_cov) begin
+          cov.error_status_cg.sample(spi_error_status_reg, spi_error_enable_reg);
+          while (pending_invalid_cmd_q.size() > 0) begin
+            spi_invalid_cmd_item_t inv_item = pending_invalid_cmd_q.pop_front();
+            bit confirmed = ((inv_item.kind == InvalidCmdBusy)      && spi_error_status_reg.cmdbusy)   ||
+                            ((inv_item.kind == InvalidCmdCsidInval) && spi_error_status_reg.csidinval) ||
+                            ((inv_item.kind inside {InvalidCmdRsvdSpd, InvalidCmdDualBidir, InvalidCmdQuadBidir}) &&
+                             spi_error_status_reg.cmdinval);
+            if (confirmed) begin
+              cov.invalid_cmd_outcome_cg.sample(inv_item.kind, inv_item.direction, inv_item.err_en);
+            end
+          end
+        end
       end
       "status": begin
         spi_status_reg.ready       = get_field_val(ral.status.ready, value);
@@ -960,6 +1118,104 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_status_reg.cmd_qd      = get_field_val(ral.status.cmdqd, value);
         spi_status_reg.rx_qd       = get_field_val(ral.status.rxqd, value);
         spi_status_reg.tx_qd       = get_field_val(ral.status.txqd, value);
+        if (cfg.en_scb && !is_sw_rst_active() && (cfg.clk_rst_vif.rst_n === 1'b1)) begin
+          bit single_access = (csr_utils_pkg::outstanding_accesses <= 1);
+          bit quiescent     = single_access && !spi_status_reg.active &&
+                              (write_segment_q.size() == 0) &&
+                              (in_tx_seg_cnt == checked_tx_seg_cnt) &&
+                              (exp_rx_pending_seg_cnt == 0);
+          // 1. Atomic flag-vs-depth and parameter invariants across every STATUS read (Comments #9, #12)
+          if (spi_status_reg.byteorder !== SPI_HOST_BYTEORDER) begin
+            `uvm_error(`gfn, $sformatf("STATUS.BYTEORDER mismatch: actual=%0b exp=%0b",
+                                       spi_status_reg.byteorder, SPI_HOST_BYTEORDER))
+          end
+          if (spi_status_reg.tx_qd > (SPI_HOST_TX_DEPTH + 1)) begin
+            `uvm_error(`gfn, $sformatf("STATUS.TXQD out of bounds: actual=%0d max=%0d",
+                                       spi_status_reg.tx_qd, SPI_HOST_TX_DEPTH + 1))
+          end
+          if (spi_status_reg.rx_qd > SPI_HOST_RX_DEPTH) begin
+            `uvm_error(`gfn, $sformatf("STATUS.RXQD out of bounds: actual=%0d max=%0d",
+                                       spi_status_reg.rx_qd, SPI_HOST_RX_DEPTH))
+          end
+          if (spi_status_reg.cmd_qd > SPI_HOST_CMD_DEPTH) begin
+            `uvm_error(`gfn, $sformatf("STATUS.CMDQD out of bounds: actual=%0d max=%0d",
+                                       spi_status_reg.cmd_qd, SPI_HOST_CMD_DEPTH))
+          end
+          if (spi_status_reg.txempty !== (spi_status_reg.tx_qd == 0)) begin
+            `uvm_error(`gfn, $sformatf("STATUS.TXEMPTY (%0b) inconsistent with TXQD (%0d)",
+                                       spi_status_reg.txempty, spi_status_reg.tx_qd))
+          end
+          if (spi_status_reg.txfull !== (spi_status_reg.tx_qd >= (SPI_HOST_TX_DEPTH + 1))) begin
+            `uvm_error(`gfn, $sformatf("STATUS.TXFULL (%0b) inconsistent with TXQD (%0d)",
+                                       spi_status_reg.txfull, spi_status_reg.tx_qd))
+          end
+          if (spi_status_reg.rxempty !== (spi_status_reg.rx_qd == 0)) begin
+            `uvm_error(`gfn, $sformatf("STATUS.RXEMPTY (%0b) inconsistent with RXQD (%0d)",
+                                       spi_status_reg.rxempty, spi_status_reg.rx_qd))
+          end
+          if (spi_status_reg.rxfull !== (spi_status_reg.rx_qd >= SPI_HOST_RX_DEPTH)) begin
+            `uvm_error(`gfn, $sformatf("STATUS.RXFULL (%0b) inconsistent with RXQD (%0d)",
+                                       spi_status_reg.rxfull, spi_status_reg.rx_qd))
+          end
+          if ((spi_status_reg.ready || (spi_status_reg.cmd_qd > 0)) &&
+              (spi_status_reg.ready !== (spi_status_reg.cmd_qd < SPI_HOST_CMD_DEPTH))) begin
+            `uvm_error(`gfn, $sformatf("STATUS.READY (%0b) inconsistent with CMDQD (%0d)",
+                                       spi_status_reg.ready, spi_status_reg.cmd_qd))
+          end
+          if (single_access) begin
+            if (spi_status_reg.tx_wm !== (spi_status_reg.tx_qd < spi_ctrl_reg.tx_watermark)) begin
+              `uvm_error(`gfn, $sformatf("STATUS.TXWM (%0b) mismatch for TXQD=%0d, TX_WATERMARK=%0d",
+                                         spi_status_reg.tx_wm, spi_status_reg.tx_qd,
+                                         spi_ctrl_reg.tx_watermark))
+            end
+            if (spi_status_reg.rx_wm !== (spi_status_reg.rx_qd >= spi_ctrl_reg.rx_watermark)) begin
+              `uvm_error(`gfn, $sformatf("STATUS.RXWM (%0b) mismatch for RXQD=%0d, RX_WATERMARK=%0d",
+                                         spi_status_reg.rx_wm, spi_status_reg.rx_qd,
+                                         spi_ctrl_reg.rx_watermark))
+            end
+          end
+
+          // 2. Quiescent independent scoreboard queue-depth comparisons (Comment #12)
+          if (quiescent) begin
+            int unsigned exp_tx_qd = tx_word_q.size();
+            int          raw_rx_w  = (int'(rx_data_q.size()) / 4) - int'(read_segment_q.size());
+            int unsigned exp_rx_qd = (raw_rx_w <= 0) ? 0 :
+                                     ((raw_rx_w > SPI_HOST_RX_DEPTH) ? SPI_HOST_RX_DEPTH : raw_rx_w);
+            bit          csb_all_hi  = (&cfg.m_spi_agent_cfg.vif.csb === 1'b1);
+            // Allow 1-word transient within the u_merge -> u_rx_fifo -> u_status_rxqd.q + AXI R-channel
+            // pipeline window immediately following CSB deassertion; enforce exact match once settled.
+            bit          csb_settled = csb_all_hi &&
+                                       (($realtime() - prev_frame_csb_rise_time) >
+                                        (24 * cfg.clk_rst_vif.clk_period_ps));
+            // Allow 1-word transient only while u_select drains leading zero byte-enables on a partial word
+            if (((exp_tx_qd == 0 || exp_tx_qd == (SPI_HOST_TX_DEPTH + 1)) &&
+                 (spi_status_reg.tx_qd != exp_tx_qd)) ||
+                ((exp_tx_qd > 0) &&
+                 !(spi_status_reg.tx_qd inside {exp_tx_qd, exp_tx_qd - 1}))) begin
+              `uvm_error(`gfn, $sformatf("STATUS.TXQD (%0d) mismatch against predicted TX queue (%0d)",
+                                         spi_status_reg.tx_qd, exp_tx_qd))
+            end
+            if ((csb_settled && (spi_status_reg.rx_qd != exp_rx_qd)) ||
+                (!csb_settled && !(spi_status_reg.rx_qd inside {
+                  (exp_rx_qd > 0) ? (exp_rx_qd - 1) : 0, exp_rx_qd}))) begin
+              `uvm_error(`gfn, $sformatf("STATUS.RXQD (%0d) mismatch against predicted RX queue (%0d)",
+                                         spi_status_reg.rx_qd, exp_rx_qd))
+            end
+            if (!spi_ctrl_reg.spien) begin
+              if (spi_status_reg.cmd_qd != exp_halted_cmd_qd) begin
+                `uvm_error(`gfn, $sformatf(
+                  "STATUS.CMDQD (%0d) mismatch against predicted halted command queue (%0d)",
+                  spi_status_reg.cmd_qd, exp_halted_cmd_qd))
+              end
+            end else if ((sw_error_bits == 6'b0) && (staged_cmd_q.size() == 0)) begin
+              if (spi_status_reg.cmd_qd != 0) begin
+                `uvm_error(`gfn, $sformatf(
+                  "STATUS.CMDQD (%0d) expected 0 when quiescent with SPIEN=1 and no errors",
+                  spi_status_reg.cmd_qd))
+              end
+            end
+          end
+        end
         void'(ral.status.predict(.value(value), .kind(UVM_PREDICT_READ)));
         if (cfg.en_cov) cov.status_cg.sample(spi_status_reg);
       end
@@ -975,18 +1231,12 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     `uvm_info(`gfn, $sformatf("Mem Write callback: %s [offset 0x%0h] = 0x%0h (be: 0x%0h)", name, offset, value, byte_en), UVM_HIGH)
     if (name == "txdata") begin
       bit [7:0] bytes[4] = {<< 8{value}};
-      bit mask_ok = is_valid_tx_mask(byte_en[3:0]);
+      bit mask_ok  = is_valid_tx_mask(byte_en[3:0]);
+      bit exp_full = is_exp_tx_full();
 
       if (cfg.en_cov) begin
-        spi_host_status_t status;
-        uvm_hdl_data_t txfull_val;
-        if (was_txfull_at_pre_write) begin
-          status.txfull = 1'b1;
-        end else if (uvm_hdl_read("tb.dut.tx_full", txfull_val)) begin
-          status.txfull = bit'(txfull_val);
-        end else begin
-          status = spi_host_status_t'(ral.status.get_mirrored_value());
-        end
+        spi_host_status_t status = spi_status_reg;
+        status.txfull = exp_full;
         cov.tx_fifo_overflow_cg.sample(status);
         cov.unaligned_data_cg.sample(byte_en[3:0]);
       end
@@ -994,11 +1244,11 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       if (!mask_ok) begin
         sw_error_bits[5] = 1'b1;
       end
-      if (was_txfull_at_pre_write) begin
+      if (exp_full) begin
         sw_error_bits[1] = 1'b1;
       end
 
-      if (mask_ok && !was_txfull_at_pre_write && (tx_word_q.size() < SPI_HOST_TX_DEPTH + 1)) begin
+      if (mask_ok && !exp_full) begin
         tx_word_t w;
         foreach (bytes[i]) begin
           if (byte_en[i]) begin
@@ -1016,25 +1266,33 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   virtual function void mem_read(string name, uvm_reg_addr_t offset, uvm_reg_data_t value);
     `uvm_info(`gfn, $sformatf("Mem Read callback: %s [offset 0x%0h] = 0x%0h", name, offset, value), UVM_HIGH)
     if (name == "rxdata") begin
-      bit [7:0] bytes[4] = {<< 8{value}};
+      bit [7:0] bytes[4]  = {<< 8{value}};
+      bit       exp_empty = is_exp_rx_empty();
 
       if (cfg.en_cov) begin
-        spi_host_status_t status;
-        uvm_hdl_data_t rxempty_val;
-        if (was_rxempty_at_pre_read) begin
-          status.rxempty = 1'b1;
-        end else if (uvm_hdl_read("tb.dut.rx_empty", rxempty_val)) begin
-          status.rxempty = bit'(rxempty_val);
-        end else begin
-          status = spi_host_status_t'(ral.status.get_mirrored_value());
-        end
+        spi_host_status_t status = spi_status_reg;
+        status.rxempty = exp_empty;
         cov.rx_fifo_underflow_cg.sample(status);
       end
 
-      if (was_rxempty_at_pre_read) begin
-        sw_error_bits[2] = 1'b1;
-      end else if (cfg.en_scb && (rx_data_q.size() > 0 || write_segment_q.size() > 0 ||
-                                  staged_cmd_q.size() > 0 || in_tx_seg_cnt > checked_tx_seg_cnt)) begin
+      if (exp_empty) begin
+        // Expected underflow: RXDATA read on empty RX FIFO must return 0x0 and set underflow error.
+        // Flag both unexpected non-zero words AND spurious zero-valued RXDATA reads that occur
+        // without an expected/verified underflow condition (Comment #12).
+        if (cfg.en_scb && s_force_unexpected_zero_rx_err) begin
+          `uvm_error(`gfn, $sformatf(
+            "Unexpected RXDATA word 0x%08h read after expected RX queue was exhausted!",
+            value))
+        end else begin
+          sw_error_bits[2] = 1'b1;
+          if (cfg.en_scb) unverified_underflow_cnt++;
+          if (cfg.en_scb && (value != 32'h0) && (exp_rx_pending_seg_cnt == 0)) begin
+            `uvm_error(`gfn, $sformatf(
+              "Unexpected non-zero RXDATA word 0x%08h read after expected RX queue was exhausted!",
+              value))
+          end
+        end
+      end else if (cfg.en_scb) begin
         spi_segment_item rd_segment;
         host_rd_segment.spi_data.delete();
         foreach (bytes[i]) begin
@@ -1054,8 +1312,16 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       early_csb_done_cnt[i]    = 0;
       initialise_configopts[i] = 1'b1;
     end
-    prev_cmd_csaat = 0;
-    prev_cmd_csid  = 0;
+    prev_cmd_csaat            = 0;
+    prev_cmd_csid             = 0;
+    exp_halted_cmd_qd         = 0;
+    unverified_underflow_cnt  = 0;
+    pending_invalid_cmd_q.delete();
+    exp_rx_pending_seg_cnt    = 0;
+    has_prev_frame_cfg        = 1'b0;
+    prev_frame_csb_rise_time  = 0;
+    last_sck_idle_switch_time = 0;
+    saw_sck_idle_switch       = 1'b0;
     if (kind == "HARD") begin
       super.reset(kind);
       void'(ral.intr_state.predict(.value(2'b00), .kind(UVM_PREDICT_DIRECT)));
@@ -1096,6 +1362,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         `uvm_error(`gfn, $sformatf("Didn't check all segments - expected %0d actual %0d", in_tx_seg_cnt, checked_tx_seg_cnt))
       if (in_rx_seq_cnt != checked_rx_seq_cnt)
         `uvm_error(`gfn, $sformatf("Didn't check all RX reads - expected %0d actual %0d", in_rx_seq_cnt, checked_rx_seq_cnt))
+      if (unverified_underflow_cnt > 0)
+        `uvm_error(`gfn, $sformatf("Unexpected RXDATA read(s) (%0d) after expected RX queue exhausted without verified UNDERFLOW",
+                                   unverified_underflow_cnt))
 
       `DV_EOT_PRINT_Q_CONTENTS(spi_segment_item, staged_cmd_q)
       `DV_EOT_PRINT_Q_CONTENTS(spi_segment_item, write_segment_q)

@@ -46,8 +46,8 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
         cfg.spi_passthrough_vif.s_en   <= $urandom_range(0, 4'hf);
         cfg.spi_passthrough_vif.csb    <= $urandom_range(0, 1);
         cfg.spi_passthrough_vif.sck    <= $urandom_range(0, 1);
-        cfg.spi_passthrough_vif.is     <= $urandom_range(100, 2000);
-        cfg.spi_passthrough_vif.cio_sd_i <= $urandom_range(100, 2000);
+        cfg.spi_passthrough_vif.is       <= $urandom_range(0, 4'hf);
+        cfg.spi_passthrough_vif.cio_sd_i <= $urandom_range(0, 4'hf);
       end
       cfg.clk_rst_vif.wait_clks($urandom_range(10, 20));
     end

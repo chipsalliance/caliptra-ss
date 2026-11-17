@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,6 +16,7 @@ class axi_response_router extends uvm_component;
   // We never store an empty list as a value in this associative array, so can wait for a response
   // on a given ID by just waiting for the ID to have some value.
   local item_queue_t m_id_to_responses[int unsigned];
+  local semaphore    m_id_wait_sem[int unsigned];
 
   // A flag that is set by assert_reset and cleared by clear_reset. When this is set,
   // m_id_to_responses will be empty and all calls to wait_for_response will return immediately.
@@ -25,10 +26,20 @@ class axi_response_router extends uvm_component;
   // m_id_to_responses or when a reset is asserted.
   local uvm_event m_update_event;
 
+  // Optional interface handles / ID width used to mask response routing keys to the active wire ID width
+  local virtual axi_read_request_if  m_read_req_vif;
+  local virtual axi_write_request_if m_write_req_vif;
+  local int unsigned                 m_id_width = 32;
+
   // An import for reset events (asserting or clearing reset)
   uvm_analysis_imp #(axi_reset_item, axi_response_router) reset_imp;
 
   extern function new (string name, uvm_component parent);
+
+  extern function void set_read_request_vif(virtual axi_read_request_if vif);
+  extern function void set_write_request_vif(virtual axi_write_request_if vif);
+  extern function void set_id_width(int unsigned width);
+  extern local function int unsigned mask_id(int unsigned id);
 
   // The write function for reset_imp, which is called when a reset event is broadcast
   extern virtual function void write(axi_reset_item item);
@@ -49,6 +60,27 @@ function axi_response_router::new(string name, uvm_component parent);
   reset_imp = new("reset_imp", this);
 endfunction
 
+function void axi_response_router::set_read_request_vif(virtual axi_read_request_if vif);
+  m_read_req_vif = vif;
+endfunction
+
+function void axi_response_router::set_write_request_vif(virtual axi_write_request_if vif);
+  m_write_req_vif = vif;
+endfunction
+
+function void axi_response_router::set_id_width(int unsigned width);
+  m_id_width = (width > 32) ? 32 : width;
+endfunction
+
+function int unsigned axi_response_router::mask_id(int unsigned id);
+  int unsigned width = m_id_width;
+  if (m_read_req_vif != null)       width = m_read_req_vif.id_r_width;
+  else if (m_write_req_vif != null) width = m_write_req_vif.id_w_width;
+  if (width >= 32) return id;
+  if (width == 0)  return 0;
+  return id & ((32'h1 << width) - 1);
+endfunction
+
 function void axi_response_router::write(axi_reset_item item);
   if (item.m_in_reset) begin
     // Reset is being asserted. If we don't know about it already, set a flag, clear
@@ -66,34 +98,43 @@ endfunction
 
 task axi_response_router::wait_for_response(int unsigned             id,
                                             output uvm_sequence_item rsp);
-  while (!m_id_to_responses.exists(id) && !m_in_reset) m_update_event.wait_trigger();
+  int unsigned masked_id = mask_id(id);
+  if (!m_id_wait_sem.exists(masked_id)) begin
+    m_id_wait_sem[masked_id] = new(1);
+  end
+  m_id_wait_sem[masked_id].get(1);
+
+  while (!m_id_to_responses.exists(masked_id) && !m_in_reset) m_update_event.wait_trigger();
 
   if (m_in_reset) begin
     rsp = null;
   end else begin
-    // The logic just below should ensure that m_id_to_responses[id] is never an empty queue, but it
-    // probably makes sense to add an extra check here for debugging.
-    if (m_id_to_responses[id].size() == 0) begin
+    // The logic just below should ensure that m_id_to_responses[masked_id] is never an empty queue,
+    // but it probably makes sense to add an extra check here for debugging.
+    if (m_id_to_responses[masked_id].size() == 0) begin
       `uvm_fatal(get_full_name(),
-                 $sformatf("m_id_to_responses[0x%0h] is an empty queue.", id))
+                 $sformatf("m_id_to_responses[0x%0h] is an empty queue.", masked_id))
     end
 
-    rsp = m_id_to_responses[id].pop_front;
+    rsp = m_id_to_responses[masked_id].pop_front;
 
-    if (m_id_to_responses[id].size() == 0) begin
-      m_id_to_responses.delete(id);
+    if (m_id_to_responses[masked_id].size() == 0) begin
+      m_id_to_responses.delete(masked_id);
     end
   end
+
+  m_id_wait_sem[masked_id].put(1);
 endtask
 
 function void axi_response_router::on_response(int unsigned id, uvm_sequence_item rsp);
+  int unsigned masked_id = mask_id(id);
   if (rsp == null) `uvm_fatal(get_full_name(), "rsp must not be null.")
 
   if (!m_in_reset) begin
-    if (!m_id_to_responses.exists(id)) begin
-      m_id_to_responses[id] = '{};
+    if (!m_id_to_responses.exists(masked_id)) begin
+      m_id_to_responses[masked_id] = '{};
     end
-    m_id_to_responses[id].push_back(rsp);
+    m_id_to_responses[masked_id].push_back(rsp);
     m_update_event.trigger();
   end
 endfunction

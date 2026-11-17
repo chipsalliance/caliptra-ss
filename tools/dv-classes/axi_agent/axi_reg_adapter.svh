@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -8,9 +8,14 @@
 class axi_reg_adapter extends uvm_reg_adapter;
   `uvm_object_utils(axi_reg_adapter)
 
+  static bit        m_use_next_byte_en    = 1'b0;
+  static bit [31:0] m_subword_target_addr = 32'h0000_001c;
+  static bit [3:0]  m_next_byte_en        = 4'b0001;
+  static bit [3:0]  m_last_byte_en        = 4'b1111;
+
   extern function new(string name="");
   extern function uvm_sequence_item reg2bus(const ref uvm_reg_bus_op rw);
-  extern function void bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op op);
+  extern function void bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op rw);
 endclass
 
 function axi_reg_adapter::new(string name="");
@@ -31,24 +36,35 @@ function uvm_sequence_item axi_reg_adapter::reg2bus(const ref uvm_reg_bus_op rw)
   // struct)
   bus_item.m_rw = rw;
 
-  // Allow sequences to override byte_en via uvm_reg_item::extension (e.g. for sub-word FIFO writes
-  // or sub-word CSR write error tests).
+  // Allow sequences to override byte_en via uvm_reg_item::extension (e.g., sub-word writes to
+  // TXDATA or CSRs with explicit WSTRB masks).
   if (reg_item != null && reg_item.extension != null && $cast(ext_item, reg_item.extension)) begin
     bus_item.m_rw.byte_en = ext_item.m_rw.byte_en;
+    if (rw.kind == UVM_WRITE && (rw.addr[7:0] == m_subword_target_addr[7:0])) begin
+      m_last_byte_en = ext_item.m_rw.byte_en[3:0];
+    end
+  end else if (rw.kind == UVM_WRITE && (rw.addr[7:0] == m_subword_target_addr[7:0])) begin
+    if (m_use_next_byte_en) begin
+      bus_item.m_rw.byte_en = m_next_byte_en;
+      m_last_byte_en        = m_next_byte_en;
+      m_use_next_byte_en    = 1'b0;
+    end else begin
+      m_last_byte_en        = bus_item.m_rw.byte_en[3:0];
+    end
   end
 
   return bus_item;
 endfunction
 
-function void axi_reg_adapter::bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op op);
+function void axi_reg_adapter::bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op rw);
   axi_reg_op_item local_bus_item;
   if (!$cast(local_bus_item, bus_item)) begin
     `uvm_fatal(get_full_name(), "bus_item is not of type axi_reg_op_item")
   end
-  // Replace all the fields in op that bus2reg would normally populate (kind, addr, data, byte_en and status)
-  op.kind    = local_bus_item.m_rw.kind;
-  op.addr    = local_bus_item.m_rw.addr;
-  op.data    = local_bus_item.m_rw.data;
-  op.byte_en = local_bus_item.m_rw.byte_en;
-  op.status  = local_bus_item.m_rw.status;
+  // Replace all the fields in rw that bus2reg would normally populate (kind, addr, data and status)
+  rw.kind = local_bus_item.m_rw.kind;
+  rw.addr = local_bus_item.m_rw.addr;
+  rw.data = local_bus_item.m_rw.data;
+  rw.byte_en = local_bus_item.m_rw.byte_en;
+  rw.status = local_bus_item.m_rw.status;
 endfunction

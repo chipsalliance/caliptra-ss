@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -89,9 +89,9 @@ interface axi_write_request_if (input clk_i, input rst_ni);
   logic [63:0]  awaddr_mask;
   logic [127:0] awuser_mask;
 
-  assign awid_mask   = (32'b1 << id_w_width) - 1;
-  assign awaddr_mask = (64'b1 << addr_width) - 1;
-  assign awuser_mask = (128'b1 << user_req_width) - 1;
+  assign awid_mask   = (id_w_width >= 32) ? '1 : ((32'b1 << id_w_width) - 1);
+  assign awaddr_mask = (addr_width >= 64) ? '1 : ((64'b1 << addr_width) - 1);
+  assign awuser_mask = (user_req_width >= 128) ? '1 : ((128'b1 << user_req_width) - 1);
 
   clocking mon_cb @(posedge clk_i);
     input awvalid;
@@ -222,4 +222,31 @@ interface axi_write_request_if (input clk_i, input rst_ni);
 
     user_req_width = width;
   endfunction
+  // Enable/disable protocol assertions
+  bit en_assert = 1'b1;
+  function void set_en_assert(bit enable);
+    en_assert = enable;
+  endfunction
+
+  // AXI4 Protocol Assertions (AW Channel)
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    !$isunknown(awvalid))
+  else `uvm_error($sformatf("%m"), "AWVALID is X/Z out of reset.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    awvalid |-> !$isunknown(awready))
+  else `uvm_error($sformatf("%m"), "AWREADY is X/Z when AWVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    awvalid |-> !$isunknown({awid, awaddr, awregion, awlen, awsize, awburst, awlock, awcache, awprot, awqos, awuser}))
+  else `uvm_error($sformatf("%m"), "AW payload contains X/Z when AWVALID is high.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (awvalid && !awready) |=> awvalid)
+  else `uvm_error($sformatf("%m"), "AWVALID deasserted before AWREADY handshake.")
+
+  assert property (@(posedge clk_i) disable iff (!rst_ni || !en_assert)
+    (awvalid && !awready) |=> $stable({awid, awaddr, awregion, awlen, awsize, awburst, awlock, awcache, awprot, awqos, awuser}))
+  else `uvm_error($sformatf("%m"), "AW payload changed while AWVALID was high and AWREADY was low.")
+
 endinterface

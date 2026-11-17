@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -42,6 +42,11 @@ class axi_fixed_read_req_item extends uvm_sequence_item;
   // This is sent as AWUSER, whose width is configurable (and will be checked against the
   // corresponding width in the interface by the driver).
   rand bit [127:0]                 m_user;
+  rand burst_e                     m_burst;
+
+  constraint burst_c {
+    m_burst dist { BurstIncr := 80, BurstFixed := 20 };
+  }
 
   extern function new(string name = "");
   extern function void do_print(uvm_printer printer);
@@ -64,6 +69,7 @@ function void axi_fixed_read_req_item::do_print(uvm_printer printer);
   printer.print_field_int("m_prot", m_prot, 3, UVM_BIN);
   printer.print_field_int("m_qos", m_qos, 4, UVM_HEX);
   printer.print_field("m_user", m_user, 128, UVM_HEX);
+  printer.print_string("m_burst", m_burst.name());
 endfunction
 
 function void axi_fixed_read_req_item::do_copy(uvm_object rhs);
@@ -82,6 +88,7 @@ function void axi_fixed_read_req_item::do_copy(uvm_object rhs);
   this.m_prot   = rhs_.m_prot;
   this.m_qos    = rhs_.m_qos;
   this.m_user   = rhs_.m_user;
+  this.m_burst  = rhs_.m_burst;
 endfunction
 
 function bit axi_fixed_read_req_item::do_compare(uvm_object rhs, uvm_comparer comparer);
@@ -102,5 +109,6 @@ function bit axi_fixed_read_req_item::do_compare(uvm_object rhs, uvm_comparer co
           comparer.compare_field_int("m_cache", m_cache, rhs_.m_cache, 4, UVM_BIN) &
           comparer.compare_field_int("m_prot", m_prot, rhs_.m_prot, 3, UVM_BIN) &
           comparer.compare_field_int("m_qos", m_qos, rhs_.m_qos, 4, UVM_HEX) &
-          comparer.compare_field("m_user", m_user, rhs_.m_user, 128, UVM_HEX));
+          comparer.compare_field("m_user", m_user, rhs_.m_user, 128, UVM_HEX) &
+          comparer.compare_field_int("m_burst", m_burst, rhs_.m_burst, 2, UVM_BIN));
 endfunction

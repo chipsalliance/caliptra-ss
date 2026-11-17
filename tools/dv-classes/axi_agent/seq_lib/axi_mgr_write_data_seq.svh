@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,6 +11,12 @@ class axi_mgr_write_data_seq extends uvm_sequence #(axi_write_data_item, axi_sta
   // that creates this sequence to match the m_len value that the virtual sequence is sending on AW.
   rand int unsigned m_number_of_items;
 
+  // Optional bus width / strobe overrides for narrower AXI interfaces (e.g. 32-bit CSR buses)
+  int unsigned m_data_width      = 1024;
+  int unsigned m_user_data_width = 512;
+  bit          m_use_fixed_strb  = 1'b0;
+  bit [127:0]  m_fixed_strb      = '0;
+
   extern function new(string name="");
   extern task body();
 
@@ -18,7 +24,7 @@ class axi_mgr_write_data_seq extends uvm_sequence #(axi_write_data_item, axi_sta
   // extending this one to more easily constrain the randomisation of the items that get sent.
   //
   // The is_last argument is set when this is the last item in the stream of data words.
-  extern virtual protected function void randomize_item(axi_write_data_item item, bit is_last);
+  extern protected virtual function void randomize_item(axi_write_data_item item, bit is_last);
 
   // The number of items needs to match m_len from the AW channel, which is represented by an 8-bit
   // value that gives the last index. As such, m_number_of_items should be in the range 1..256.
@@ -53,8 +59,13 @@ task axi_mgr_write_data_seq::body();
 endtask
 
 function void axi_mgr_write_data_seq::randomize_item(axi_write_data_item item, bit is_last);
+  int unsigned strb_w = (m_data_width + 7) / 8;
   if (!item.randomize() with {
         m_last == local::is_last;
+        if (local::m_data_width < 1024)     { (m_data >> local::m_data_width) == 0; }
+        if (strb_w < 128)                   { (m_strb >> strb_w) == 0; }
+        if (local::m_user_data_width < 512) { (m_user >> local::m_user_data_width) == 0; }
+        if (local::m_use_fixed_strb)        { m_strb == local::m_fixed_strb; }
       }) begin
     `uvm_fatal(get_full_name(), "Failed to randomise item.")
   end

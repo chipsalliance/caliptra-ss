@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -71,7 +71,7 @@ task axi_mgr_write_fixed_vseq::body();
   aw_seq.m_use_fixed_size   = 1'b1;
   aw_seq.m_fixed_size       = m_fixed_req.m_size;
   aw_seq.m_use_fixed_burst  = 1'b1;
-  aw_seq.m_fixed_burst      = BurstFixed;
+  aw_seq.m_fixed_burst      = m_fixed_req.m_burst;
   aw_seq.m_use_fixed_lock   = 1'b1;
   aw_seq.m_fixed_lock       = m_fixed_req.m_lock;
   aw_seq.m_use_fixed_cache  = 1'b1;
@@ -94,10 +94,6 @@ task axi_mgr_write_fixed_vseq::body();
   if (!w_seq.randomize()) begin
     `uvm_fatal(get_full_name(), "Failed to randomize w_seq.")
   end
-  w_seq.m_write_data_item.m_data = 1024'b0;
-  w_seq.m_write_data_item.m_strb = 128'b0;
-  w_seq.m_write_data_item.m_data[31:0] = m_fixed_req.m_write_data_item.m_data[31:0];
-  w_seq.m_write_data_item.m_strb[3:0] = m_fixed_req.m_write_data_item.m_strb[3:0];
 
   // Create a sequence to receive a single write response (B). (This might or might not match our
   // ID, but that doesn't matter: the point is that we need to send it as a token)

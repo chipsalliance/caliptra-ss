@@ -25,7 +25,7 @@ class spi_device_driver extends spi_driver;
   bit [CSB_WIDTH-1:0] active_csb = 0;
 
   task on_enter_reset();
-    cfg.vif.sio_out = 'z;
+    cfg.vif.sio_out <= 'z;
   endtask
 
   virtual task get_and_drive();
@@ -79,11 +79,12 @@ class spi_device_driver extends spi_driver;
 
     `uvm_info(`gfn, $sformatf("\n  dev_drv: send_rx_item, return %0d bits to dut",
                               bits_q.size()), UVM_DEBUG)
-    // pop enough bits do drive all needed sio
+    // pop enough bits to drive all needed sio (MSB on highest active lane)
     while (bits_q.size() > 0) begin
-       if (bits_q.size() > 0) cfg.wait_sck_edge(DrivingEdge, active_csb);
-      for (int i = 0; i < 4; i++) begin
-        sio_bits[i] = (i < max_tx_bits) ? bits_q.pop_front() : 1'bz;
+      if (bits_q.size() > 0) cfg.wait_sck_edge(DrivingEdge, active_csb);
+      sio_bits = 'z;
+      for (int i = max_tx_bits - 1; i >= 0; i--) begin
+        sio_bits[i] = (bits_q.size() > 0) ? bits_q.pop_front() : 1'bz;
       end
       send_data_to_sio(cfg.spi_mode, sio_bits);
       `uvm_info(`gfn, $sformatf("\n  dev_drv: assert data bit[%0d] %b",
@@ -154,13 +155,13 @@ class spi_device_driver extends spi_driver;
 
   virtual task drive_bus_to_highz();
     @(posedge cfg.vif.csb[active_csb]);
-    cfg.vif.sio_out = 'z;
+    cfg.vif.sio_out <= 'z;
     `uvm_info(`gfn, "\n  dev_drv: drive_bus_to_highz is done", UVM_DEBUG)
   endtask : drive_bus_to_highz
 
   virtual task drive_bus_for_reset();
     @(negedge cfg.vif.rst_n);
-    cfg.vif.sio_out = 'z;
+    cfg.vif.sio_out <= 'z;
     `uvm_info(`gfn, "\n  dev_drv: drive_bus_for_reset is done", UVM_DEBUG)
   endtask : drive_bus_for_reset
 endclass : spi_device_driver

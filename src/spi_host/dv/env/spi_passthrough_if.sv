@@ -4,23 +4,26 @@
 
 interface spi_passthrough_if
 (
-  input rst_n
+  input logic rst_n
 );
 
-  bit       passthrough_en;
-  bit       sck;
-  bit       sck_en;
-  bit       csb;
-  bit       csb_en;
-  bit [3:0] is;
-  bit [3:0] os;
-  bit [3:0] s_en;
-  bit       cio_sck_o;
-  bit       cio_sck_en_o;
-  bit       cio_csb_o;
-  bit       cio_csb_en_o;
-  bit [3:0] cio_sd_o;
-  bit [3:0] cio_sd_en_o;
-  bit [3:0] cio_sd_i;
+  // Driven passthrough inputs (4-state logic initialized cleanly to inactive '0 / '1)
+  logic       passthrough_en = 1'b0;
+  logic       sck            = 1'b0;
+  logic       sck_en         = 1'b0;
+  logic       csb            = 1'b1;
+  logic       csb_en         = 1'b0;
+  logic [3:0] is             = 4'h0;
+  logic [3:0] s_en           = 4'h0;
+  logic [3:0] cio_sd_i       = 4'h0;
+
+  // Sampled 4-state DUT outputs
+  logic [3:0] os;
+  logic       cio_sck_o;
+  logic       cio_sck_en_o;
+  logic       cio_csb_o;
+  logic       cio_csb_en_o;
+  logic [3:0] cio_sd_o;
+  logic [3:0] cio_sd_en_o;
 
 endinterface : spi_passthrough_if

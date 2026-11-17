@@ -37,6 +37,7 @@ class spi_segment_item extends uvm_sequence_item;
   rand bit                [7:0] spi_data      [$];
   bit [CSB_WIDTH-1:0]           csid               = '0;
   spi_host_configopts_t         configopts;
+  bit                           internal_exec      = 1'b0;
 
   constraint command_reg_direction_c {
     //make sure the direction matches the segtype /cmd address are always tx/standard
@@ -143,6 +144,7 @@ class spi_segment_item extends uvm_sequence_item;
     spi_data              = rhs_.spi_data;
     csid                  = rhs_.csid;
     configopts            = rhs_.configopts;
+    internal_exec         = rhs_.internal_exec;
   endfunction
 
 

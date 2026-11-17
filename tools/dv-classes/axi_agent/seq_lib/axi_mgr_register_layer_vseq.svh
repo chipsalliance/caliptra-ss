@@ -1,30 +1,24 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-// This is a register layering virtual sequence. It consumes axi_reg_op_item objects from a
-// sequencer and uses them to trigger multiple bus sequences for the different AXI channels (AW, W,
-// B, AR and R).
-//
-// It is designed to be used with axi_reg_adapter with provides_responses=1, so calls put() on
-// m_layered_sequencer to provide responses to the operations.
+// A virtual sequence that sits behind an axi_reg_adapter and translates uvm_reg_bus_op items
+// into AXI reads and writes.
 
 class axi_mgr_register_layer_vseq extends uvm_sequence;
   `uvm_object_utils(axi_mgr_register_layer_vseq)
 
-  // A sequencer used as a source of register transactions can be run, and the five AXI channels.
-  // These can be provided by calling set_sequencers, which must be done before starting this
-  // sequence.
-  local uvm_sequencer #(axi_reg_op_item) m_layered_sequencer;
-  local write_request_sequencer_t        m_aw_sequencer;
-  local write_data_sequencer_t           m_w_sequencer;
-  local write_response_sequencer_t       m_b_sequencer;
-  local read_request_sequencer_t         m_ar_sequencer;
-  local read_data_sequencer_t            m_r_sequencer;
+  local uvm_sequencer#(axi_reg_op_item) m_layered_sequencer;
+  local write_request_sequencer_t       m_aw_sequencer;
+  local write_data_sequencer_t          m_w_sequencer;
+  local write_response_sequencer_t      m_b_sequencer;
+  local read_request_sequencer_t        m_ar_sequencer;
+  local read_data_sequencer_t           m_r_sequencer;
 
-  // Read and write response routers
-  local axi_response_router        m_read_response_router;
-  local axi_response_router        m_write_response_router;
+  local axi_response_router m_read_response_router;
+  local axi_response_router m_write_response_router;
+  local axi_agent_cfg       m_cfg;
+  local semaphore           m_write_order_sem;
 
   extern function new(string name="");
   extern task body();
@@ -39,6 +33,8 @@ class axi_mgr_register_layer_vseq extends uvm_sequence;
   extern function void set_response_routers(axi_response_router read_response_router,
                                             axi_response_router write_response_router);
 
+  extern function void set_cfg(axi_agent_cfg cfg);
+
   // Send the request item through a layered sequence, passing any information back by modifying the
   // item argument (specifically, by modifying its m_rw field).
   extern local task send_op_item(axi_reg_op_item item);
@@ -46,6 +42,11 @@ endclass
 
 function axi_mgr_register_layer_vseq::new(string name="");
   super.new(name);
+  m_write_order_sem = new(1);
+endfunction
+
+function void axi_mgr_register_layer_vseq::set_cfg(axi_agent_cfg cfg);
+  m_cfg = cfg;
 endfunction
 
 task axi_mgr_register_layer_vseq::body();
@@ -66,18 +67,13 @@ task axi_mgr_register_layer_vseq::body();
       axi_reg_op_item item;
       m_layered_sequencer.get(item);
 
-      // Run the item in the background. The send_op_item task completes when the generated virtual
-      // sequence runs to completion, modifying the item in its item argument to represent the
-      // response.
-      //
-      // At that point, we call m_layered_sequencer.put(item). The item will have originally come
-      // from an axi_reg_adapter and the response will now be passed back to that adapter's bus2reg,
-      // which will be able to update a uvm_reg_bus_op in a uvm_reg_map, completing the operation
-      // handshake.
-      fork begin
-        send_op_item(item);
-        m_layered_sequencer.put(item);
-      end join_none
+      fork
+        automatic axi_reg_op_item op_item = item;
+        begin
+          send_op_item(op_item);
+          m_layered_sequencer.put(op_item);
+        end
+      join_none
     end
   end join
 endtask
@@ -115,30 +111,17 @@ function void
 endfunction
 
 task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
-  // This task handles the bulk of the work that would normally be done by a uvm_reg_adapter's
-  // reg2bus and bus2reg functions.
+  int unsigned axsize;
+  int unsigned bus_byte_width;
+  int unsigned byte_offset;
+  int unsigned id_width;
+  int unsigned user_req_width;
+  bit          en_user_strb;
+  bit [127:0]  strb_from_size;
+  bit [127:0]  unshifted_strb;
+  bit [127:0]  byte_mask;
 
-  // item.m_rw.n_bits gives the number of bits that are being accessed. Since we don't support burst
-  // accesses, round this up to the next value for ARSIZE / AWSIZE by dividing down to bytes (and
-  // taking the ceiling), then taking clog2.
-  int unsigned axsize = $clog2((item.m_rw.n_bits + 7) / 8);
-
-  // Shift strb_from_size to the lowest enabled byte lane when UVM accesses an upper-lane field
-  int unsigned lsb_byte = 0;
-
-  // This is the maximum strb value possible, given axsize. If byte_en is not maximal, the strb
-  // value to actually use might not have all of the bits set.
-  bit [127:0] strb_from_size;
-
-  // The strb value to send on W, or the byte mask to use with rdata in an R response. This takes
-  // size and byte_en into account.
-  bit [127:0] byte_mask;
-
-  while (lsb_byte < 128 && !item.m_rw.byte_en[lsb_byte]) begin
-    lsb_byte++;
-  end
-  strb_from_size = ((128'd1 << (1 << axsize)) - 1) << lsb_byte;
-  byte_mask = strb_from_size & item.m_rw.byte_en;
+  axsize = $clog2((item.m_rw.n_bits + 7) / 8);
 
   if (axsize > 7) begin
     `uvm_error(get_full_name(),
@@ -149,9 +132,60 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
     return;
   end
 
+  // Determine interface bus byte width, ID width limit, and user strobe policy from m_cfg
+  bus_byte_width = 4;
+  id_width       = 8;
+  user_req_width = 32;
+  en_user_strb   = 1'b1;
+  if (m_cfg != null) begin
+    id_width     = m_cfg.reg_layer_id_width;
+    en_user_strb = m_cfg.en_caliptra_user_strb;
+    if (item.m_rw.kind == UVM_READ && m_cfg.read_data_vif != null) begin
+      bus_byte_width = (m_cfg.read_data_vif.data_width + 7) / 8;
+      if (m_cfg.read_request_vif != null) begin
+        user_req_width = m_cfg.read_request_vif.user_req_width;
+        if (m_cfg.read_request_vif.id_r_width < id_width) begin
+          id_width = m_cfg.read_request_vif.id_r_width;
+        end
+      end
+    end else if (item.m_rw.kind == UVM_WRITE && m_cfg.write_data_vif != null) begin
+      bus_byte_width = (m_cfg.write_data_vif.data_width + 7) / 8;
+      if (m_cfg.write_request_vif != null) begin
+        user_req_width = m_cfg.write_request_vif.user_req_width;
+        if (m_cfg.write_request_vif.id_w_width < id_width) begin
+          id_width = m_cfg.write_request_vif.id_w_width;
+        end
+      end
+    end
+  end
+
+  // Compute AXI byte-lane offset and transfer size mask
+  byte_offset    = int'(item.m_rw.addr) & (bus_byte_width - 1);
+  strb_from_size = (128'd1 << (1 << axsize)) - 1;
+
+  // Propagate item.m_rw.byte_en into the strobes so partial writes only assert
+  // the selected byte lanes rather than always driving a full-word mask.
+  if (byte_offset == 0) begin
+    if ((128'(item.m_rw.byte_en) & ~strb_from_size) != '0 &&
+        axsize < $clog2(bus_byte_width)) begin
+      axsize         = $clog2(bus_byte_width);
+      strb_from_size = (128'd1 << (1 << axsize)) - 1;
+    end
+    unshifted_strb = (axsize <= $clog2(bus_byte_width)) ?
+                     (strb_from_size & 128'(item.m_rw.byte_en)) :
+                     ((item.m_rw.byte_en != '0) ? (strb_from_size & 128'(item.m_rw.byte_en)) : strb_from_size);
+    byte_mask      = unshifted_strb;
+  end else begin
+    if ((128'(item.m_rw.byte_en) & strb_from_size) != '0) begin
+      unshifted_strb = strb_from_size & 128'(item.m_rw.byte_en);
+      byte_mask      = unshifted_strb << byte_offset;
+    end else begin
+      byte_mask      = (strb_from_size << byte_offset) & 128'(item.m_rw.byte_en);
+    end
+  end
+
   case (item.m_rw.kind)
     UVM_READ: begin
-      // Single read
       axi_mgr_read_fixed_vseq read_vseq = axi_mgr_read_fixed_vseq::type_id::create("read_vseq");
       bit          ar_complete, r_complete;
       bit [1023:0] bit_mask;
@@ -162,17 +196,19 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
       if (!read_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            (local::id_width < 32) -> (m_fixed_req.m_id < (32'd1 << local::id_width));
+            (local::user_req_width < 128) -> ((m_fixed_req.m_user >> local::user_req_width) == '0);
+            (local::en_user_strb && local::user_req_width >= 22) -> (m_fixed_req.m_user[21:18] == local::byte_mask[3:0]);
           }) begin
         `uvm_fatal(get_full_name(), "Failed to randomise read_vseq.")
       end
 
-      // Run read_vseq to completion, which will set a rsp field (the sequence is designed to do so
-      // on every path).
       read_vseq.start(null);
 
-      // Convert byte_mask into a mask that can be used with rdata
+      // Convert byte_mask into a bit mask that can be used with rdata
+      bit_mask = '0;
       for (int unsigned i = 0; i < 128; i++) begin
-        if (byte_mask[i]) bit_mask |= 1024'hff << 8 * i;
+        if (byte_mask[i]) bit_mask |= 1024'hff << (8 * i);
       end
 
       ar_complete = (read_vseq.rsp.m_ar_status != null &&
@@ -183,13 +219,20 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
                           read_vseq.rsp.m_read_data.m_resp inside {axi_read_data_item::RRespOkay, axi_read_data_item::RRespExOkay}) ?
                          UVM_IS_OK :
                          UVM_NOT_OK;
-      item.m_rw.data   = r_complete ? (read_vseq.rsp.m_read_data.m_data & bit_mask) : 0;
+      item.m_rw.data   = r_complete ? ((read_vseq.rsp.m_read_data.m_data & bit_mask) >> (8 * byte_offset)) : 0;
     end
 
     UVM_WRITE: begin
-      // Single write
       axi_mgr_write_fixed_vseq write_vseq = axi_mgr_write_fixed_vseq::type_id::create("write_vseq");
-      bit aw_complete, w_complete, b_complete;
+      bit          aw_complete, w_complete, b_complete;
+      bit [1023:0] shifted_data;
+
+      if (byte_offset != 0 && (128'(item.m_rw.byte_en) & strb_from_size) == '0 &&
+          (1024'(item.m_rw.data) & ((1024'd1 << (8 * byte_offset)) - 1)) == '0) begin
+        shifted_data = 1024'(item.m_rw.data);
+      end else begin
+        shifted_data = 1024'(item.m_rw.data) << (8 * byte_offset);
+      end
 
       write_vseq.set_sequencers(m_aw_sequencer, m_w_sequencer, m_b_sequencer);
       write_vseq.set_write_response_router(m_write_response_router);
@@ -197,17 +240,21 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
       if (!write_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            (local::id_width < 32) -> (m_fixed_req.m_id < (32'd1 << local::id_width));
+            (local::user_req_width < 128) -> ((m_fixed_req.m_user >> local::user_req_width) == '0);
+
+            m_fixed_req.m_write_data_item.m_data == local::shifted_data;
+            m_fixed_req.m_write_data_item.m_strb == local::byte_mask;
+            m_fixed_req.m_write_data_item.m_last == 1'b1;
+            m_fixed_req.m_write_data_item.m_user == 512'h0;
+            (local::en_user_strb && local::user_req_width >= 22) -> (m_fixed_req.m_user[21:18] == local::byte_mask[3:0]);
           }) begin
         `uvm_fatal(get_full_name(), "Failed to randomise write_vseq.")
       end
-      write_vseq.m_fixed_req.m_write_data_item.m_data = 1024'b0;
-      write_vseq.m_fixed_req.m_write_data_item.m_strb = 128'b0;
-      write_vseq.m_fixed_req.m_write_data_item.m_data[31:0] = item.m_rw.data;
-      write_vseq.m_fixed_req.m_write_data_item.m_strb[3:0] = byte_mask[3:0];
 
-      // Run write_vseq to completion, which will set a rsp field (the sequence is designed to do so
-      // on every path).
+      m_write_order_sem.get(1);
       write_vseq.start(null);
+      m_write_order_sem.put(1);
 
       aw_complete = (write_vseq.rsp.m_aw_status != null &&
                      write_vseq.rsp.m_aw_status.m_sending_complete);
@@ -222,7 +269,6 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
     end
 
     default: begin
-      // Something else (a burst read or write). Not yet supported.
       `uvm_error(get_full_name(),
                  $sformatf("Cannot send this uvm_reg_op. kind is %0s, which is not supported.",
                            item.m_rw.kind.name()))

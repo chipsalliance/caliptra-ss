@@ -64,7 +64,7 @@ package spi_agent_pkg;
   typedef enum bit [7:0] {
     ReadStd      = 8'b11001100,
     WriteStd     = 8'b11111100,
-    ReadDual     = 8'b00000011,
+    ReadDual     = 8'b00111011,
     WriteDual    = 8'b00001100,
     ReadQuad     = 8'b00001111,
     WriteQuad    = 8'b11110000,

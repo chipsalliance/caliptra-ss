@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -66,7 +66,7 @@ task axi_mgr_read_fixed_vseq::body();
   ar_seq.m_use_fixed_size   = 1'b1;
   ar_seq.m_fixed_size       = m_fixed_req.m_size;
   ar_seq.m_use_fixed_burst  = 1'b1;
-  ar_seq.m_fixed_burst      = BurstFixed;
+  ar_seq.m_fixed_burst      = m_fixed_req.m_burst;
   ar_seq.m_use_fixed_lock   = 1'b1;
   ar_seq.m_fixed_lock       = m_fixed_req.m_lock;
   ar_seq.m_use_fixed_cache  = 1'b1;

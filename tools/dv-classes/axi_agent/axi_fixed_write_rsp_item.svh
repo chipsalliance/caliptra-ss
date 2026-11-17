@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC (OpenTitan project).
+// Copyright 2026 Google LLC (chipsalliance project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -53,7 +53,7 @@ function void axi_fixed_write_rsp_item::do_copy(uvm_object rhs);
   end
 
   if (rhs_.m_write_response == null) m_write_response = null;
-  if (!$cast(m_write_response, rhs_.m_write_response.clone())) begin
+  else if (!$cast(m_write_response, rhs_.m_write_response.clone())) begin
     `uvm_fatal("do_copy", "Failed to clone m_write_response.")
   end
 endfunction

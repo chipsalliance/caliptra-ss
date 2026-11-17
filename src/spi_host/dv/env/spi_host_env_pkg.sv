@@ -88,6 +88,21 @@ package spi_host_env_pkg;
     Bidir    = 2'b11
   } spi_dir_e;
 
+  // Negative/rejected command classification for invalid_cmd_outcome_cg
+  typedef enum bit [2:0] {
+    InvalidCmdRsvdSpd   = 3'd0,
+    InvalidCmdDualBidir = 3'd1,
+    InvalidCmdQuadBidir = 3'd2,
+    InvalidCmdCsidInval = 3'd3,
+    InvalidCmdBusy      = 3'd4
+  } spi_invalid_cmd_kind_e;
+
+  typedef struct packed {
+    spi_invalid_cmd_kind_e kind;
+    spi_dir_e              direction;
+    bit                    err_en;
+  } spi_invalid_cmd_item_t;
+
   typedef struct {
     // command register fields
     rand spi_mode_e mode;

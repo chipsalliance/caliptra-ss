@@ -20,6 +20,10 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
 
   int unsigned num_wr, num_rd; // Keeps score of the reads/writes sent
   bit          spi_host_txn_sent = 0;
+  bit          stop_rx_fifo_read = 0;
+  int unsigned inter_trans_delay_ns = 1000;
+  int unsigned rx_poll_min_delay_ns = 500;
+  int unsigned rx_poll_max_delay_ns = 1000;
 
   virtual task start_spi_host_trans(int num_transactions, bit wait_ready = 1'b1);
     spi_host_status_t status;
@@ -39,7 +43,9 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
       send_trans(transaction, wait_ready);
       if (wait_ready)
         wait_ready_for_command();
-      #1000ns;
+      if (inter_trans_delay_ns > 0) begin
+        #(inter_trans_delay_ns * 1ns);
+      end
     end
     spi_host_txn_sent = 1;
   endtask
@@ -51,20 +57,37 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
     spi_host_status_t status;
 
     forever begin : read_rxfifo_until_empty_and_inactive
+      if (stop_rx_fifo_read) break;
       csr_rd(.ptr(ral.status), .value(status));
-      if (spi_host_txn_sent && !status.active && status.rxempty && (status.rx_qd == 0)) begin
-        break;
+      if (stop_rx_fifo_read) break;
+      if (spi_host_txn_sent && !status.active && (status.cmd_qd == 0) &&
+          status.rxempty && (status.rx_qd == 0)) begin
+        // Re-confirm after allowing u_cmd_queue -> u_fsm pop (1-2 clks) and the
+        // u_merge -> u_rx_fifo -> u_status_rxqd.q packer flush pipeline (2-4 clks at clkdiv=0)
+        // to settle so a final packed RX word is never left behind in u_rx_fifo.
+        cfg.clk_rst_vif.wait_clks(10);
+        if (stop_rx_fifo_read) break;
+        csr_rd(.ptr(ral.status), .value(status));
+        if (stop_rx_fifo_read ||
+            (!status.active && (status.cmd_qd == 0) && status.rxempty && (status.rx_qd == 0))) begin
+          break;
+        end
       end
       if (status.rx_qd > 0) begin
         int num_words = status.rx_qd;
         for (int i = 0; i < num_words; i++) begin
+          if (stop_rx_fifo_read) break;
           `uvm_info(`gfn, $sformatf("Calling 'access_data_fifo' since status.rx_qd = 0x%0x > 0",
                                     status.rx_qd), UVM_DEBUG)
           access_data_fifo(read_q, RxFifo, 0);
         end
       end else begin
         // Add some delay here so other tb tasks can use the bus while we spin.
-        #($urandom_range(500, 1000) * 1ns);
+        if (rx_poll_max_delay_ns > 0) begin
+          #($urandom_range(rx_poll_min_delay_ns, rx_poll_max_delay_ns) * 1ns);
+        end else begin
+          cfg.clk_rst_vif.wait_clks(2);
+        end
       end
     end : read_rxfifo_until_empty_and_inactive
 
@@ -156,7 +179,8 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
   endtask
 
   task check_error(uvm_reg_field fld, bit value);
-    uvm_reg_field enable_fld = ral.error_enable.get_field_by_name(fld.get_name);
+    uvm_reg_field enable_fld = (fld.get_name() == "accessinval") ? null :
+                               ral.error_enable.get_field_by_name(fld.get_name());
     bit enable = (fld.get_name() == "accessinval") ? 1'b1 :
                  ((enable_fld != null) ? `gmv(enable_fld) : 1'b0);
     csr_rd_check(.ptr(fld), .compare_value(value));

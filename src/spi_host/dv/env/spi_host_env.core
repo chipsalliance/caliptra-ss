@@ -11,8 +11,9 @@ filesets:
       - lowrisc:dv:spi_agent
       - lowrisc:dv:axi_agent
       - caliptra:rtl:spi_host_subsystem:1.0
+      - lowrisc:dv:spi_host_env_cfg_pkg
+      - lowrisc:dv:spi_host_ral_pkg
     files:
-      - spi_host_ral_pkg.sv
       - spi_host_env_pkg.sv
       - spi_passthrough_if.sv
       - spi_host_seq_cfg.sv: {is_include_file: true}
@@ -28,6 +29,7 @@ filesets:
       - seq_lib/spi_host_tx_rx_vseq.sv: {is_include_file: true}
       - seq_lib/spi_host_common_vseq.sv: {is_include_file: true}
       - seq_lib/spi_host_smoke_vseq.sv: {is_include_file: true}
+      - seq_lib/spi_host_closure_vseq.sv: {is_include_file: true}
       - seq_lib/spi_host_speed_vseq.sv: {is_include_file: true}
       - seq_lib/spi_host_upper_range_clkdiv_vseq.sv: {is_include_file: true}
       - seq_lib/spi_host_event_vseq.sv: {is_include_file: true}

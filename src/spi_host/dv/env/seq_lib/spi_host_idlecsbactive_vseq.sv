@@ -35,11 +35,16 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
           csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
           cfg.clk_rst_vif.wait_clks(10);
           // Exercise IdleCSBActive -> Idle transition via SW reset
-          ral.control.sw_rst.set(1'b1);
-          csr_update(ral.control);
-          cfg.clk_rst_vif.wait_clks(10);
-          ral.control.sw_rst.set(1'b0);
-          csr_update(ral.control);
+          begin
+            uvm_reg_data_t ctrl_val;
+            csr_utils_pkg::wait_no_outstanding_access();
+            ctrl_val = ral.control.get_mirrored_value();
+            ctrl_val[30] = 1'b1;
+            csr_wr(.ptr(ral.control), .value(ctrl_val));
+            cfg.clk_rst_vif.wait_clks(10);
+            ctrl_val[30] = 1'b0;
+            csr_wr(.ptr(ral.control), .value(ctrl_val));
+          end
           cfg.clk_rst_vif.wait_clks(10);
           spi_host_init();
           program_configopt_regs();

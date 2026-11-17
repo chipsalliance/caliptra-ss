@@ -18,6 +18,11 @@ module tb;
   `include "uvm_macros.svh"
   `include "dv_macros.svh"
 
+  localparam int unsigned AXI_AW = 32;
+  localparam int unsigned AXI_DW = 32;
+  localparam int unsigned AXI_UW = 32;
+  localparam int unsigned AXI_IW = 1;
+
   wire clk, rst_n;
   wire [NUM_MAX_INTERRUPTS-1:0] interrupts;
   wire [3:0]                    si_pulldown;
@@ -43,23 +48,80 @@ module tb;
   pins_if #(NUM_MAX_INTERRUPTS) intr_if(.pins(interrupts));
   pins_if #(1) intg_error_if(.pins(intg_error));
 
+  // Production Caliptra AXI4 interface connected to spi_host_axi
+  axi_if #(
+    .AW(AXI_AW),
+    .DW(AXI_DW),
+    .IW(AXI_IW),
+    .UW(AXI_UW)
+  ) axi_bus_if (
+    .clk  (clk),
+    .rst_n(rst_n)
+  );
 
-  // AXI Sub-interfaces for AXI Agent
+  // AXI Sub-interfaces for UVM AXI Manager Agent
   axi_write_request_if  aw_if (.clk_i(clk), .rst_ni(rst_n));
   axi_write_data_if     w_if  (.clk_i(clk), .rst_ni(rst_n));
   axi_write_response_if b_if  (.clk_i(clk), .rst_ni(rst_n));
   axi_read_request_if   ar_if (.clk_i(clk), .rst_ni(rst_n));
   axi_read_data_if      r_if  (.clk_i(clk), .rst_ni(rst_n));
+
   // Prevent compiler from optimizing away the test package (needed for UVM factory)
   spi_host_base_test dummy_test;
 
-  initial begin
-    aw_if.if_mode = dv_utils_pkg::Host;
-    w_if.if_mode  = dv_utils_pkg::Host;
-    b_if.if_mode  = dv_utils_pkg::Host;
-    ar_if.if_mode = dv_utils_pkg::Host;
-    r_if.if_mode  = dv_utils_pkg::Host;
-  end
+  // Connect AXI AW channel
+  assign axi_bus_if.awvalid  = aw_if.awvalid;
+  assign aw_if.awready       = axi_bus_if.awready;
+  assign axi_bus_if.awaddr   = aw_if.awaddr[AXI_AW-1:0];
+  assign axi_bus_if.awid     = aw_if.awid[AXI_IW-1:0];
+  assign axi_bus_if.awlen    = aw_if.awlen;
+  assign axi_bus_if.awsize   = aw_if.awsize;
+  assign axi_bus_if.awburst  = aw_if.awburst;
+  assign axi_bus_if.awlock   = aw_if.awlock;
+  assign axi_bus_if.awcache  = aw_if.awcache;
+  assign axi_bus_if.awprot   = aw_if.awprot;
+  assign axi_bus_if.awqos    = aw_if.awqos;
+  assign axi_bus_if.awregion = aw_if.awregion;
+  assign axi_bus_if.awuser   = aw_if.awuser[AXI_UW-1:0];
+
+  // Connect AXI W channel
+  assign axi_bus_if.wvalid   = w_if.wvalid;
+  assign w_if.wready         = axi_bus_if.wready;
+  assign axi_bus_if.wdata    = w_if.wdata[AXI_DW-1:0];
+  assign axi_bus_if.wstrb    = w_if.wstrb[(AXI_DW/8)-1:0];
+  assign axi_bus_if.wlast    = w_if.wlast;
+  assign axi_bus_if.wuser    = w_if.wuser[AXI_UW-1:0];
+
+  // Connect AXI B channel
+  assign b_if.bvalid         = axi_bus_if.bvalid;
+  assign axi_bus_if.bready   = b_if.bready;
+  assign b_if.bid            = {{(32-AXI_IW){1'b0}}, axi_bus_if.bid};
+  assign b_if.bresp          = {1'b0, axi_bus_if.bresp};
+  assign b_if.buser          = axi_bus_if.buser[15:0];
+
+  // Connect AXI AR channel
+  assign axi_bus_if.arvalid  = ar_if.arvalid;
+  assign ar_if.arready       = axi_bus_if.arready;
+  assign axi_bus_if.araddr   = ar_if.araddr[AXI_AW-1:0];
+  assign axi_bus_if.arid     = ar_if.arid[AXI_IW-1:0];
+  assign axi_bus_if.arlen    = ar_if.arlen;
+  assign axi_bus_if.arsize   = ar_if.arsize;
+  assign axi_bus_if.arburst  = ar_if.arburst;
+  assign axi_bus_if.arlock   = ar_if.arlock;
+  assign axi_bus_if.arcache  = ar_if.arcache;
+  assign axi_bus_if.arprot   = ar_if.arprot;
+  assign axi_bus_if.arqos    = ar_if.arqos;
+  assign axi_bus_if.arregion = ar_if.arregion;
+  assign axi_bus_if.aruser   = ar_if.aruser[AXI_UW-1:0];
+
+  // Connect AXI R channel
+  assign r_if.rvalid         = axi_bus_if.rvalid;
+  assign axi_bus_if.rready   = r_if.rready;
+  assign r_if.rid            = {{(32-AXI_IW){1'b0}}, axi_bus_if.rid};
+  assign r_if.rdata          = {{(1024-AXI_DW){1'b0}}, axi_bus_if.rdata};
+  assign r_if.rresp          = {1'b0, axi_bus_if.rresp};
+  assign r_if.rlast          = axi_bus_if.rlast;
+  assign r_if.ruser          = {{(528-AXI_UW){1'b0}}, axi_bus_if.ruser};
 
   wire [3:0] sd;
   pullup (sd[0]);
@@ -67,226 +129,44 @@ module tb;
   pullup (sd[2]);
   pullup (sd[3]);
 
-  spi_if       spi_if(.rst_n(rst_n), .sio(sd));
-  spi_passthrough_if       spi_passthrough_if(.rst_n(rst_n));
+  spi_if             spi_if(.rst_n(rst_n), .sio(sd));
+  spi_passthrough_if spi_passthrough_if(.rst_n(rst_n));
 
-  // DUT: Caliptra SS SPI Host unwrapped to match RAL paths exactly
-  tlul_pkg::tl_h2d_t tl_h2d;
-  tlul_pkg::tl_d2h_t tl_d2h;
-
-  // Simple AXI-to-TLUL Behavioral Bridge
-  typedef enum logic [2:0] {
-    IDLE,
-    WRITE_REQ,
-    WRITE_RESP,
-    WRITE_DRAIN,
-    READ_REQ,
-    READ_RESP,
-    READ_DRAIN
-  } bridge_state_e;
-
-  bridge_state_e bridge_state, bridge_state_next;
-  
-  logic awready_int, wready_int, bvalid_int, arready_int, rvalid_int;
-  logic [1:0]  bresp_int, rresp_int;
-  logic [31:0] rdata_int;
-  logic [31:0] awid_q, arid_q;
-
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      awid_q <= '0;
-      arid_q <= '0;
-    end else begin
-      if (aw_if.awvalid && awready_int) awid_q <= aw_if.awid;
-      if (ar_if.arvalid && arready_int) begin
-        arid_q    <= ar_if.arid;
-      end
-    end
-  end
-
-  assign aw_if.awready = awready_int;
-  assign w_if.wready   = wready_int;
-  assign b_if.bvalid   = bvalid_int;
-  assign b_if.bresp    = bresp_int;
-  assign b_if.bid      = awid_q; // Latched ID
-  assign b_if.buser    = '0;
-  
-  assign ar_if.arready = arready_int;
-  assign r_if.rvalid   = rvalid_int;
-  assign r_if.rdata    = rdata_int;
-  assign r_if.rresp    = rresp_int;
-  assign r_if.rid      = arid_q; // Latched ID
-  assign r_if.rlast    = rvalid_int; // Single beat
-  assign r_if.ruser    = '0;
-
-  logic ar_consumed, aw_consumed, w_consumed;
-  logic last_served_read;
-  logic read_pending, write_pending;
-
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      bridge_state     <= IDLE;
-      ar_consumed      <= 1'b0;
-      aw_consumed      <= 1'b0;
-      w_consumed       <= 1'b0;
-      last_served_read <= 1'b0;
-    end else begin
-      bridge_state <= bridge_state_next;
-
-      if (bridge_state == READ_REQ && tl_d2h.a_ready) begin
-        last_served_read <= 1'b1;
-      end else if (bridge_state == WRITE_REQ && tl_d2h.a_ready) begin
-        last_served_read <= 1'b0;
-      end
-
-      if (arready_int && ar_if.arvalid) begin
-        ar_consumed <= 1'b1;
-      end else if (!ar_if.arvalid) begin
-        ar_consumed <= 1'b0;
-      end
-
-      if (awready_int && aw_if.awvalid) begin
-        aw_consumed <= 1'b1;
-      end else if (!aw_if.awvalid) begin
-        aw_consumed <= 1'b0;
-      end
-
-      if (wready_int && w_if.wvalid) begin
-        w_consumed <= 1'b1;
-      end else if (!w_if.wvalid) begin
-        w_consumed <= 1'b0;
-      end
-    end
-  end
-
-  always_comb begin
-    // Default TLUL H2D
-    tl_h2d           = '0;
-    tl_h2d.a_source  = 1'b0;
-    tl_h2d.d_ready   = 1'b0;
-
-    // Default AXI READY and VALID responses
-    awready_int = 1'b0;
-    wready_int  = 1'b0;
-    bvalid_int  = 1'b0;
-    bresp_int   = 2'b00;
-    
-    arready_int = 1'b0;
-    rvalid_int  = 1'b0;
-    rresp_int   = 2'b00;
-    rdata_int   = 32'b0;
-
-    bridge_state_next = bridge_state;
-
-    case (bridge_state)
-      IDLE: begin
-        read_pending  = ar_if.arvalid && !ar_consumed;
-        write_pending = aw_if.awvalid && !aw_consumed && w_if.wvalid && !w_consumed;
-
-        if (read_pending && write_pending) begin
-          if (last_served_read) begin
-            bridge_state_next = WRITE_REQ;
-          end else begin
-            bridge_state_next = READ_REQ;
-          end
-        end else if (read_pending) begin
-          bridge_state_next = READ_REQ;
-        end else if (write_pending) begin
-          bridge_state_next = WRITE_REQ;
-        end
-      end
-
-      WRITE_REQ: begin
-        tl_h2d.a_valid   = 1'b1;
-        tl_h2d.a_opcode  = (w_if.wstrb[3:0] == 4'hF) ? tlul_pkg::PutFullData
-                                                     : tlul_pkg::PutPartialData;
-        tl_h2d.a_address = aw_if.awaddr;
-        tl_h2d.a_data    = w_if.wdata[31:0];
-        tl_h2d.a_mask    = w_if.wstrb[3:0];
-        tl_h2d.a_size    = 2'h2;
-        
-        if (tl_d2h.a_ready) begin
-          awready_int = 1'b1;
-          wready_int  = 1'b1;
-          bridge_state_next = WRITE_RESP;
-        end
-      end
-
-      WRITE_RESP: begin
-        if (tl_d2h.d_valid) begin
-          bvalid_int     = 1'b1;
-          bresp_int      = tl_d2h.d_error ? 2'b10 : 2'b00;
-          if (b_if.bready) begin
-            tl_h2d.d_ready = 1'b1;
-            bridge_state_next = WRITE_DRAIN;
-          end
-        end
-      end
-
-      WRITE_DRAIN: begin
-        bridge_state_next = IDLE;
-      end
-
-      READ_REQ: begin
-        tl_h2d.a_valid   = 1'b1;
-        tl_h2d.a_opcode  = tlul_pkg::Get;
-        tl_h2d.a_address = ar_if.araddr;
-        tl_h2d.a_mask    = 4'hF;
-        tl_h2d.a_size    = 2'h2;
-        
-        if (tl_d2h.a_ready) begin
-          arready_int = 1'b1;
-          bridge_state_next = READ_RESP;
-        end
-      end
-
-      READ_RESP: begin
-        if (tl_d2h.d_valid) begin
-          rvalid_int     = 1'b1;
-          rdata_int      = tl_d2h.d_data;
-          rresp_int      = tl_d2h.d_error ? 2'b10 : 2'b00;
-          if (r_if.rready) begin
-            tl_h2d.d_ready = 1'b1;
-            bridge_state_next = READ_DRAIN;
-          end
-        end
-      end
-
-      READ_DRAIN: begin
-        bridge_state_next = IDLE;
-      end
-    endcase
-
-    // Generate valid TLUL Integrity ECC bits (corrupt cmd_intg when intg_error_if.pins_pu[0] is set)
-    if (tl_h2d.a_valid) begin
-      tl_h2d.a_user.instr_type = caliptra_prim_mubi_pkg::MuBi4False;
-      tl_h2d.a_user.cmd_intg   = tlul_pkg::get_cmd_intg(tl_h2d) ^
-                                 (intg_error_if.pins_pu[0] ? 7'h01 : 7'h00);
-      tl_h2d.a_user.data_intg  = tlul_pkg::get_data_intg(tl_h2d.a_data);
-    end
-  end
-
-  caliptra_ss_spi_host #(
-    .NumCS(SPI_HOST_NUM_CS),
-    .CmdDepth(8)
+  // DUT: Production Caliptra-SS SPI Host AXI Subsystem Wrapper (axi2tlul + caliptra_ss_spi_host)
+  spi_host_axi #(
+    .NumCS   (SPI_HOST_NUM_CS),
+    .CmdDepth(8),
+    .AxiAw   (AXI_AW),
+    .AxiDw   (AXI_DW),
+    .AxiUw   (AXI_UW),
+    .AxiIw   (AXI_IW)
   ) dut (
-    .clk_i                (clk),
-    .rst_ni               (rst_n),
-    .tl_i                 (tl_h2d),
-    .tl_o                 (tl_d2h),
-    .intg_error_o         (intg_error),
-    .cio_sck_o            (cio_sck_o),
-    .cio_sck_en_o         (cio_sck_en_o),
-    .cio_csb_o            (cio_csb_o),
-    .cio_csb_en_o         (cio_csb_en_o),
-    .cio_sd_o             (cio_sd_o),
-    .cio_sd_en_o          (cio_sd_en_o),
-    .cio_sd_i             (cio_sd_i),
-    .passthrough_i        (passthrough_i),
-    .passthrough_o        (passthrough_o),
-    .intr_error_o         (intr_error),
-    .intr_spi_event_o     (intr_event)
+    .clk_i            (clk),
+    .rst_ni           (rst_n),
+    .s_axi_w_if       (axi_bus_if.w_sub),
+    .s_axi_r_if       (axi_bus_if.r_sub),
+    .intg_error_o     (intg_error),
+    .cio_sck_o        (cio_sck_o),
+    .cio_sck_en_o     (cio_sck_en_o),
+    .cio_csb_o        (cio_csb_o),
+    .cio_csb_en_o     (cio_csb_en_o),
+    .cio_sd_o         (cio_sd_o),
+    .cio_sd_en_o      (cio_sd_en_o),
+    .cio_sd_i         (cio_sd_i),
+    .passthrough_i    (passthrough_i),
+    .passthrough_o    (passthrough_o),
+    .intr_error_o     (intr_error),
+    .intr_spi_event_o (intr_event)
   );
+
+  // Inject single-bit TL-UL cmd_intg ECC fault on the internal TL-UL link when enabled by test
+  always @(intg_error_if.pins_pu[0] or dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg) begin
+    if (intg_error_if.pins_pu[0] === 1'b1) begin
+      force dut.tl_h2d.a_user.cmd_intg = dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg ^ 7'h01;
+    end else begin
+      release dut.tl_h2d.a_user.cmd_intg;
+    end
+  end
 
   assign passthrough_i.passthrough_en = spi_passthrough_if.passthrough_en;
   assign passthrough_i.sck_en         = spi_passthrough_if.sck_en;
@@ -320,15 +200,15 @@ module tb;
     end
   end
 
-  // Instantiate SPI Flash Models
+  // Instantiate SPI Flash Models (gated by DUT pad enables and spi_if.en_flash_model)
   for (genvar i = 0; i < SPI_HOST_NUM_CS; i++) begin : gen_spi_flash
     spiflash #(
       .FlashSize (1024 * 1024), // 1MB
       .PageSize  (256),         // 256 Bytes
       .EnFastSim (1'b1)         // Fast simulation delays
     ) u_spi_flash (
-      .sck (cio_sck_o),
-      .csb (cio_csb_o[i]),
+      .sck ((spi_if.en_flash_model && cio_sck_en_o) ? cio_sck_o : 1'b0),
+      .csb (spi_if.en_flash_model ? spi_if.csb[i] : 1'b1),
       .sd  (sd)
     );
   end
@@ -337,16 +217,48 @@ module tb;
   assign interrupts[SpiHostEvent] = intr_event;
 
   // Bind
-  bind dut.u_spi_core spi_host_fsm_if fast_prescaler_bound_if();
+  bind dut.u_caliptra_ss_spi_host.u_spi_core spi_host_fsm_if fast_prescaler_bound_if();
   spi_host_cov_bind u_spi_host_cov_bind();
   spi_host_bind     u_spi_host_bind();
 
-  defparam dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.EnableAlertTriggerSVA = 0;
+  // Single-sourced scoped assertion parameter waiver: Caliptra-SS spi_host outputs single-wire
+  // intg_error_o rather than connecting an OpenTitan differential alert sender inside u_reg.
+  defparam dut.u_caliptra_ss_spi_host.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.EnableAlertTriggerSVA = 0;
 
   initial begin
-    $fsdbDumpfile("waves.fsdb");
-    $fsdbDumpvars(0, tb, "+all");
-    $fsdbDumpSVA(0, tb);
+`ifdef FSDB
+    if ($test$plusargs("dump_waves") || $test$plusargs("waves")) begin
+      $fsdbDumpfile("waves.fsdb");
+      $fsdbDumpvars(0, tb, "+all");
+      $fsdbDumpSVA(0, tb);
+    end
+`endif
+
+    // Configure AXI sub-interface modes and widths matching spi_host_axi
+    aw_if.if_mode = dv_utils_pkg::Host;
+    w_if.if_mode  = dv_utils_pkg::Host;
+    b_if.if_mode  = dv_utils_pkg::Host;
+    ar_if.if_mode = dv_utils_pkg::Host;
+    r_if.if_mode  = dv_utils_pkg::Host;
+
+    aw_if.set_id_w_width(AXI_IW);
+    aw_if.set_addr_width(AXI_AW);
+    aw_if.set_user_req_width(AXI_UW);
+
+    w_if.set_user_data_width(0);
+    w_if.set_data_width(AXI_DW);
+
+    b_if.set_id_w_width(AXI_IW);
+    b_if.set_user_resp_width(16);
+
+    ar_if.set_id_r_width(AXI_IW);
+    ar_if.set_addr_width(AXI_AW);
+    ar_if.set_user_req_width(AXI_UW);
+
+    r_if.set_id_r_width(AXI_IW);
+    r_if.set_user_data_width(0);
+    r_if.set_data_width(AXI_DW);
+    r_if.set_user_resp_width(16);
 
     // drive clk and rst_n from clk_if
     clk_rst_if.set_active();
@@ -363,15 +275,18 @@ module tb;
     uvm_config_db#(virtual spi_if)::set(null, "*.env.m_spi_agent*", "vif", spi_if);
 
     uvm_config_db#(virtual spi_host_fsm_if)::set(null, "*.env", "fast_prescaler_bound_if",
-                                                 dut.u_spi_core.fast_prescaler_bound_if);
-    $assertoff(0, tb.dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A);
+                                                 dut.u_caliptra_ss_spi_host.u_spi_core.fast_prescaler_bound_if);
     $timeformat(-12, 0, " ps", 12);
     run_test();
   end
 
+`ifdef FSDB
   final begin
-    $fsdbDumpflush();
+    if ($test$plusargs("dump_waves") || $test$plusargs("waves")) begin
+      $fsdbDumpflush();
+    end
   end
+`endif
 
   `ASSERT(Sck_A,   passthrough_i.passthrough_en -> passthrough_i.sck == cio_sck_o, clk, !rst_n)
   `ASSERT(Sck_En_A,passthrough_i.passthrough_en -> passthrough_i.sck_en == cio_sck_en_o,
@@ -384,4 +299,3 @@ module tb;
   `ASSERT(Sd_I_A,  passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
 
 endmodule
-

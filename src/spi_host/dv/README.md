@@ -2,14 +2,15 @@
 
 ## Goals
 * **DV**
-  * Verify all `caliptra_ss_spi_host` IP features in dynamic SystemVerilog/UVM simulation across dual chip-select (`NumCS = 2`) and 8-entry command queue (`CmdDepth = 8`) configurations.
-  * Exercise all testpoints in [`spi_host_testplan.hjson`](../data/spi_host_testplan.hjson) with end-to-end scoreboard checking enabled across all functional, error, reset, CSR, and interrupt tests.
+  * Verify the production `spi_host_axi` subsystem wrapper (`axi2tlul` + `caliptra_ss_spi_host`) end-to-end in dynamic SystemVerilog/UVM simulation for the Caliptra-SS target configuration (`NumCS = 2`, `CmdDepth = 8`, `TxDepth = 72` + 1-word `ByteSelect` = `73` words, `RxDepth = 64` words, `ByteOrder = 1`, `AxiAw = 32`, `AxiDw = 32`, `AxiUw = 32`, `AxiIw = 1`).
+  * Exercise all testpoints in [`spi_host_testplan.hjson`](../data/spi_host_testplan.hjson) with independent end-to-end scoreboard checking (zero `uvm_hdl_read` oracle dependencies), separating completed legal-transfer coverage from rejected-command negative outcomes.
 * **Protocol & Pin Assertions (SVA)**
-  * Continuously verify TL-UL device protocol compliance, SPI whole-cycle data/enable stability across `CS0`/`CS1`, and passthrough pin invariants via bound SystemVerilog assertions.
+  * Continuously verify AMBA AXI4 manager/subordinate channel compliance (`axi_*_if` and `axi_sub`), TL-UL device protocol compliance (`tlul_assert`), accepted-command SPI launch/sample data and output-enable stability (`spi_host_data_stable_sva`), multi-CS mutual exclusion (`$onehot0(~cio_csb_o)`), and passthrough tie-off invariants.
 
 ## Design & Register Specification
-* **RTL Top-Level**: [`src/spi_host/rtl/spi_host.sv`](../rtl/spi_host.sv) (`caliptra_ss_spi_host`)
-* **AXI Subsystem Wrapper**: [`src/spi_host/rtl/spi_host_axi.sv`](../rtl/spi_host_axi.sv)
+* **DUT Top-Level (Production AXI Subsystem Wrapper)**: [`src/spi_host/rtl/spi_host_axi.sv`](../rtl/spi_host_axi.sv) (`spi_host_axi`)
+* **AXI-to-TL-UL Gasket**: [`src/axi2tlul/rtl/axi2tlul.sv`](../../axi2tlul/rtl/axi2tlul.sv), [`src/axi2tlul/rtl/sub2tlul.sv`](../../axi2tlul/rtl/sub2tlul.sv)
+* **SPI Host Core**: [`src/spi_host/rtl/spi_host.sv`](../rtl/spi_host.sv) (`caliptra_ss_spi_host`)
 * **Register Definitions**:
   * SystemRDL: [`src/spi_host/rtl/spi_host.rdl`](../rtl/spi_host.rdl)
   * HJSON RAL Spec: [`src/spi_host/data/spi_host.hjson`](../data/spi_host.hjson)
@@ -20,94 +21,75 @@
 The SPI_HOST UVM verification environment is built on `dv_base_env` / `dv_lib_pkg` and resides under [`src/spi_host/dv/`](.).
 
 ### Top-Level Testbench (`src/spi_host/dv/tb.sv`)
-[`tb.sv`](tb.sv) instantiates `caliptra_ss_spi_host #(.NumCS(2), .CmdDepth(8))` alongside:
-* **Clock & Reset Interface**: `clk_rst_if` driving `clk` and active-low `rst_n`.
-* **AXI Manager Sub-Interfaces**: `axi_write_request_if`, `axi_write_data_if`, `axi_write_response_if`, `axi_read_request_if`, and `axi_read_data_if` driven by `axi_mgr_agent` (`tools/dv-classes/axi_agent/`) through the testbench AXI-to-TL-UL bridge (propagating byte strobes, `SLVERR` error responses, and TL-UL `cmd_intg` ECC fault injection).
-* **SPI Bus & Dual NOR Flash Models**: `spi_if` (`tools/dv-classes/spi_agent/`) with tri-state `sd[3:0]` pullups and two `spiflash` behavioral NOR flash instances (`gen_spi_flash[0..1]`, one per chip select `CS0` and `CS1`).
-* **Interrupt & Integrity Pins**: `pins_if #(2)` monitoring `{intr_spi_event_o, intr_error_o}` and `pins_if #(1)` monitoring/controlling `intg_error_o` fault injection (replacing OpenTitan's alert channel interface in Caliptra-SS).
-* **Passthrough & Passive FSM Observer Interfaces**: `spi_passthrough_if` and `spi_host_fsm_if` (purely passive observer exposing `u_fsm.state_q`, `u_fsm.bit_cntr_q`, and `u_fsm.sw_rst_i` with zero internal RTL `force` statements).
+[`tb.sv`](tb.sv) instantiates `spi_host_axi #(.NumCS(2), .CmdDepth(8), .AxiAw(32), .AxiDw(32), .AxiUw(32), .AxiIw(1))` directly as `dut` alongside:
+* **Clock, Reset & Gated Waveform Dumping**: `clk_rst_if` driving `clk` and active-low `rst_n`; FSDB/SVA dumping is gated on `+dump_waves` or `+waves` so batch regressions incur zero unconditional waveform overhead.
+* **Production AXI4 Bus & Shared Agent (`tools/dv-classes/axi_agent/`)**: `axi_if` connected to `dut.s_axi_w_if` / `dut.s_axi_r_if` and driven by `axi_mgr_agent` across all five AXI4 channels (`aw_if`, `w_if`, `b_if`, `ar_if`, `r_if`), supporting configurable `axi_reg_adapter::m_subword_target_addr` (`SPI_HOST_TXDATA_OFFSET = 0x28`), sub-word `WSTRB` / `AxUSER[21:18]` byte masks, narrow/FIXED/INCR/WRAP bursts, `SLVERR` propagation under `BREADY`/`RREADY` backpressure, and in-flight reset cancellation.
+* **SPI Bus, Dual NOR Flash BFMs & Directed Peripheral Responders**: `spi_if` (`tools/dv-classes/spi_agent/`) with tri-state `sd[3:0]` pullups and two pad-enable-gated `spiflash` instances (`gen_spi_flash[0..1]`), which can be disabled via `spi_if.set_flash_model_en(0)` when running strict Winbond W25Q01JV datasheet-enforcing, delayed-MISO `FULLCYC`, or reactive `spi_device_driver` responders.
+* **Reactive SPI Device Path Status**: `cfg.en_reactive_device_rsp` defaults to `0` because `tb.sv` connects dual NOR flash models and directed protocol responders; `spi_device_cmd_rsp_seq` + `spi_device_driver` (multi-CS `csb_sel`, MSB-on-highest-lane Dual/Quad bit ordering, and non-conflicting `ReadDual = 0x3B` opcode) are validated in `spi_host_closure_vseq`.
+* **Interrupt, Integrity & Passive FSM Observer Interfaces**: `pins_if #(2)` monitoring `{intr_spi_event_o, intr_error_o}`, `pins_if #(1)` monitoring `intg_error_o` and gating TL-UL `cmd_intg` ECC fault injection on `dut.tl_h2d`, `spi_passthrough_if`, and purely passive `spi_host_fsm_if` (zero internal RTL `force` statements).
 
 ### Compile-Time Configuration Parameters
 | Parameter | Value | Description |
 | :--- | :---: | :--- |
-| `SPI_HOST_NUM_CS` (`NumCS`) | `2` | Dual active-low chip selects (`CS0`, `CS1`) with independent `CONFIGOPTS_0` (`0x14`) and `CONFIGOPTS_1` (`0x18`) CSRs; passthrough muxing is structurally disabled (`gen_passthrough_ignore`). |
-| `SPI_HOST_CMD_DEPTH` (`CmdDepth`) | `8` | 8-segment command descriptor FIFO depth (`u_cmd_queue`). |
-| `SPI_HOST_TX_DEPTH` (`TxDepth`) | `72` | 72-word TX data FIFO (`73` words including `u_select` packer stage). |
-| `SPI_HOST_RX_DEPTH` (`RxDepth`) | `64` | 64-word RX data FIFO. |
-| `SPI_HOST_BYTEORDER` (`ByteOrder`) | `1` | Little-Endian byte ordering across `TXDATA` and `RXDATA` windows. |
+| `SPI_HOST_NUM_CS` (`NumCS`) | `2` | Dual active-low chip selects (`CS0`, `CS1`) with `CONFIGOPTS_0` (`0x14`) and `CONFIGOPTS_1` (`0x18`); passthrough muxing is structurally disabled (`gen_passthrough_ignore`). |
+| `SPI_HOST_CMD_DEPTH` (`CmdDepth`) | `8` | 8-entry command descriptor FIFO (`u_cmd_queue`). |
+| `SPI_HOST_TX_DEPTH` (`TxDepth`) | `72` | 72-word `u_tx_fifo` + 1-word greedy `u_select` packer stage = `73` words total capacity (`TXFULL == 1` at `TXQD == 73`). |
+| `SPI_HOST_RX_DEPTH` (`RxDepth`) | `64` | 64-word `u_rx_fifo` (`RXFULL == 1` at `RXQD == 64`; `65` words incl. `u_merge` stage for `RXSTALL`). |
+| `SPI_HOST_BYTEORDER` (`ByteOrder`) | `1` | Little-Endian byte ordering (`STATUS.BYTEORDER == 1`). |
 
-### Key Package Types (`src/spi_host/dv/env/spi_host_env_pkg.sv`)
-```systemverilog
-typedef struct {
-  rand bit        cpol;
-  rand bit        cpha;
-  rand bit        fullcyc;
-  rand bit [3:0]  csnlead;
-  rand bit [3:0]  csntrail;
-  rand bit [3:0]  csnidle;
-  rand bit [15:0] clkdiv;
-} spi_host_configopts_t;
+## Stimulus, Scoreboard & Assertion Verification
+* **Smoke vs. Directed Closure Separation**:
+  * `spi_host_smoke`: Concise fast smoke test executing dual-CS transfers without replaying heavy closure/fault/reset routines in derived sequences (`speed`, `dual_cs`, `performance`, `upper_range_clkdiv`, `stress_all`).
+  * `spi_host_closure`: Dedicated closure sequence executing checked `512`-byte (`LEN = 511`) `TxOnly`/`RxOnly`/`Bidir` streaming transfers, `CMDQD = 8` / `TXQD = 73` / watermark `0..255` boundary checks, bus-level wrong-direction `RXDATA` write (`0x24`) & `TXDATA` read (`0x28`) `SLVERR` + FIFO-preservation checks, AXI4 gasket bursts & shared `axi_agent` null-copy / oversized-ID controls, TL-UL `cmd_intg` fault injection, reactive responder validation, and TX/RX/floating-`Z`/unexpected-zero-RX negative controls.
+* **Timing, Reset, Pause, Isolation, Performance & Flash Sequences**:
+  * `spi_host_speed` & `spi_host_upper_range_clkdiv`: Sweeps `CSNLEAD/TRAIL/IDLE` through `15`, exercises controlled delayed-MISO transitions distinguishing `FULLCYC = 0` from `FULLCYC = 1` (with DUT-poked and scoreboard fault controls), checks two-sided `ConfigSwitch` (`WaitIdle` + `CSBSwitch`) idle intervals and all-CSB-high `CPOL` switch placement (with early-transition and missing-`CPOL`-switch controls), and verifies unforced (`fast_mode = 0`) physical SCK half-periods at `CLKDIV = 0x0100` and `0xFFFF`.
+  * `spi_host_error_cmd`, `spi_host_event`, `spi_host_overflow_underflow`: Verifies reserved `SPEED = 2'b11` (`RsvdSpd`) rejection and pin non-execution across all 4 directions, plus directed one-hot `EVENT_ENABLE` (all 6 bits) and isolated enabled/masked `UNDERFLOW`/`OVERFLOW` verification.
+  * `spi_host_sw_reset` & `spi_host_spien`: Verifies observed mid-transfer overlap, `SW_RST` pin return (`CSB = '1`, `SCK = CPOL`, `SD_EN = '0`), empty-`RXDATA` read (`0x0` + `UNDERFLOW`), non-reset CSR retention across `SW_RST`, continuous clock-by-clock `SCK`/`CSB`/`SD`/`SD_EN` stability across `SPIEN == 0`, negative violation controls, and lossless recovery.
+  * `spi_host_dual_cs`, `spi_host_performance`, `spi_host_flash`, and CIP `csr_*` / `intr_test`: Verifies single-bit mid-command `CPOL`/`CPHA` updates and physical wrong-CS routing controls (`dual_cs`), `>= 85%` peak Quad streaming bit-rate utilization with `<= 4`-clock inter-SCK gaps and zero stalls (`performance`), synthetic `spiflash` mixed-lane vs. strict Winbond W25Q01JV Rev B datasheet conformance (`flash`), and connected scoreboard recovery checking in `csr_mem_rw_with_rand_reset` even under `csr_tests_mode` (`+en_scb=0`) with separate bus-accepted vs. RAL-call overlap counters.
+* **Assertions (`spi_host_bind.sv` & `spi_host_cov_if.sv`)**:
+  * `tlul_assert #(.EndpointType("Device"))` bound on `caliptra_ss_spi_host`.
+  * `spi_host_data_stable_sva #(.NumCS(2))`: Selects launch/sample edges from accepted-command FSM registers (`u_fsm.cpol_q`, `u_fsm.cpha_q`, `u_fsm.full_cyc_q`) rather than live CSRs; checks dedicated host outputs `cio_sd_o & cio_sd_en_o` and `cio_sd_en_o` both at SCK sampling edges and continuously on every core `clk_i` cycle (`CORE_CLK_SAMPLE_PHASE_STABLE_P`), while checking resolved pad input `cio_sd_i` (host loopback on driven lanes / external MISO on input lanes) at nominal half-cycle edges when `!fsm_full_cyc_i`.
+  * `spi_host_cov_if #(.NumCS(2))`: Per-CS `csb_pin_cg[0..1]`, per-CS SVA protocol cover properties across `CS0` and `CS1`, and `$onehot0(~cio_csb_o)` mutual-exclusion assertion.
+  * **Scoped Assertion Notes**:
+    * `EnableAlertTriggerSVA = 0` is single-sourced via `defparam` in [`tb.sv`](tb.sv) for `u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check` because Caliptra-SS exports single-wire `intg_error_o` rather than an OpenTitan differential alert channel.
+    * `spi_host_csr_assert_fpv` is not elaborated because OpenTitan's standalone FPV CSR generator is not packaged in Caliptra-SS; CSR reset, RW, bit-bash, aliasing, and integrity error paths are verified dynamically in UVM.
 
-typedef struct {
-  rand bit        spien;
-  rand bit        output_en;
-  rand bit        sw_rst;
-  rand bit [31:0] csid;
-  rand bit [7:0]  tx_watermark; // CONTROL[15:8], reset 8'h00
-  rand bit [7:0]  rx_watermark; // CONTROL[7:0],  reset 8'h7F
-} spi_host_ctrl_t;
+## Coverage Scope, Waivers & CI Integration
+* **Hierarchy Configuration ([`cov_hier.cfg`](../config/cov_hier.cfg))**: Instruments `tb.dut` (`spi_host_axi`, `u_axi2tlul_spi_host`, `u_caliptra_ss_spi_host`, `u_reg`, `u_window`, `u_cmd_queue`, `u_data_fifos`, and `u_spi_core.*`). Pre-verified TL-UL/SECDED/onehot bus primitives (`u_axi2tlul_cmd_intg_gen`, `u_chk`, `u_prim_reg_we_check`, `u_rsp_intg_gen`, `u_reg_if`, `u_socket`, `u_adapter_rx/tx`), wire-through RO status subregs, and bound DV/SVA modules are scoped out; therefore quoted `tb.dut` code coverage does not measure the internal combinational SECDED tree inside `u_reg.u_chk` (though bus-level `cmd_intg` fault injection and `intg_error_o` latching are verified dynamically).
+* **VCS Exclusion File ([`cov_waivers.el`](../config/cov_waivers.el))**:
+  * Single-sourced in [`spi_host_sim_cfg.hjson`](spi_host_sim_cfg.hjson) (stale Xcelium `.vRefine` reference removed).
+  * Applied file SHA-256 digest: `bd0b982ed09cea198f111d05d358a6c1a8992a3e46050b39f0409749402482d7`.
+  * Explicitly separates `[DESIGN-UNR]` invariants (`ClearOnRead = 1` in `caliptra_prim_packer_fifo`, `~under_rst` factor in `caliptra_prim_fifo_sync`, mutually exclusive FSM/shift-reg handshakes, one-hot `reg_we_err`) from `[TARGET-CFG]` restrictions of `spi_host_axi` (`NumCS = 2` disabling `passthrough_i.passthrough_en` and leaving `spi_host.sv:122` `unused_pt_en` unexercised without synthetic sub-cycle glitches; `AxiIw = 1`, `AxiDw = 32`, `ByteOrder = 1`, `TxDepth = 72`, `RxDepth = 64`).
+  * Note on raw vs. waived wrapper metrics: in `u_axi2tlul_spi_host`, `i_sub2tlul` direct `valid_get_txn <-> valid_put_txn` FSM transitions (`pending_txn`-gated) and `axi_addr` `DSZ != 2` / 8-byte `AxSIZE` branches remain unwaived in the raw wrapper score, distinguishing wrapper code coverage from waived `u_caliptra_ss_spi_host` core coverage. Current-head 23-test / 175-seed VCS W-2024.09-SP2-1 (`dvsim -i all --cov`) results matching the waiver SHA-256 above: **175 / 175 (100.00%) passing**, `dvsim` total **98.01%** (URG score **95.73%**: Line **99.79%**, Branch **98.24%**, Cond **97.32%**, Toggle **83.44%**, FSM **91.30%**, Assert **100.00%**, Functional **100.00%** across **30 / 30** covergroups / **561 / 561** bins).
+* **CI & Nightly Regression**:
+  * Both `all` and `nightly` (`en_sim_modes: ["cov"]`, 23 tests) regressions are defined in [`spi_host_sim_cfg.hjson`](spi_host_sim_cfg.hjson). In `chipsalliance/caliptra-ss`, proprietary EDA simulations (Synopsys VCS) execute on internal EDA farm runners (attested for PR gates via `.github/workflows/pre-run-check.yml` / `stamp_repo.sh`), while public GitHub Actions (`ubuntu-22.04`) runs license, RDL parity, and repository hygiene checks.
 
-typedef struct {
-  rand spi_mode_e mode;         // Standard (0), Dual (1), Quad (2), RsvdSpd (3)
-  rand spi_dir_e  direction;    // None (0), RxOnly (1), TxOnly (2), Bidir (3)
-  rand bit        csaat;        // COMMAND[9]
-  rand bit [8:0]  len;          // COMMAND[8:0] (transfer length = len + 1)
-} spi_host_command_t;
-```
-
-### Bus & Peripheral Agents
-* **AXI Manager Agent (`tools/dv-classes/axi_agent`)**: Drives frontdoor CSR and `TXDATA`/`RXDATA` window transactions via `axi_mgr_register_layer_vseq` and `axi_reg_adapter` (preserving sub-word `byte_en` strobes and handling in-flight reset cancellation via `axi_status_item` without `UVM_FATAL [PUTRSP]`).
-* **SPI Agent (`tools/dv-classes/spi_agent`)**: Configured in `Device` monitor mode with 4-state `logic [3:0] plain_data_q[$]` per-SCK-edge bus sampling (`enable_plain_sampling = 1`) across `CS0` and `CS1` (`CSB_WIDTH = 2`, `NUM_CSB = 2 ** CSB_WIDTH = 4`).
-
-## Stimulus & Self-Checking Strategy
-
-### Virtual Sequences (`src/spi_host/dv/env/seq_lib/`)
-All 15 functional sequences and `spi_host_intr_test` (16 tests / 155 seeds; zero `+en_scb=0` overrides in `src/spi_host/dv/`) run with end-to-end scoreboard checking enabled (`en_scb = 1`), alongside the 6 common CIP CSR sequences (`18` seeds under `csr_tests_mode`):
-* `spi_host_smoke_vseq`: Dual-CS NOR flash page program & quad-read, all segment speed/direction/CSAAT transitions, all 8 valid `TXDATA` byte-enable masks (including `4'b0110`), partial-word (`1, 2, 3, 5, 9` byte) `TxOnly`/`RxOnly`/`Bidir` checks, `OUTPUT_EN = 0 -> 1` queued-command execution, `CS1` Mode 3 transfer, sub-word CSR `SLVERR` & backpressure retention, TL-UL `cmd_intg` fault injection, and negative scoreboard self-checks (TX mismatch, RX mismatch, and 4-state floating-`1'bz` active-lane rejection on `8'h00` payloads).
-* `spi_host_dual_cs_vseq`: Independent `CONFIGOPTS_0` / `CONFIGOPTS_1` timing, same-address `CS0`/`CS1` flash isolation, `CSAAT = 1` active CS switching (`IdleCSBActive -> WaitTrail -> CSBSwitch`) across `CPHA = 0/1`, mid-flight `CONFIGOPTS_1` queued-command snapshotting, `CS1` mode/lead/trail/idle fault negative controls, and `CSID >= NumCS` `csidinval` error recovery.
-* `spi_host_speed_vseq` & `spi_host_upper_range_clkdiv_vseq`: Scoreboard-checked `Bidir` and `TxOnly` transfers sweeping `CPOL`, `CPHA`, `FULLCYC`, `CSNLEAD`, `CSNTRAIL`, `CSNIDLE`, and `CLKDIV` across `CS0` and `CS1`, including 100% unforced (`fast_mode = 0`) `Bidir` TX+RX and physical SCK half-period verification at `CLKDIV = 16'h0100` (`257` core clocks) and max `CLKDIV = 16'hFFFF` (`65,536` core clocks).
-* `spi_host_sw_reset_vseq`: Randomized mid-transfer `CONTROL.SW_RST` assertions plus passive FSM state observation (`WaitLead`, `CSBSwitch`, `WaitTrail`, `WaitIdle`, `InternalClkHigh`) triggering real bus `CONTROL.SW_RST` writes and post-reset checked `Bidir` recovery.
-* `spi_host_error_cmd_vseq` & `spi_host_overflow_underflow_vseq`: Bus-driven `csidinval`, `cmdinval`, `cmdbusy`, `accessinval` (all 8 invalid byte masks), `underflow`, and `overflow` error/interrupt verification with post-error checked `Bidir` recovery.
-* `spi_host_event_vseq`, `spi_host_spien_vseq`, `spi_host_status_stall_vseq`, `spi_host_idlecsbactive_vseq`, `spi_host_passthrough_mode_vseq`, `spi_host_flash_vseq`, `spi_host_performance_vseq`, `spi_host_stress_all_vseq`: Event watermarks, mid-transfer `SPIEN` stall/resume, TX/RX FIFO stall stretching, `CSAAT = 1` parking, passthrough tie-off verification (`NumCS = 2`), and multi-sequence stress.
-* Common CIP tests (`spi_host_base_vseq`): `csr_hw_reset`, `csr_rw`, `csr_bit_bash`, `csr_aliasing`, `same_csr_outstanding`, `intr_test`, and `csr_mem_rw_with_rand_reset` (concurrent CSR + `TXDATA`/`RXDATA` AXI traffic overlapping randomized `HARD` reset assertion + post-reset checked `Bidir` recovery).
-
-### Scoreboard (`src/spi_host/dv/env/spi_host_scoreboard.sv`)
-* **4-State Pin Integrity (`SCB-PIN-01`)**: Preserves 4-state `logic` samples from `spi_if.sio` through `spi_monitor` and `plain_data_fifo`; explicitly flags `1'bz`/`1'bx` (`$isunknown`) on active driven TX lanes (`sio[0]` in `Standard`, `sio[1:0]` in `Dual`, `sio[3:0]` in `Quad`) even when expected TX data is `8'h00`, while permitting high-Z on unused lanes.
-* **Per-CS Mode, Divider & Timing Prediction**: Snapshots `CSID` and `CONFIGOPTS[csid]` per queued command, tracks `pending_lead_cfg_q[cs]` across back-to-back and `CSAAT = 1` envelopes, and checks `CSNLEAD`, `CSNTRAIL`, `CSNIDLE`, and `CSAAT` (`csaat == 0` deassertion & extra-SCK check vs. `csaat == 1` hold check) per active chip select.
-* **Command Queue Staging**: Models `u_cmd_queue` (`staged_cmd_q`) across `CONTROL.SPIEN`, `CONTROL.OUTPUT_EN`, `ERROR_STATUS` (`enb_error`), and `CONTROL.SW_RST`.
-* **Operational Timing Coverage**: Samples `config_opts_cg` and `different_ch_settings_cg` upon completed scoreboard-checked segments in `compare_tx_trans()` rather than on raw CSR writes.
-
-### Assertions (`src/spi_host/dv/sva/`)
-[`spi_host_bind.sv`](sva/spi_host_bind.sv) is instantiated in `tb.sv` and binds:
-* `tlul_assert #(.EndpointType("Device"))`: Verifies TL-UL request/response protocol and integrity invariants on `caliptra_ss_spi_host`.
-* `spi_host_data_stable_sva #(.NumCS(2))`: Verifies `cio_sd_i` and `cio_sd_en_o` remain stable across the active SCK sampling phase for the active chip select's `(CPOL, CPHA)` mode.
-* Passthrough assertions (`Sck_A`, `Sck_En_A`, `Csb_A`, `Csb_En_A`, `S_En_A`, `Sd_O_A`, `Sd_I_A` in `tb.sv` and `PassthroughNumCSCompat_A` / `PassthroughConn_A` in `spi_host.sv`).
-* **Scope Note on `spi_host_csr_assert_fpv`**: The `spi_host_csr_assert_fpv` bind in [`spi_host_bind.sv`](sva/spi_host_bind.sv) remains intentionally commented out because standalone OpenTitan FPV CSR assertion collateral is not packaged in Caliptra-SS; CSR reset, read/write, bit-bash, aliasing, write-enable one-hot (`u_prim_reg_we_check`, with only disconnected alert-port `AssertConnected_A` disabled), and bus-integrity checks are verified dynamically across the UVM CSR test suite and `spi_host_smoke_vseq`.
-
-### Coverage Scope & Exclusions (`src/spi_host/config/`)
-* **Hierarchy Configuration ([`cov_hier.cfg`](../config/cov_hier.cfg))**: Collects code coverage on `tb.dut` (`caliptra_ss_spi_host`, `u_reg` decode & writable/RW1C CSR subregs, `u_cmd_queue`, `u_data_fifos`, and `u_spi_core.*`) while scoping out pre-verified `caliptra_prim`/`tlul` bus-socket primitives, pure wire-through RO status subregs, `u_window`, and bound DV/SVA collateral.
-* **Waivers ([`cov_waivers.el`](../config/cov_waivers.el))**: Wired into `vcs_cov_excl_files` in both [`spi_host_common_sim_cfg.hjson`](spi_host_common_sim_cfg.hjson) and [`spi_host_sim_cfg.hjson`](spi_host_sim_cfg.hjson), waiving structurally unreachable FSM/shift-register/packer/sync-FIFO condition rows (e.g., `ClearOnRead = 0`, `Secure = 0`, validated `speed != 2'b11`, `TxDepth`/`RxDepth < 128` MSB depth bits) and tied-off TL-UL bridge port bits on `tb.dut` / `u_reg`.
+## Confirmed Design-Owner Architectural Contracts (Nov 12, 2026)
+Design owner **Harry Callahan (`hcallahan@lowrisc.org`, Nov 12, 2026)** confirmed **Option A** (maintaining exact RTL parity with upstream OpenTitan with zero RTL modifications and documenting the HW/SW contracts in `caliptra-ss`) for all five specification questions raised in PR #1298:
+1. **Same-CS `CSAAT = 1` Continuation with Changed `CONFIGOPTS` (Comment #1 — Confirmed Option A)**: `spi_host_fsm.sv:197-235` checks `config_changed` on the `Idle` path and closes `IdleCSBActive` only on a `CSID` change (`command_i.csid != csid_q`). Software is contractually required to close an active transaction with `CSAAT = 0` before modifying `CONFIGOPTS[cs]` for the same chip select.
+2. **Invalid-`CSID` (`CSID >= NumCS`) Queue Retention & Recovery Contract (Comment #2 — Confirmed Option A)**: `spi_host.sv:189-262` clamps out-of-range `CSID` to `'0` and enqueues `command_valid` into `u_cmd_queue` while asserting `ERROR_STATUS.CSIDINVAL` (`enb_error = 1`, halting `u_spi_core`). Firmware must issue `CONTROL.SW_RST` to flush the offending descriptor before clearing `ERROR_STATUS`; clearing `CSIDINVAL` via W1C alone without `SW_RST` unhalts the core and executes the retained descriptor on clamped `CS0` (verified in `spi_host_dual_cs_vseq.sv`).
+3. **`ERROR_ENABLE` Masking Scope — Interrupt-Only vs. Core Halt (Comment #3 — Confirmed Option A)**: Upstream documentation claiming `ERROR_ENABLE = 0` *"allows the IP to continue operating"* was inaccurate; per `spi_host.sv:409,487-495`, `ERROR_ENABLE` masks `intr_error_o` generation only, while `enb_error = |sw_error_status` unconditionally halts `u_spi_core` until `ERROR_STATUS` is cleared (verified with `SPIEN = 1` across `ERROR_ENABLE = 1/0` and W1C-only recovery in `spi_host_error_cmd_vseq.sv`).
+4. **`CPHA = 1` + `FULLCYC = 1` Architectural Restriction (Comment #4 — Confirmed Option A)**: `spi_host_fsm.sv:275` reflects the intended architectural limitation: full-cycle receive sampling (`FULLCYC = 1`) is supported only when `CPHA = 0`.
+5. **`RXWM` Equality Boundary — `>=` ("Reaches or Exceeds") (Comment #25 — Confirmed Option A)**: `spi_host_data_fifos.sv:129` (`rx_wm_o = (rx_qd_o >= rx_watermark_i)`) is the intended behavior, matching upstream OpenTitan PR #32013; `STATUS.RXWM` and `EVENT_ENABLE.RXWM` descriptions in [`spi_host.hjson`](../data/spi_host.hjson) are reconciled to `>=`, and explicit below/equal/above checks are verified in `spi_host_event_vseq.sv` and `spi_host_closure_vseq.sv`.
 
 ## Building and Running Tests
-Tests and regressions are executed with `dvsim.py` against [`spi_host_sim_cfg.hjson`](spi_host_sim_cfg.hjson):
+Tests and regressions are executed via the pinned `caliptra-rtl` `dvsim` package (inside the Nix shell or via `uv run`) or directly with VCS against [`spi_host_tb_flat.vf`](../config/spi_host_tb_flat.vf):
 ```console
-# Run smoke test
-$ python3 third_party/caliptra-rtl/tools/dvsim/dvsim.py \
-    src/spi_host/dv/spi_host_sim_cfg.hjson -i spi_host_smoke
+# Option 1: Pinned dvsim via Nix development shell
+$ nix develop ./third_party/caliptra-rtl#caliptra-dvsim
+$ dvsim src/spi_host/dv/spi_host_sim_cfg.hjson -i spi_host_smoke
+$ dvsim src/spi_host/dv/spi_host_sim_cfg.hjson -i nightly --cov
 
-# Run full 22-test regression with code and functional coverage
-$ python3 third_party/caliptra-rtl/tools/dvsim/dvsim.py \
+# Option 2: Direct uv invocation against pinned third_party/caliptra-rtl/tools/dvsim/python
+$ uv run --project third_party/caliptra-rtl/tools/dvsim/python dvsim \
     src/spi_host/dv/spi_host_sim_cfg.hjson -i all --cov
+
+# Option 3: Standalone VCS flat-filelist build & run (pass +dump_waves or +waves for FSDB)
+$ vcs -sverilog -full64 -ntb_opts uvm-1.2 -timescale=1ns/1ps \
+    +define+UVM +define+UVM_NO_DEPRECATED +define+UVM_REGEX_NO_DPI \
+    +define+SIMULATION +define+INC_ASSERT -top tb \
+    -f $CALIPTRA_SS_ROOT/src/spi_host/config/spi_host_tb_flat.vf -R \
+    +UVM_TESTNAME=spi_host_base_test +UVM_TEST_SEQ=spi_host_smoke_vseq
 ```
 
 ## Testplan

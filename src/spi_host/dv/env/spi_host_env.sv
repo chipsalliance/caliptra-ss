@@ -36,6 +36,10 @@ class spi_host_env extends dv_base_env #(
     if (!uvm_config_db#(virtual axi_read_data_if)::get(this, "", "r_vif", cfg.m_axi_agent_cfg.read_data_vif)) begin
       `uvm_fatal(get_full_name(), "failed to get r_vif")
     end
+    cfg.m_axi_agent_cfg.en_cov                = cfg.en_cov;
+    cfg.m_axi_agent_cfg.en_assert             = 1'b1;
+    cfg.m_axi_agent_cfg.reg_layer_id_width    = 1;
+    cfg.m_axi_agent_cfg.en_caliptra_user_strb = 1'b1;
     uvm_config_db#(axi_agent_cfg)::set(this, "m_axi_agent*", "cfg", cfg.m_axi_agent_cfg);
     // create components
     m_spi_agent = spi_agent::type_id::create("m_spi_agent", this);
@@ -63,14 +67,16 @@ class spi_host_env extends dv_base_env #(
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     if (cfg.is_active) begin
+      virtual_sequencer.axi_agent_h = m_axi_agent;
+      axi_reg_adapter::m_subword_target_addr = SPI_HOST_TXDATA_OFFSET;
       cfg.ral.set_base_addr(0, .randomize_base_addr(0));
       cfg.ral.default_map.set_sequencer(m_axi_agent.get_register_layering_sequencer(),
                                         m_axi_agent.get_layered_reg_adapter());
     end
+    m_spi_agent.monitor.plain_sampling_analysis_port.connect(
+                                                    scoreboard.plain_data_fifo.analysis_export);
     if (cfg.en_scb) begin
       cfg.m_spi_agent_cfg.enable_plain_sampling = 1;
-      m_spi_agent.monitor.plain_sampling_analysis_port.connect(
-                                                      scoreboard.plain_data_fifo.analysis_export);
     end
     if (cfg.is_active && cfg.m_spi_agent_cfg.is_active) begin
       virtual_sequencer.spi_sequencer_h = m_spi_agent.sequencer;

@@ -34,6 +34,8 @@ class spi_item extends uvm_sequence_item;
   // blocks spi_host full testing when generating random spi_segments. This queue allows the
   // scoreboard to take the data from the bus directly in a per-cycle basis and group it accordingly
   rand logic [3:0]         plain_data_q[$];
+  // Full-cycle trailing-edge sample queue (captured at DrivingEdge when CPHA == 0)
+  logic [3:0]              plain_fullcyc_data_q[$];
 
   // transaction status. only use in monitor on flash mode
   // allow scb to process payload when one byte data is received, instead
@@ -86,6 +88,7 @@ class spi_item extends uvm_sequence_item;
     `uvm_field_int(terminated_before_dummy_cycles, UVM_DEFAULT | UVM_NOCOMPARE)
     `uvm_field_int(terminated_before_read_pipeline, UVM_DEFAULT | UVM_NOCOMPARE)
     `uvm_field_queue_int(plain_data_q,           UVM_DEFAULT)
+    `uvm_field_queue_int(plain_fullcyc_data_q,   UVM_DEFAULT)
   `uvm_object_utils_end
 
   `uvm_object_new

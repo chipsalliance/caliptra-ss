@@ -10,6 +10,11 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
   rand bit [31:0] wr_data_cs0[FIFO_DEPTH];
   rand bit [31:0] wr_data_cs1[FIFO_DEPTH];
 
+  virtual task pre_start();
+    super.pre_start();
+    run_cov_stimulus = 1'b0;
+  endtask
+
   virtual task body();
     uvm_status_e status;
     bit [31:0] err_val;
@@ -73,10 +78,18 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
     run_flash_read_and_check(2'd0);
 
     // 5. Test CSAAT=1 active CSID switch (CS0 <-> CS1) from IdleCSBActive and pipelined CPHA=0/1
-    // Covers spi_host_fsm.sv lines 214, 221, 223 (command_i.csid != csid_q -> WaitTrail)
+    // Covers spi_host_fsm.sv lines 214, 221, 223 (command_i.csid != csid_q -> WaitTrail).
+    // Confirmed Design Contract (Harry Callahan, Option A, Nov 12, 2026 - Comment #1):
+    // spi_host_fsm.sv:197-235 checks config_changed on the Idle path and closes IdleCSBActive only
+    // on a CSID change (command_i.csid != csid_q); software must close an active transaction with
+    // CSAAT=0 before modifying CONFIGOPTS[cs] for the same chip select.
     run_csaat_cs_switch_stimulus();
 
-    // 6. Test out-of-range CSID >= SPI_HOST_NUM_CS (CSID = 2) -> csidinval error assertion
+    // 6. Test out-of-range CSID >= SPI_HOST_NUM_CS (CSID = 2) -> csidinval error assertion across:
+    //    (6a) Recommended firmware recovery via CONTROL.SW_RST (flushes retained descriptor), and
+    //    (6b) W1C-only clear without CONTROL.SW_RST per confirmed Option A contract (Comment #2,
+    //         Harry Callahan, Nov 12, 2026), proving the invalid descriptor is halted while
+    //         CSIDINVAL == 1 and executes on clamped CS0 upon W1C acknowledgement.
     csr_wr(.ptr(ral.error_enable), .value(32'h0000_001F));
     csr_wr(.ptr(ral.intr_enable),  .value(32'h0000_0003));
     csr_wr(.ptr(ral.csid),         .value(32'h0000_0002));
@@ -93,7 +106,7 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
     csr_rd(.ptr(ral.error_status), .value(err_val));
     `DV_CHECK_EQ(err_val[4], 1'b1, "Expected csidinval error_status[4] == 1 when CSID = 2")
 
-    // Flush queued command via SW reset, clear csidinval error, and verify post-error recovery on CS1
+    // 6a. Flush queued command via SW reset, clear csidinval error, and verify post-error recovery on CS1
     program_spi_host_sw_reset();
     csr_wr(.ptr(ral.error_status), .value(32'h0000_003F));
     csr_wr(.ptr(ral.intr_state),   .value(32'h0000_0003));
@@ -120,6 +133,69 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
                      "Expected scoreboard TX check on post-csidinval CS1 recovery transfer")
         `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
                      "Expected scoreboard RX check on post-csidinval CS1 recovery transfer")
+      end
+    end
+
+    // 6b. Directed CSID=2 + COMMAND + W1C-only clear WITHOUT SW_RST (Comment #2 post-sign-off):
+    //     Verify sticky CSIDINVAL halts u_spi_core while set, and clearing CSIDINVAL via W1C alone
+    //     executes the retained descriptor (known payload 8'hD2) on clamped CS0 while CS1 stays high.
+    begin
+      spi_host_command_t w1c_cmd;
+      int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      bit saw_cs0_low = 1'b0;
+      bit saw_cs1_low = 1'b0;
+      bit stop_csb_obs = 1'b0;
+
+      csr_wr(.ptr(ral.configopts),   .value(32'h0111_0003));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0003));
+      csr_wr(.ptr(ral.error_enable), .value(32'h0000_001F));
+      csr_wr(.ptr(ral.intr_enable),  .value(32'h0000_0003));
+      csr_wr(.ptr(ral.intr_state),   .value(32'h0000_0003));
+      write_txdata(32'h0000_00D2, 4'b0001, status);
+      `DV_CHECK_EQ(status, UVM_IS_OK)
+
+      csr_wr(.ptr(ral.csid), .value(32'h0000_0002)); // Out-of-range CSID >= NumCS
+      w1c_cmd.direction = TxOnly;
+      w1c_cmd.mode      = Standard;
+      w1c_cmd.csaat     = 1'b0;
+      w1c_cmd.len       = 9'd0;
+      program_command_reg(w1c_cmd);
+
+      // Verify core remains halted while CSIDINVAL == 1 despite SPIEN == 1
+      cfg.clk_rst_vif.wait_clks(20);
+      check_error(ral.error_status.csidinval, 1);
+      `DV_CHECK_EQ(cfg.m_spi_agent_cfg.vif.csb, 2'b11,
+                   "CSB[1:0] must stay inactive high while ERROR_STATUS.CSIDINVAL is set")
+      csr_rd_check(.ptr(ral.status.cmdqd),  .compare_value(4'd1));
+      csr_rd_check(.ptr(ral.status.active), .compare_value(1'b0));
+
+      // Program CSID=1 before W1C clear to prove u_cmd_queue latched clamped CS0 at enqueue time
+      csr_wr(.ptr(ral.csid), .value(32'h0000_0001));
+
+      fork
+        begin
+          while (!stop_csb_obs) begin
+            @(posedge cfg.clk_rst_vif.clk);
+            if (cfg.m_spi_agent_cfg.vif.csb[0] === 1'b0) saw_cs0_low = 1'b1;
+            if (cfg.m_spi_agent_cfg.vif.csb[1] === 1'b0) saw_cs1_low = 1'b1;
+          end
+        end
+        begin
+          // Clear CSIDINVAL via W1C ONLY (no SW_RST) -> retained command unhalts onto clamped CS0
+          csr_wr(.ptr(ral.error_status), .value(32'h0000_0010));
+          csr_wr(.ptr(ral.intr_state),   .value(32'h0000_0003));
+          wait (saw_cs0_low);
+          csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+          cfg.clk_rst_vif.wait_clks(10);
+          stop_csb_obs = 1'b1;
+        end
+      join
+
+      `DV_CHECK_EQ(saw_cs0_low, 1'b1, "Expected retained CSID=2 command to assert clamped CS0 after W1C clear")
+      `DV_CHECK_EQ(saw_cs1_low, 1'b0, "CS1 must remain inactive high during clamped CS0 W1C execution")
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected scoreboard TX & CS0 routing check on W1C-only CSID=2 command")
       end
     end
     csr_wr(.ptr(ral.csid), .value(32'h0000_0000));
@@ -351,6 +427,7 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
         csr_wr(.ptr(ral.configopts_1), .value(32'h8111_0004)); // Expected CS1 Mode 2 (cpol=1, cpha=0), clkdiv=4
         csr_poke(.ptr(ral.configopts_1), .value(32'h0111_0004), .predict(1'b0)); // Actual DUT CS1 Mode 0 (cpol=0, cpha=0), clkdiv=4
         uvm_report_cb::add(null, mode_catcher);
+        cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b0);
 
         wait_ready_for_command();
         cmd.direction = RxOnly;
@@ -362,13 +439,13 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
           begin
             @(negedge cfg.m_spi_agent_cfg.vif.csb[1]);
             for (int b = 7; b >= 0; b--) begin
-              cfg.m_spi_agent_cfg.vif.sio_out[1] = rx_drv_byte[b];
+              cfg.m_spi_agent_cfg.vif.sio_out[1] <= rx_drv_byte[b];
               @(posedge cfg.m_spi_agent_cfg.vif.sck);
               cfg.clk_rst_vif.wait_clks(1);
             end
-            cfg.m_spi_agent_cfg.vif.sio_out[1] = ~rx_drv_byte[0];
+            cfg.m_spi_agent_cfg.vif.sio_out[1] <= ~rx_drv_byte[0];
             @(negedge cfg.m_spi_agent_cfg.vif.sck);
-            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+            cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
           end
           begin
             program_command_reg(cmd);
@@ -381,6 +458,7 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
         `DV_CHECK_EQ(rdata[7:0], rx_drv_byte, "DUT Mode 0 RXDATA capture sanity check on CS1")
         cfg.clk_rst_vif.wait_clks(10);
 
+        cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b1);
         csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0002));
         uvm_report_cb::delete(null, mode_catcher);
         `DV_CHECK_EQ(mode_catcher.caught_err_cnt, 1,
@@ -429,6 +507,72 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
                      "Expected CS1 csntrail fault control to trigger Trail-time check error")
         `DV_CHECK_GE(idle_catcher.caught_err_cnt, 1,
                      "Expected CS1 csnidle fault control to trigger Idle-time check error")
+      end
+
+      // 3) Single-bit mid-command CPOL-only (0->1) and CPHA-only (0->1) CONFIGOPTS_1 updates while
+      //    an older CS1 command is actively shifting on the bus (Comment #17): verifies both
+      //    spi_host_data_stable_sva accepted-command edge selection (cpol ^ cpha flips 0 -> 1!)
+      //    and scoreboard per-command CONFIGOPTS snapshotting.
+      begin
+        int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+        bit [31:0] single_bit_updates[2] = '{
+          32'h8222_0004, // Case A: single-bit CPOL-only flip (cpol=1, cpha=0 -> XOR flips 0->1)
+          32'h4222_0004  // Case B: single-bit CPHA-only flip (cpol=0, cpha=1 -> XOR flips 0->1)
+        };
+        foreach (single_bit_updates[u_i]) begin
+          csr_wr(.ptr(ral.csid),         .value(32'h0000_0001));
+          csr_wr(.ptr(ral.configopts_1), .value(32'h0222_0006)); // Cmd 1: Mode 0 (cpol=0, cpha=0), clkdiv=6
+          ral.txdata.write(status, 0, 32'hA55A_3CC3 ^ u_i);
+          ral.txdata.write(status, 0, 32'h6996_F00F ^ u_i);
+          wait_ready_for_command();
+          cmd.direction = TxOnly;
+          cmd.mode      = Standard;
+          cmd.csaat     = 1'b0;
+          cmd.len       = 9'd3; // 4 bytes (~450 core clocks on CS1)
+          program_command_reg(cmd);
+
+          // Wait until CS1 is actively shifting Command 1, then update ONLY 1 bit (CPOL or CPHA)
+          @(negedge cfg.m_spi_agent_cfg.vif.csb[1]);
+          @(cfg.m_spi_agent_cfg.vif.sck);
+          csr_wr(.ptr(ral.configopts_1), .value(single_bit_updates[u_i]));
+          wait_ready_for_command();
+          program_command_reg(cmd); // Queues Command 2 with the updated single-bit mode
+          csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(100));
+        end
+        cfg.clk_rst_vif.wait_clks(10);
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 4,
+                     "Expected all 4 single-bit mid-command CPOL/CPHA CS1 transfers to pass scoreboard & SVA")
+      end
+
+      // 4) Deliberate wrong-CS routing fault control with identical timing & payload bytes (Comment #21):
+      //    Frontdoor CSID=1 (scoreboard expects CS1) + backdoor poke CSID=0 (DUT drives CS0) ->
+      //    proves scoreboard catches CS routing mismatch independent of payload or timing differences.
+      begin
+        spi_host_scb_neg_catcher cs_route_catcher = spi_host_scb_neg_catcher::type_id::create("cs_route_catcher");
+        cs_route_catcher.match_pattern = "*CS routing mismatch on byte*";
+        uvm_report_cb::add(null, cs_route_catcher);
+
+        csr_wr(.ptr(ral.configopts),   .value(32'h0111_0003));
+        csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0003));
+        csr_wr(.ptr(ral.csid),         .value(32'h0000_0001)); // Scoreboard expects CS1
+        csr_poke(.ptr(ral.csid),       .value(32'h0000_0000), .predict(1'b0)); // DUT routes to CS0
+
+        write_txdata(32'h0000_005A, 4'b0001, status);
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+        cfg.clk_rst_vif.wait_clks(15);
+
+        uvm_report_cb::delete(null, cs_route_catcher);
+        `DV_CHECK_EQ(cs_route_catcher.caught_err_cnt, 1,
+                     "Expected physical wrong-CS routing fault control to trigger CS routing mismatch error")
+        program_spi_host_sw_reset();
+        program_control_reg();
+        csr_wr(.ptr(ral.csid), .value(32'h0000_0000));
       end
     end
     csr_wr(.ptr(ral.configopts),   .value(32'h0111_0002));

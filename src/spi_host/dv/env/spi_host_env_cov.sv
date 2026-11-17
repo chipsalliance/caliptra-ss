@@ -31,7 +31,7 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
     cpol_cp : coverpoint spi_configopts.cpol{ bins cpol[] = {[0:1]}; }
     cpha_cp : coverpoint spi_configopts.cpha{ bins cpha[] = {[0:1]}; }
     fullcyc_cp : coverpoint spi_configopts.fullcyc{
-    bins fullcyc[] = {[0:1]};
+      bins fullcyc[] = {[0:1]};
     }
     csnlead_cp : coverpoint spi_configopts.csnlead{
       bins zero = {0};
@@ -66,24 +66,31 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
     unaligned_data_cp: coverpoint mask{ bins mask[] = {[0:15]}; }
   endgroup
 
-  covergroup duplex_cg with function sample(spi_dir_e  direction);
+  covergroup duplex_cg with function sample(spi_dir_e direction);
     duplex_cp : coverpoint direction{ ignore_bins unsupported_dir = {None}; }
   endgroup
 
   covergroup control_cg with function sample(spi_host_ctrl_t spi_ctrl_reg, bit active);
     tx_watermark_cp : coverpoint spi_ctrl_reg.tx_watermark{
-      bins zero = {0};
-      bins low  = {[1:15]};
-      bins mid  = {[16:47]};
-      bins high = {[48:SPI_HOST_TX_DEPTH]};
-      ignore_bins invalid = {[SPI_HOST_TX_DEPTH+1:$]};
+      bins zero        = {0};
+      bins one         = {1};
+      bins low         = {[2:15]};
+      bins mid         = {[16:47]};
+      bins high        = {[48:SPI_HOST_TX_DEPTH]};
+      bins full_depth  = {SPI_HOST_TX_DEPTH + 1};
+      bins above_depth = {[SPI_HOST_TX_DEPTH + 2 : 8'hfe]};
+      bins max_val     = {8'hff};
     }
     rx_watermark_cp : coverpoint spi_ctrl_reg.rx_watermark{
-      bins zero = {0};
-      bins low  = {[1:15]};
-      bins mid  = {[16:47]};
-      bins high = {[48:SPI_HOST_RX_DEPTH]};
-      ignore_bins invalid = {[SPI_HOST_RX_DEPTH+1:$]};
+      bins zero        = {0};
+      bins one         = {1};
+      bins low         = {[2:15]};
+      bins mid         = {[16:47]};
+      bins high        = {[48:SPI_HOST_RX_DEPTH - 1]};
+      bins full_depth  = {SPI_HOST_RX_DEPTH};
+      bins reset_val   = {8'h7f};
+      bins above_depth = {[SPI_HOST_RX_DEPTH + 1 : 8'h7e], [8'h80 : 8'hfe]};
+      bins max_val     = {8'hff};
     }
     spien_cp : coverpoint spi_ctrl_reg.spien { bins spien = {1}; }
     output_en_cp : coverpoint spi_ctrl_reg.output_en { bins output_en = {1}; }
@@ -124,9 +131,9 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
       bins empty = {0};
       bins low   = {[1:16]};
       bins mid   = {[17:48]};
-      bins high  = {[49:SPI_HOST_TX_DEPTH-1]};
-      bins full  = {SPI_HOST_TX_DEPTH};
-      ignore_bins invalid = {[SPI_HOST_TX_DEPTH+1:$]};
+      bins high  = {[49:SPI_HOST_TX_DEPTH]};
+      bins full  = {SPI_HOST_TX_DEPTH + 1};
+      ignore_bins invalid = {[SPI_HOST_TX_DEPTH + 2:$]};
     }
   endgroup
 
@@ -136,19 +143,41 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
     }
   endgroup
 
+  // Sampled strictly on completed, scoreboard-checked legal SPI segments (Comment #8).
   covergroup command_cg with function sample(spi_host_command_t spi_cmd_reg);
     direction_cp : coverpoint spi_cmd_reg.direction;
     mode_cp : coverpoint spi_cmd_reg.mode {
       ignore_bins unsupported_mode = {RsvdSpd};
-      }
+    }
     csaat_cp : coverpoint spi_cmd_reg.csaat;
     len_cp : coverpoint spi_cmd_reg.len{
       bins len_zero = {0};
       bins lenl[] = {[1:3]};
       bins lenh[10] = {[4:(2**SPI_HOST_COMMAND_LEN_SIZE_BITS)-1]};
-      }
-    direction_mode_cross: cross  direction_cp, mode_cp;
+    }
+    direction_mode_cross: cross direction_cp, mode_cp {
+      ignore_bins illegal_dual_quad_bidir = binsof(direction_cp) intersect {Bidir} &&
+                                            binsof(mode_cp) intersect {Dual, Quad};
+    }
     csaat_mode_cross: cross csaat_cp, mode_cp;
+  endgroup
+
+  // Dedicated negative-command outcome coverage for rejected/invalid COMMAND writes,
+  // sampled when the corresponding ERROR_STATUS outcome is verified (Comment #8).
+  covergroup invalid_cmd_outcome_cg with function sample(spi_invalid_cmd_kind_e kind,
+                                                         spi_dir_e direction,
+                                                         bit err_en);
+    kind_cp : coverpoint kind {
+      bins rsvd_spd   = {InvalidCmdRsvdSpd};
+      bins dual_bidir = {InvalidCmdDualBidir};
+      bins quad_bidir = {InvalidCmdQuadBidir};
+      bins csid_inval = {InvalidCmdCsidInval};
+      bins cmd_busy   = {InvalidCmdBusy};
+    }
+    rsvd_spd_dir_cross : cross kind_cp, direction {
+      ignore_bins non_rsvd = !binsof(kind_cp.rsvd_spd);
+    }
+    kind_err_en_cross : cross kind_cp, err_en;
   endgroup
 
   covergroup error_en_cg with function sample(spi_host_error_enable_t spi_error_enable_reg);
@@ -188,6 +217,7 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
     rxfull_cp : coverpoint spi_event_enable_reg.rxfull;
   endgroup
 
+  // Sampled strictly on completed, scoreboard-checked legal SPI segments (Comment #8).
   covergroup command_segment_cg with function sample(spi_host_command_t spi_cmd_reg);
 
     csaat_cp: coverpoint spi_cmd_reg.csaat;
@@ -196,7 +226,7 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
       ignore_bins unsupported_speed = {RsvdSpd};
     }
     speed_trans_cp : coverpoint spi_cmd_reg.mode {
-      // Creates a bin for each of the possible transitions
+      // Creates a bin for each of the possible legal transitions
       bins Any2Any[] = ([Standard:Quad] => [Standard:Quad]);
     }
     direction_cp: coverpoint spi_cmd_reg.direction;
@@ -210,8 +240,10 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
       bins middle_range_val = {[2:2**SPI_HOST_COMMAND_LEN_SIZE_BITS - 2]};
       bins max_val = { 2**SPI_HOST_COMMAND_LEN_SIZE_BITS - 1 };
     }
-    //XCOV
-    speedXdirectionXcsaat_cp: cross speed_cp, direction_cp, csaat_cp;
+    speedXdirectionXcsaat_cp: cross speed_cp, direction_cp, csaat_cp {
+      ignore_bins illegal_dual_quad_bidir = binsof(direction_cp) intersect {Bidir} &&
+                                            binsof(speed_cp) intersect {Dual, Quad};
+    }
 
   endgroup // command_segment_cg
 
@@ -308,6 +340,7 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
     status_cg = new();
     csid_cg = new();
     command_cg = new();
+    invalid_cmd_outcome_cg = new();
     error_en_cg = new();
     error_status_cg = new();
     event_en_cg = new();
@@ -325,9 +358,6 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
 
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    // [or instantiate covergroups here]
-    // Please instantiate sticky_intr_cov array of objects for all interrupts that are sticky
-    // See cip_base_env_cov for details
   endfunction
 
 endclass

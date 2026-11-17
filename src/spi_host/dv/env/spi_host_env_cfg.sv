@@ -23,6 +23,13 @@ class spi_host_env_cfg extends dv_base_env_cfg #(.RAL_T(spi_host_reg_block));
   int unsigned scb_checked_tx_seg_cnt = 0;
   int unsigned scb_checked_rx_seq_cnt = 0;
 
+  // Tracks whether one-time CONFIGOPTS subreg toggle init has already run in this test
+  bit did_configopts_toggle_init = 1'b0;
+
+  // Explicit opt-in guard for generic reactive SPI device responder sequence (Comment #18);
+  // default 0 because tb.sv instantiates dual NOR flash models / directed peripheral responders.
+  bit en_reactive_device_rsp = 1'b0;
+
   // number of dummy cycles in a dummy segment
   rand int    num_dummy;
   int         max_dummy_cycles = 16;
@@ -91,10 +98,10 @@ class spi_host_env_cfg extends dv_base_env_cfg #(.RAL_T(spi_host_reg_block));
   endfunction
 
   virtual protected function void post_build_ral_settings(dv_base_reg_block ral);
-    ral.set_hdl_path_root("tb.dut");
-    ral.set_hdl_path_root("tb.dut", "RTL");
-    ral.set_hdl_path_root("tb.dut", "BkdrRegPathRtl");
-    ral.set_hdl_path_root("tb.dut", "BkdrRegPathRtlShadow");
+    ral.set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host");
+    ral.set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "RTL");
+    ral.set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "BkdrRegPathRtl");
+    ral.set_hdl_path_root("tb.dut.u_caliptra_ss_spi_host", "BkdrRegPathRtlShadow");
   endfunction
 
   function void set_default_csr_timeout();

@@ -22,6 +22,5 @@ targets:
   formal:
     <<: *default_target
     filesets:
-      - files_formal
       - files_dv
-    toplevel: spi_host
+    toplevel: spi_host_axi
