@@ -858,9 +858,133 @@ static int check_reg_bank(uint32_t base, const char *bank,
     return errors;
 }
 
+// ---------------------------------------------------------------------------
+// Indirect ULPI/UTMI+ PHY access walk (HUB_ULPIDEBUG / C_HUB_PHY, offset
+// 0x3C of the hub bank). COVERAGE TARGET: USB_PHY_REGISTER_ACCESS toggle bins
+// on USBREG_PHY_ADDR/WDATA, REG_PHY_ADDR/WDATA/RDATA/MODE/START/WRITE,
+// PHY_READDATA, SYNC_PHY_RDATA/ENDTOGGLE, PHY_ENDTOGGLE, HUB_PHY_RDATA/
+// START/ENDTOGGLE in usb_pie.m.vhdl / usb_ep0_hub_descr.m.vhdl / usb
+// synchronizer. The existing RW/RO walk above never launches a live access
+// (PHY_ACCESS is ACC_SKIP there, see hub_phydebug_fields), so these signals
+// never toggle.
+//
+// HANDSHAKE (verified against RTL, not asserted): hub_phy_start is wired
+// straight from ep0_mem(C_HUB_PHY)(25) (usb_ep0_hub_descr.m.vhdl). In UTMI
+// mode (phy_mode='0', which is what this integration's TB wires up -
+// ULPI_SUPPORT path is unused here) usb_pie.m.vhdl's
+// utmi_ulpi_vendor_specific_clk_proc toggles phy_endtoggle_r on the pie_clk
+// edge immediately following phy_start='1' - i.e. the access completes and
+// hub_phy_endtoggle pulses one pie_clk cycle after PHY_ACCESS is set. Back in
+// usb_ep0_hub_descr.m.vhdl, "if hub_phy_endtoggle = '1'" then loads
+// ep0_mem(C_HUB_PHY)(23 downto 16) from hub_phy_rdata AND clears bit 25
+// (PHY_ACCESS) in the SAME cycle. So PHY_ACCESS is a true one-shot: it is
+// expected to read back 0 on the very next LSU read after the write that set
+// it, with no firmware-visible "launched" window. The poll loop below is a
+// bounded safety net (a few iterations), not a required wait, in case of
+// extra synchronizer latency between the MCU's AXI domain and pie_clk.
+//
+// TB CAVEAT (must be reported, not worked around): caliptra_ss_top_tb.sv
+// ties cptra_ss_usb_utmi_vstatus_i to constant 0 ("Not modeled by VIP"). In
+// UTMI mode phy_readdata <= utmi_vstatus (usb_pie.m.vhdl
+// utmi_ulpi_vendor_specific_comb_proc), so hub_phy_rdata is ALWAYS 0 after a
+// real access, regardless of PHY_ADDR/PHY_MODE. PHY_RDATA[23:16] can
+// therefore only be exercised 1->0 by this walk (pre-load it to 1 via the
+// plain RW write already covered above, then launch an access and observe
+// hardware clear it to 0); a genuine 0->1 HW-driven transition is not
+// reachable without a TB model change to drive a non-zero
+// cptra_ss_usb_utmi_vstatus_i. This is reported as a TB gap, not forced.
+//
+// Sweep performed: walking-ones and walking-zeros on PHY_ADDR[7:0] and
+// PHY_WDATA[15:8], both PHY_RW access types (0=read, 1=write), and both
+// PHY_MODE states (0/1), each followed by a PHY_ACCESS launch.
+// ---------------------------------------------------------------------------
+#define USB_HUB_PHY_ACCESS_POLL_MAX   32u
+
+// Launch one indirect PHY access and wait (bounded) for PHY_ACCESS to
+// self-clear. Returns 1 if the bit failed to clear within the poll bound
+// (reported, not fatal - the handshake is expected to be effectively
+// immediate per the RTL trace above, so this would indicate a real
+// discrepancy worth flagging).
+static int usb_hub_phy_launch_access(uint32_t addr, uint8_t phy_addr,
+                                     uint8_t phy_wdata, uint8_t phy_rw,
+                                     uint8_t phy_mode) {
+    uint32_t word = (uint32_t)phy_addr
+                  | ((uint32_t)phy_wdata << 8)
+                  | ((uint32_t)phy_rw    << 24)
+                  | (1u << 25) /* PHY_ACCESS */
+                  | ((uint32_t)phy_mode  << 31);
+    lsu_write_32(addr, word);
+
+    for (uint32_t i = 0; i < USB_HUB_PHY_ACCESS_POLL_MAX; i++) {
+        if ((lsu_read_32(addr) & (1u << 25)) == 0u)
+            return 0;
+    }
+    VPRINTF(LOW,
+        "ERROR: HUB HUB_ULPIDEBUG.PHY_ACCESS did not self-clear within %d "
+        "polls (addr=0x%x wdata=0x%x rw=%d mode=%d)  <-- possible RTL issue\n",
+        USB_HUB_PHY_ACCESS_POLL_MAX, phy_addr, phy_wdata, phy_rw, phy_mode);
+    return 1;
+}
+
+// Walking-ones/zeros sweep over PHY_ADDR and PHY_WDATA, crossed with both
+// PHY_RW and PHY_MODE states, launching a real access each time.
+static int usb_hub_phy_access_sweep(uint32_t addr) {
+    int errors = 0;
+
+    for (uint8_t mode = 0; mode <= 1; mode++) {
+        for (uint8_t rw = 0; rw <= 1; rw++) {
+            // Walking ones on PHY_ADDR, PHY_WDATA fixed at a fixed pattern.
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                errors += usb_hub_phy_launch_access(addr, (uint8_t)(1u << bit),
+                                                    0xA5u, rw, mode);
+            }
+            // Walking zeros on PHY_ADDR (complement of walking ones).
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                errors += usb_hub_phy_launch_access(
+                    addr, (uint8_t)(~(1u << bit)), 0x5Au, rw, mode);
+            }
+            // Walking ones on PHY_WDATA, PHY_ADDR fixed.
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                errors += usb_hub_phy_launch_access(addr, 0x3Cu,
+                                                    (uint8_t)(1u << bit), rw,
+                                                    mode);
+            }
+            // Walking zeros on PHY_WDATA (complement of walking ones).
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                errors += usb_hub_phy_launch_access(
+                    addr, 0xC3u, (uint8_t)(~(1u << bit)), rw, mode);
+            }
+        }
+    }
+
+    // Pre-load PHY_RDATA[23:16] to a non-zero pattern via the plain RW path
+    // (no PHY_ACCESS set - this is the same write the RO/RW walk above
+    // already exercises), then launch one more access so hardware's
+    // unconditional "ep0_mem(C_HUB_PHY)(23 downto 16) <= hub_phy_rdata"
+    // (always 0 per the TB caveat above) demonstrably clears it. This is the
+    // only 1->0 transition this TB configuration can exercise on PHY_RDATA;
+    // see the TB CAVEAT note above for why a HW-driven 0->1 is not reachable
+    // here.
+    lsu_write_32(addr, (uint32_t)0xFFu << 16);
+    errors += usb_hub_phy_launch_access(addr, 0x00u, 0x00u, 0u, 0u);
+    {
+        uint32_t rd = (lsu_read_32(addr) >> 16) & 0xFFu;
+        if (rd != 0u) {
+            VPRINTF(LOW,
+                "ERROR: HUB HUB_ULPIDEBUG.PHY_RDATA not cleared by HW after "
+                "access: got 0x%x (expected 0x0 per utmi_vstatus tied to 0 "
+                "in this TB)  <-- possible RTL issue\n", rd);
+            errors++;
+        }
+    }
+
+    return errors;
+}
+
 void main(void) {
 
     int error_count = 0;
+
 
     VPRINTF(LOW, "=================\nMCU: USB dev0/dev1/hub register RW test\n=================\n\n");
 
@@ -901,8 +1025,14 @@ void main(void) {
     error_count += check_reg_bank(SOC_USB_COMBO_HUB_BASE_ADDR, "HUB",
                                   usb_hub_reg_table, USB_HUB_REG_TABLE_LEN);
 
+    // Phase 3: indirect PHY access walk (USB_PHY_REGISTER_ACCESS coverage
+    // target). Runs after the RW/RO walk so any PHY_RDATA value left behind
+    // by check_field_rw()/check_field_ro() is a known starting point, not
+    // relied upon.
+    error_count += usb_hub_phy_access_sweep(SOC_USB_COMBO_HUB_ULPIDEBUG);
 
     VPRINTF(LOW, "\nMCU: USB register RW test complete, error_count = %d\n",
+
             error_count);
 
     if (error_count == 0) {

@@ -179,15 +179,108 @@ class caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence
 
         #ERROR_SETTLE_DELAY;
 
+        // -------------------------------------------------------------------
+        // PID_DATA1 and PID_DATA2 unexpected branches (usb_pie.m.vhdl lines
+        // 2655/2680). Both guards default to "unexpected" on a fresh
+        // transfer on this same single-buffer endpoint, since
+        // iso_mdata_cnt_up resets to "00" and:
+        //   PID_DATA1: unexpected when iso_mdata_cnt_up /= "01" (HS)
+        //   PID_DATA2: unexpected when iso_mdata_cnt_up /= "10" (any speed)
+        // Neither needs a high-bandwidth endpoint - unlike PID_DATA0
+        // (unexpected only when iso_mdata_cnt_up /= "00", which requires a
+        // prior successful MDATA acceptance, impossible on this endpoint).
+        // Same directed OUT-token + bare data-PID pattern as the MDATA case
+        // above, no exception attached (legal PID, wrong sequencing
+        // position).
+        // -------------------------------------------------------------------
+        send_mismatched_data_pid(usb_cfg, svt_usb_packet::DATA1, "PhaseDATA1");
+        send_mismatched_data_pid(usb_cfg, svt_usb_packet::DATA2, "PhaseDATA2");
+
         // Release the MCU. Same rationale as every other err-injection body
         // - see request_mcu_stop() in caliptra_ss_usb_err_inject_base_sequence.
         request_mcu_stop(MSG_ID);
 
         `uvm_info(MSG_ID,
-            "Out-of-sequence MDATA scenario complete.", UVM_LOW)
+            "Out-of-sequence ISO data PID scenarios complete.", UVM_LOW)
+    endtask
+
+    // -------------------------------------------------------------------
+    // Shared helper for the DATA1/DATA2 phases: directed OUT token to EP2
+    // ISO OUT, followed by a bare data packet carrying the given PID, no
+    // exception attached. Bounded the same way as the MDATA injection in
+    // body() - the DUT answers neither packet (isochronous, no handshake;
+    // RTL returns to WF_IDLE without a DMA/ACK step).
+    // -------------------------------------------------------------------
+    protected task send_mismatched_data_pid(svt_usb_configuration usb_cfg,
+                                              svt_usb_packet::pid_name_enum pid,
+                                              string label);
+        caliptra_ss_usb_err_inject_packet_sequence tok_seq;
+        caliptra_ss_usb_err_inject_packet_sequence data_seq;
+        bit [7:0]                                  payload[$];
+        bit                                        sent;
+
+        tok_seq = caliptra_ss_usb_err_inject_packet_sequence::type_id::create(
+            {label, "_tok_seq"});
+        tok_seq.pid                  = svt_usb_packet::OUT;
+        tok_seq.device_address       = 7'(USBDC0_ADDR);
+        tok_seq.endpoint_number      = 4'(EP2_ISO);
+        tok_seq.payload_bytes.delete();
+        tok_seq.packet_configuration = usb_cfg;
+        tok_seq.attach_exception     = 1'b0;
+        tok_seq.msg_id               = MSG_ID;
+
+        `uvm_info(MSG_ID,
+            $sformatf({"[%s] Sending a directed OUT token to addr %0d ep ",
+                       "%0d so the PIE is in its data phase."},
+                      label, USBDC0_ADDR, EP2_ISO), UVM_LOW)
+
+        tok_seq.start(p_sequencer.usb_20_pkt_sequencer);
+
+        payload.delete();
+        for (int unsigned i = 0; i < 1024; i++)
+            payload.push_back(8'(i));
+
+        data_seq = caliptra_ss_usb_err_inject_packet_sequence::type_id::create(
+            {label, "_data_seq"});
+        data_seq.pid                  = pid;
+        data_seq.device_address       = 7'(USBDC0_ADDR);
+        data_seq.endpoint_number      = 4'(EP2_ISO);
+        data_seq.payload_bytes        = payload;
+        data_seq.packet_configuration = usb_cfg;
+        data_seq.attach_exception     = 1'b0;
+        data_seq.msg_id               = MSG_ID;
+
+        `uvm_info(MSG_ID,
+            $sformatf({"[%s] Sending %s to addr %0d ep %0d - unexpected on ",
+                       "a fresh ISO transfer (iso_mdata_cnt_up resets to ",
+                       "\"00\"). No handshake is the expected outcome."},
+                      label, pid.name(), USBDC0_ADDR, EP2_ISO), UVM_LOW)
+
+        sent = 1'b0;
+        fork : bounded_data_pid
+            begin
+                data_seq.start(p_sequencer.usb_20_pkt_sequencer);
+                sent = 1'b1;
+            end
+            begin
+                #MDATA_RESPONSE_BOUND;
+            end
+        join_any
+        disable bounded_data_pid;
+
+        if (!sent) begin
+            data_seq.kill();
+            `uvm_info(MSG_ID,
+                $sformatf({"[%s] %s packet did not complete within the ",
+                           "response bound. That is an acceptable outcome."},
+                          label, pid.name()), UVM_LOW)
+        end
+
+        #ERROR_SETTLE_DELAY;
     endtask
 
 endclass
+
 
 `endif // CALIPTRA_SS_USB_HS_DEV_ERR_ISO_PID_SEQ_SEQUENCE_SV
 
