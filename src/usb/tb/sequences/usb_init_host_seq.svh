@@ -34,6 +34,14 @@ class usb_init_host_seq extends usb_host_base_seq;
 
   localparam int unsigned ENUMERATION_REQUEST_COUNT = 7;
 
+  // USB 2.0 9.2.6.3 allows 2ms after SET_ADDRESS status. The bench already
+  // uses USB_VIP_SCALEDOWN_TIMER_VALUES; its documented USB2 timer set has no
+  // address-recovery entry. Keep the existing 5us allowance as explicit,
+  // additional test-only scaling, not unscaled USB timing compliance.
+  localparam time SET_ADDRESS_RECOVERY = 2ms;
+  localparam int unsigned SET_ADDRESS_RECOVERY_SCALE = 400;
+  localparam time SCALED_SET_ADDRESS_RECOVERY = SET_ADDRESS_RECOVERY / SET_ADDRESS_RECOVERY_SCALE;
+
   int unsigned validated_transfer_count;
 
   // Scenario inputs. This sequence runs on the SVT sequencer, which has no
@@ -41,6 +49,8 @@ class usb_init_host_seq extends usb_host_base_seq;
   // usb_env_cfg before start. Link bring-up is bounded separately from each
   // individual control transfer.
   usb_endpoint_cfg control_endpoint;
+  // The device service publishes completion of the initial reset/EP0 rearm.
+  uvm_event dut_ep0_ready;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time link_timeout = USB_DEFAULT_LINK_TIMEOUT;
   time control_transfer_timeout = USB_DEFAULT_CONTROL_TRANSFER_TIMEOUT;
@@ -331,6 +341,16 @@ class usb_init_host_seq extends usb_host_base_seq;
     );
   endtask
 
+  // Wait for device-side reset writes, independently of native link readiness.
+  task wait_for_dut_ep0_ready();
+    if (dut_ep0_ready === null) begin
+      `uvm_fatal("USB_INIT_HOST", "No device-side EP0 reset-readiness event was supplied")
+    end
+    `uvm_info("USB_INIT_HOST", "Waiting for device reset handling and EP0 rearm", UVM_LOW)
+    dut_ep0_ready.wait_on();
+    `uvm_info("USB_INIT_HOST", "Device reset handling and EP0 rearm complete; starting checked enumeration traffic", UVM_LOW)
+  endtask
+
   // Runs the fixed seven-request USB INIT flow and gates completion on all
   // seven transfer validations.
   virtual task body();
@@ -374,9 +394,8 @@ class usb_init_host_seq extends usb_host_base_seq;
       sof_sequence.start(p_sequencer.prot_service_sequencer);
       `uvm_info("USB_INIT_HOST", "SOF generation started", UVM_LOW)
     end
-    // Fixed framing-settling allowance before the first request, not a checked
-    // readiness condition or a protocol minimum established by this sequence.
-    #20us;
+    // Native link/SOF readiness does not establish completion of DUT CSR writes.
+    wait_for_dut_ep0_ready();
 
     // Steps 1-3 discover the default-address device, inspect its status, and
     // request the transition from address 0 to device_address.
@@ -414,10 +433,13 @@ class usb_init_host_seq extends usb_host_base_seq;
       no_payload
     );
 
-    // Allow a fixed interval after SET_ADDRESS validation before
-    // updating the host model for the new address; this delay does not poll
-    // DUT address activation.
-    #5us;
+    `uvm_info("USB_INIT_HOST",
+              $sformatf("Waiting for SET_ADDRESS recovery: USB2=%0t additional_test_scale=%0d effective=%0t; not unscaled timing coverage",
+                        SET_ADDRESS_RECOVERY, SET_ADDRESS_RECOVERY_SCALE, SCALED_SET_ADDRESS_RECOVERY), UVM_LOW)
+    #(SCALED_SET_ADDRESS_RECOVERY);
+    `uvm_info("USB_INIT_HOST", "Scaled SET_ADDRESS recovery elapsed; reconfiguring host before checked addressed traffic", UVM_LOW)
+    // Status completion plus the scaled recovery gates host reconfiguration.
+    // The next addressed transfer and final CSR readback prove activation.
     begin
       svt_usb_configuration addressed_cfg;
 
@@ -479,13 +501,11 @@ class usb_init_host_seq extends usb_host_base_seq;
       configured_payload
     );
 
-    // Preserve a fixed post-enumeration observation window; this sequence
-    // adds no active checks during the delay. Then gate completion on exactly
-    // seven validated transfers, rather than treating elapsed time as proof
-    // of success.
-    #50us;
-    if (validated_transfer_count !== 7) begin
-      `uvm_fatal("USB_INIT_HOST", $sformatf("USB INIT validated %0d control transfers instead of exactly 7", validated_transfer_count))
+    // Each transfer watch already observed terminal completion.
+    if (validated_transfer_count !== ENUMERATION_REQUEST_COUNT) begin
+      `uvm_fatal("USB_INIT_HOST",
+                 $sformatf("USB INIT validated %0d control transfers instead of exactly %0d",
+                           validated_transfer_count, ENUMERATION_REQUEST_COUNT))
     end
     completed = 1'b1;
     `uvm_info("USB_INIT_HOST", $sformatf("USB INIT host enumeration complete: validated_count=%0d/7 address=%0d configuration=1", validated_transfer_count, device_address), UVM_LOW)
