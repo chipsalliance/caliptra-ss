@@ -94,7 +94,6 @@ targets:
       - $COMPILE_ROOT/coverage
     files:
       - $COMPILE_ROOT/coverage/usb_cov_if.sv
-      - $COMPILE_ROOT/coverage/usb_cov_bind.sv
 ---
 provides: [usb_top_tb]
 schema_version: 2.4.0
@@ -113,6 +112,12 @@ targets:
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest/sverilog/include
     files:
+      # usb_cov_bind.sv binds by MODULE TYPE to ip_xxx_3511_hs_mem_compound_wrapper
+      # and usb_compound_ahb_decoder, both of which are instantiated here. It is
+      # compiled only via this target (not usb_coverage) so that it is not
+      # pulled in a second time when caliptra_ss_top_tb_coverage also requires
+      # usb_coverage, which would redeclare the module.
+      - $COMPILE_ROOT/coverage/usb_cov_bind.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
@@ -173,3 +178,5 @@ global:
         # Config properties enable_prot_tracing, enable_link_tracing, and
         # enable_phys_tracing gate which layers are written.
         #- '+svt_debug_opts'
+
+# File contains AI-generated response based on internal company sources
