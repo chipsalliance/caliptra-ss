@@ -103,6 +103,52 @@ module usb_cov_bind;
     .utmi_linestate         (utmi_linestate)
   );
 
+  // ---------------------------------------------------------------------------
+  // OCP recovery implementation coverage (SETUP ownership, arbiter state,
+  // DMA completion and CMS FIFO diagnostics)
+  // ---------------------------------------------------------------------------
+  // usb_cov_if is an implementation-coverage interface (see usb_cov_if.sv); its
+  // inputs come from two different sub-instances inside the wrapper's VHDL hub
+  // compound (u_hub_compound) and the OCP recovery datapath (u_ocp_recovery),
+  // which is why it is bound by hierarchical path relative to the wrapper
+  // rather than by port list like the two observers above.
+  `define USB_COV_ARB u_hub_compound.usb_ocp_recovery_post_sync_arb_1
+  `define USB_COV_REG u_hub_compound.usb_reg_if_1
+  `define USB_COV_REC u_ocp_recovery
+
+  bind ip_xxx_3511_hs_mem_compound_wrapper usb_cov_if i_usb_cov_if (
+    .hclk                       (`USB_COV_ARB.hclk),
+    .hresetn                    (`USB_COV_ARB.hresetn),
+    .sync_busreset               (`USB_COV_ARB.sync_busreset),
+    .dev0_local_reset_c          (`USB_COV_ARB.dev0_local_reset_c),
+    .new_setup_c                 (`USB_COV_ARB.new_setup_c),
+    .setup_owner_ocp_o           (`USB_COV_ARB.setup_owner_ocp_o),
+    .post_sync_arb_state_o       (`USB_COV_ARB.post_sync_arb_state_o),
+    .usbreg_setup                (`USB_COV_REG.usbreg_setup),
+    .ocp_claim_abort_i           (`USB_COV_ARB.ocp_claim_abort_i),
+    .fw_protocol_error_req_i     (`USB_COV_ARB.fw_protocol_error_req_i),
+    .ep0_ocp_owner_r             (`USB_COV_ARB.ep0_ocp_owner_r),
+    .setup_complete_c            (`USB_COV_ARB.setup_complete_c),
+    .setup_valid_c               (`USB_COV_ARB.setup_valid_c),
+    .setup_claim_c               (`USB_COV_ARB.setup_claim_c),
+    .dma_set_int                 (`USB_COV_REG.dma_set_int),
+    .dma_txn_done_c              (`USB_COV_ARB.dma_txn_done_c),
+    .dma_req_forward_c           (`USB_COV_ARB.dma_req_forward_c),
+    .setup_dma_match_c           (`USB_COV_ARB.setup_dma_match_c),
+    .sync_sieint_endtransfer_o   (`USB_COV_ARB.sync_sieint_endtransfer_o),
+    .sync_sieint_success_o       (`USB_COV_ARB.sync_sieint_success_o),
+    .fifo_empty                  (`USB_COV_REC.u_a4_cms_fifo.fifo_empty),
+    .fifo_full                   (`USB_COV_REC.u_a4_cms_fifo.fifo_full),
+    .fifo_region_reset           (`USB_COV_REC.fifo_region_reset),
+    .fifo_overflow               (`USB_COV_REC.fifo_overflow),
+    .image_push_done             (`USB_COV_REC.image_push_done),
+    .batch_aborted               (`USB_COV_REC.batch_aborted)
+  );
+
+  `undef USB_COV_ARB
+  `undef USB_COV_REG
+  `undef USB_COV_REC
+
 `endif // USB_FCOV
 
 endmodule : usb_cov_bind
