@@ -1361,6 +1361,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                        randomize(). Leave empty for IN transfers and
     //                        for OUT transfers that want VIP-generated data.
     //   no_zero_length_end - adds aligned_transfer_ends_with_zero_length==0.
+    //                        REQUIRES byte_count to be a whole multiple of the
+    //                        endpoint max packet size. Forcing the flag to 0
+    //                        forces the VIP's aligned_transfer to 1
+    //                        (svt_usb_transfer valid_ranges), and that in turn
+    //                        constrains byte_count % max_packet_size == 0
+    //                        (fixed_dev_ep_ustr_valid_ranges). A byte_count
+    //                        that is not aligned makes the solve unsatisfiable
+    //                        and randomize() fails outright - the VIP does not
+    //                        quietly resize the transfer.
     //   single_isoc_txn    - adds first_isoc_transaction==1 and
     //                        last_isoc_transaction==1, i.e. the transfer is a
     //                        self-contained isochronous transaction.

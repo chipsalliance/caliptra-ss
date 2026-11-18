@@ -156,7 +156,9 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_vbus_driver.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_suspend_resume_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_device_wakeup_checker.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_usb_err_type_checker.sv
       - $COMPILE_ROOT/testbench/usb_dev_addr_probe.sv
+      - $COMPILE_ROOT/testbench/usb_cov_probe_caliptra_ss.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
       - $COMPILE_ROOT/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
@@ -216,6 +218,9 @@ global:
         - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
         - +define+SIMULATION
+        # Enables the USB compound functional coverage observers, binds and
+        # probe. Without it those files compile to nothing.
+        - +define+USB_FCOV
         # --- Synopsys USB SVT VIP compile options ---
         - +define+SVT_USB_MAX_DEVICE_DEBUG_PORT=8
         - +define+SVT_UVM_TECHNOLOGY
@@ -290,3 +295,5 @@ global:
         # Allow gcc to tokenize UTF-8 source correctly (fixes Unicode curly-quote
         # characters in #error text inside a false #if branch in uvm_hdl_vcs.c)
         - '-finput-charset=UTF-8'
+
+# File contains AI-generated response based on internal company sources
