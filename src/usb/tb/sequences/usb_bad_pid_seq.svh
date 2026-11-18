@@ -17,22 +17,11 @@
 // of the armed IN descriptor, and proves subsequent bulk OUT recovery traffic
 // completes cleanly.
 //
-// Relies on the Synopsys SVT USB VIP's built-in svt_usb_packet_exception
-// (PID_CHECK_ERROR in exception/class_svt_usb_packet_exception.html) and
-// built-in protocol/link checks (enabled by default via
-// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
-// coverage/class_svt_usb_protocol_ep_sc.html, and
-// coverage/class_svt_usb_link_20_sc.html):
-//   - svt_usb_link_20_sc:
-//     * unexpected_response_check: Verifies the device remains silent and does
-//       not return DATA0/NAK when an IN token with an invalid PID check field
-//       targets an armed IN endpoint.
-//   - DUT INFO.ERR_CODE & EP1 IN descriptor:
-//     * Verifies INFO.ERR_CODE latches ERROR_PID_ENCODING (4'h1) and the armed
-//       EP1 IN descriptor remains active with its full byte count untouched.
-//   - svt_usb_protocol_ep_sc:
-//     * packet_error_check, data_toggle_check, and valid_device_response_check
-//       on the post-error bulk OUT recovery transfer.
+// Uses native PID_CHECK_ERROR injection (exception/class_svt_usb_packet_exception.html)
+// and supported link/physical checking. Endpoint protocol checks are unsupported
+// in this UTMI 4-stack topology and are not credited here.
+// Explicit DUT error/descriptor checks establish rejection without consumption;
+// EPSKIP returns ownership before cleanup, and the bulk helper checks recovery.
 class usb_bad_pid_seq extends usb_resume_recovery_seq;
   `uvm_object_utils(usb_bad_pid_seq)
 
@@ -107,7 +96,18 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
         $sformatf("Malformed-PID IN token modified armed EP1 IN descriptor: %s", describe_entry(in_entry))
       )
     end
+    // Programmers Guide 4.2 forbids rewriting an Active command/status word.
+    `uvm_info("USB_BAD_PID", "Malformed PID left the IN descriptor owned; requesting EPSKIP before cleanup", UVM_LOW)
+    request_endpoint_skip(in_endpoint);
+    wait_for_endpoint_skip_clear(in_endpoint, status_timeout);
+    in_entry.active = 1'b0;
+    check_endpoint_entry_writeback(in_endpoint, in_entry, "Bad-PID cleanup skip altered more than Active");
+    `uvm_info("USB_BAD_PID",
+              $sformatf("EPSKIP returned IN ownership with residual/pointer preserved: %s", describe_entry(in_entry)), UVM_LOW)
+    clear_endpoint_interrupt(in_endpoint);
     write_endpoint_entry(in_endpoint, '0);
+    check_endpoint_entry_writeback(in_endpoint, '0, "Bad-PID cleanup did not clear the retired IN descriptor");
+    `uvm_info("USB_BAD_PID", "Bad-PID IN cleanup verified: skip retired ownership and descriptor cleared", UVM_LOW)
     sof_on_sequence =
         svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
             "sof_on_sequence");
