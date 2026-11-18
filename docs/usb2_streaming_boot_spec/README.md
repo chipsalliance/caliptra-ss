@@ -198,14 +198,16 @@ The Recovery stack receives the USB device subordinate reset as
 - **Handwritten Recovery logic.** `usb_ocp_recovery_top`, A2, A3, A4, and the
   post-sync arbiter operate in the `dev_axi_aclk`/hclk domain. A4's FIFO
   storage uses the same reset and has a separate synchronous clear for FIFO
-  region reset and batch teardown.
+  region reset and USB/Device 0 local reset.
 - **Generated register block.** The SystemRDL definition declares `rst_ni` as
   its active-low reset. `usb_ocp_recovery_top` drives the generated block from
   its own `rst_ni`.
 - **USB and Device 0 local reset.** USB bus reset, Device 0 port reset, or
   Device 0 disconnect clears retained claim, packet staging, reservations,
-  response snapshots, and SETUP success-mask tracking. This local cleanup
-  does not reset the shared compound DMA.
+  response snapshots, SETUP success-mask tracking, and CMS FIFO contents,
+  indices, occupancy, and batch notification. Held disconnect keeps CMS clear.
+  `BATCH_ABORTED` history is preserved. The shared compound DMA follows the
+  USB controller's reset lifecycle.
 - **Assertions.** Handwritten assertion blocks are disabled while their
   active-low reset is asserted.
 
@@ -375,9 +377,11 @@ without modifying the FIFO or setting an OCP protocol error.
 
 A validated 64-byte packet drains as 16 consecutive DWORD transfers. STATUS
 remains NAK while validation/drain is incomplete. A partial final DWORD uses
-byte enables and zero padding. `INDIRECT_FIFO_CTRL.IMAGE_SIZE` is programmed
-and reported in DWORD units; byte-exact final image length, if required, comes
-from the image format or a higher-level firmware contract.
+byte enables and zero padding. Full DATA acceptance establishes FIFO
+commitment. A replacement SETUP preserves the accepted packet and
+its drain into CMS. `INDIRECT_FIFO_CTRL.IMAGE_SIZE` is programmed and reported
+in DWORD units; byte-exact final image length, if required, comes from the
+image format or a higher-level firmware contract.
 
 `payload_available` asserts when the FIFO reaches 64 DWORDs, or when a
 nonempty terminal image batch completes, and remains asserted until the FIFO
@@ -438,7 +442,9 @@ the resource. Once an EXT transfer is admitted, it remains in flight until
 acknowledgement.
 
 Every EXT FIFO control, status, and data access is deferred while a claimed
-USB FIFO command or packet reservation owns the FIFO aperture. EXT
+USB FIFO command or packet reservation owns the FIFO aperture, and at the
+reset-entry flush boundary. During held USB bus reset or Device 0 disconnect,
+FIFO control/status accesses resume after that boundary. EXT
 `INDIRECT_FIFO_DATA` reads additionally wait for `payload_available`.
 
 ### 3.7 Firmware-owned recovery procedure
@@ -457,19 +463,26 @@ restart, publishes the result, and clears the request.
 Agent `DEVICE_STATUS` read returns and clears it; firmware reads are
 non-destructive.
 
-If an incomplete FIFO DATA batch is interrupted by replacement SETUP, bus
-reset, Device 0 disconnect/reset, or firmware claim abort, hardware clears
-packet staging/reservation, flushes the incomplete batch, and sets
-`CALIPTRA_STATUS.BATCH_ABORTED`. Firmware may then request
-`OCP_PROTOCOL_ERROR_GENERAL` (`0xFF`). That request is accepted only while
-`BATCH_ABORTED` is asserted and self-clears. It records
-`DEVICE_STATUS.PROT_ERROR=0xFF`; it also enters persistent protocol STALL only
-if a Device 0 OCP claim remains active.
+A replacement SETUP cancels an incomplete FIFO DATA command,
+discards its unaccepted packet staging, releases its reservation, and sets
+`CALIPTRA_STATUS.BATCH_ABORTED`. Fully accepted DATA continues draining into
+CMS as described in Section 3.5.
 
-`INDIRECT_FIFO_CTRL.RESET` atomically clears FIFO state and self-clears for
-subsequent readback. `CALIPTRA_CTRL.OCP_CLAIM_ABORT` is a firmware-only
-write-one request that releases the retained claim, protocol STALL, staging,
-and reservation and then self-clears.
+`CALIPTRA_CTRL.OCP_CLAIM_ABORT` is a firmware-only write-one request that
+releases the retained claim and protocol STALL, clears packet staging and
+reservation, and then self-clears. It takes priority over packet acceptance
+and drain. Canceling an incomplete FIFO command or a pending accepted-packet
+drain sets `BATCH_ABORTED`; DWORDs already published to CMS remain committed.
+
+`BATCH_ABORTED` is sticky cancellation history. Firmware may request
+`OCP_PROTOCOL_ERROR_GENERAL` (`0xFF`) while it is set. Hardware self-clears
+the request and records `DEVICE_STATUS.PROT_ERROR=0xFF`. If a Device 0 OCP
+claim remains active, the arbiter also enters persistent protocol STALL.
+
+`INDIRECT_FIFO_CTRL.RESET` atomically clears FIFO state and `BATCH_ABORTED`,
+sets `CALIPTRA_STATUS.REGION_RESET`, and self-clears for subsequent readback.
+`REGION_RESET` records explicit FIFO resets and is firmware write-one-clear.
+A new FIFO reset event wins a simultaneous `REGION_RESET` clear.
 
 ---
 
@@ -554,9 +567,9 @@ an AXI master it interacts with the OCP Recovery register aperture:
 5. **Handle activation.** Observe `ACTIVATE_REC_IMG == 0x0F`, perform the
    platform activation/restart required by firmware policy, publish success or
    failure, and clear the request.
-6. **Handle interrupted batches.** If `BATCH_ABORTED` is set, discard any
-   partial image state and, when appropriate, request firmware-originated
-   general protocol error `0xFF`.
+6. **Handle interrupted batches.** If `BATCH_ABORTED` is set, reconcile retained
+   FIFO data and image progress and, when appropriate, request
+   firmware-originated general protocol error `0xFF` while the flag is set.
 
 OCP commands used on this path include `DEVICE_STATUS`,
 `INDIRECT_FIFO_CTRL`, `INDIRECT_FIFO_STATUS`, `INDIRECT_FIFO_DATA`,
@@ -591,14 +604,16 @@ The aperture includes the OCP commands `PROT_CAP`, `DEVICE_ID`,
 
 ### 7.1 Diagnostic SETUP and arbiter visibility
 
-These Caliptra-only words are outside the USB command set. Both are read-only,
-non-destructive, and in the same clock domain as the post-sync arbiter.
+These Caliptra-only words are outside the USB command set and in the same clock
+domain as the post-sync arbiter. Reads are non-destructive.
+`CALIPTRA_STATUS.REGION_RESET` is write-one-clear; the remaining fields and
+`CALIPTRA_SETUP_DEBUG` are read-only.
 Offsets below are relative to the Recovery aperture (add `0x800` for the
 shared Combo-local address). Use generated register/field symbols in software.
 
 | Register | Recovery offset | Fields |
 |---|---|---|
-| `CALIPTRA_STATUS` | `0x204` | Existing FIFO status `[3:0]`; live `POST_SYNC_ARB_STATE[6:4]`; `[31:7]` zero |
+| `CALIPTRA_STATUS` | `0x204` | `REGION_RESET[0]` (W1C); FIFO status `[3:1]`; live `POST_SYNC_ARB_STATE[6:4]`; `[31:7]` zero |
 | `CALIPTRA_SETUP_DEBUG` | `0x208` | `GENERATION[11:0]`; `OWNER_OCP[12]`; `[31:13]` zero |
 
 `GENERATION` advances modulo 4096 once per accepted complete, successful,
@@ -641,9 +656,10 @@ or authorizes firmware dispatch.
   successfully completed replacement SETUP, bus reset, Device 0 local reset,
   or firmware claim abort. A corrupt replacement SETUP does not release it.
 - **Packet and batch integrity.** A USB OUT packet is committed only after
-  complete-packet validation. A superseding SETUP or teardown during an
-  incomplete FIFO write flushes the incomplete batch and sets
-  `BATCH_ABORTED`; a CRC retry does neither.
+  complete-packet validation. A superseding SETUP cancels an incomplete FIFO
+  write and sets `BATCH_ABORTED`, while accepted DATA and CMS contents are
+  preserved. Firmware claim abort discards the remaining RX drain and
+  preserves DWORDs already published to CMS.
 - **FIFO occupancy.** All 64 entries are usable. Equal indices are legal at
   empty and full; `EMPTY` and `FULL` are authoritative.
 - **Reservation before acceptance.** PING/DATA acceptance implies capacity is
@@ -655,8 +671,8 @@ or authorizes firmware dispatch.
   admission.
 - **Bounded drain.** A valid 64-byte packet drains as 16 consecutive accepted
   DWORDs while STATUS remains NAK.
-- **Local teardown.** Device 0 disconnect/reset clears Recovery-local state
-  without resetting the shared compound DMA.
+- **Local teardown.** USB bus reset and Device 0 disconnect/reset clear
+  Recovery-local state and CMS while preserving `BATCH_ABORTED` history.
 
 ---
 
@@ -670,10 +686,6 @@ or authorizes firmware dispatch.
 ---
 
 ## 10. Implemented mirrored-SETUP firmware contract
-
-**Status: implemented.** The former trap/replay architecture has been replaced
-by post-synchronizer mirrored SETUP. The legacy firmware register interface is
-unchanged.
 
 The implementation forwards every real Device 0 EP0 SETUP request/data/
 completion to the shared legacy DMA while observing the same eight-byte
@@ -757,13 +769,13 @@ Notification-qualified legacy EP0 service concerns MCU device firmware,
 not per-command service of OCP Streaming Boot. Caliptra's FIFO drain and
 firmware-owned Recovery status obligations in Sections 3.7 and 6 remain.
 
-For an active, incomplete `INDIRECT_FIFO_DATA` write, a replacement SETUP,
-USB bus reset, Device 0 disconnect/reset, or firmware `OCP_CLAIM_ABORT` aborts
-the operation whether RX is still arriving, fully staged, partly draining, or
-waiting for STATUS. The batch-abort indication describes the interrupted FIFO
-operation, not merely a cycle on which a FIFO push occurred. Other OCP
-commands, a successfully completed transfer, and a CRC retry alone do not set
-`BATCH_ABORTED`.
+`INDIRECT_FIFO_DATA` commitment follows successful full-DATA acceptance.
+Replacement SETUP preserves accepted DATA while canceling incomplete writes.
+Firmware `OCP_CLAIM_ABORT` purges pending RX, including an accepted packet's
+remaining drain, while preserving DWORDs already published to CMS.
+Command/drain cancellation latches `BATCH_ABORTED` as described in Section 3.7.
+USB bus reset and Device 0 disconnect/reset clear CMS and Recovery-local
+state as described in Section 3.2.
 
 After observing `BATCH_ABORTED`, firmware may request general error `0xFF`.
 Hardware accepts that request only while the batch-aborted condition is
@@ -772,12 +784,10 @@ Device 0 OCP claim remains active, the arbiter also holds Device 0 EP0 in
 persistent protocol STALL. A completed Recovery Agent `DEVICE_STATUS` read
 returns and clears the error.
 
-**Reconnect assumption:** a USB bus reset occurs after Device 0 reconnection
-and before new endpoint traffic. Existing shared DMA state may remain valid if
-disconnect suppressed its natural `endtransfer`; reconnect reset flushes that
-state. Recovery-local claim, staging, reservation, success-mask, and response
-tracking do not wait for shared DMA retirement. Reset is teardown, not a
-successful transfer completion.
+**Reconnect requirement:** the host performs a USB bus reset after Device 0
+reconnection and before new endpoint traffic. That reset flushes shared DMA
+state. Recovery-local claim, staging, reservation, success-mask, response
+tracking, and CMS are cleared at the local reset boundary.
 
 ### 10.4 Verification boundaries
 
