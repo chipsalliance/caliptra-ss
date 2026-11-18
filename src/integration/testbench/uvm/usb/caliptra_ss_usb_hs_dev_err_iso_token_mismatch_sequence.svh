@@ -66,18 +66,28 @@
 // caliptra_ss_usb_hs_dev_err_iso_pid_seq and caliptra_ss_usb_hs_dev_err_toggle.
 // attach_exception stays cleared on every packet this sequence sends.
 //
-// WHY A DIRECTED PACKET SEQUENCE, NOT THE TRANSFER SEQUENCER
+// WHY THE ARMING TRANSFER USES do_data_xfer() BUT THE MISMATCHED TOKEN
+// DOES NOT
 //
 // The VIP's svt_usb_transfer API always keeps a transaction's token/data/
 // handshake grouped and time-ordered; it has no way to request "send this
 // EP2 OUT token early, before the DUT believes the pending ISO phase has
-// cleared." So, like caliptra_ss_usb_hs_dev_err_iso_pid_seq and
-// caliptra_ss_usb_hs_dev_err_toggle, this sequence drives the mismatched
-// tokens directly on the packet sequencer via
-// caliptra_ss_usb_err_inject_packet_sequence, reusing the SOF-anchored ISO
-// OUT pattern from caliptra_ss_usb_hs_dev_iso_out_sequence (do_data_xfer with
-// single_isoc_txn=1) to put the DUT into the iso_out_pending_r = '1' state,
-// then sending each mismatched token before the next SOF boundary.
+// cleared." So the deliberately out-of-turn tokens below must be driven
+// directly on the packet sequencer via caliptra_ss_usb_err_inject_packet_
+// sequence. The arming ISO OUT that sets iso_out_pending_r/iso_in_pending_r
+// in the first place is a completely ordinary, well-formed transfer, so it
+// is driven through do_data_xfer() (the same helper
+// caliptra_ss_usb_hs_dev_err_pkt_unexpected's do_iso_out() uses) so the
+// VIP's transfer-routing monitor registers the device/endpoint correctly.
+// An earlier version of this file drove the arming phase on the raw packet
+// sequencer as well, reasoning that mixing layers was what caused
+// "[register_fail:...rx_packet_routed_check] Can't tell where this packet
+// should go, No device with matching address found!" in a real run - that
+// was backwards: a regression run proved the raw-sequencer arming is what
+// triggers rx_packet_routed_check (err_pkt_unexpected, which only ever
+// arms via do_data_xfer(), never hits it), and the fix is to keep the
+// arming transfer on the transfer-level API while leaving only the
+// intentionally-illegal mismatched token on the raw sequencer.
 //
 // NO HANDSHAKE IS EXPECTED
 //
@@ -112,9 +122,12 @@ class caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence
         inject_on_label = "";
     endfunction
 
-    // Arms the DUT into iso_out_pending_r = '1' by sending one ordinary ISO
-    // OUT data phase through the transfer-level helper, exactly as
-    // caliptra_ss_usb_hs_dev_err_pkt_unexpected's do_iso_out() does.
+    // Arms the DUT into iso_out_pending_r = '1' by driving one ordinary ISO
+    // OUT transfer (data phase only, no exception) through the
+    // transfer-level do_data_xfer() helper - see the file header's
+    // "WHY THE ARMING TRANSFER USES do_data_xfer()" section for why this is
+    // required instead of driving the arming phase on the raw packet
+    // sequencer.
     protected task do_iso_out(svt_usb_agent         host_agent_h,
                               svt_usb_configuration usb_cfg,
                               string                label);
@@ -142,9 +155,11 @@ class caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence
             .single_isoc_txn (1));
     endtask
 
+
     // Sends one directed, unmodified token to EP2 while iso_out_pending_r is
     // expected to still be '1', and bounds the wait for any reply (none is
-    // expected - see the file header).
+    // expected - see the file header). This deliberately out-of-turn token
+    // has to stay on the raw packet sequencer - see the file header.
     protected task send_mismatched_token(svt_usb_configuration        usb_cfg,
                                           svt_usb_packet::pid_name_enum pid,
                                           string                        label);
@@ -214,11 +229,17 @@ class caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence
         // --- Site 2211: PID_OUT while iso_in_pending_r = '1' --------------
         // iso_in_pending_r is set by set_iso_in_pending (usb_pie.m.vhdl line
         // 2401), reached from an IN token accepted on an isochronous
-        // endpoint. EP2 IN is configured as isochronous by the test class
-        // below; a bare directed IN token (no data expected back, since the
-        // firmware here never arms a real ISO IN buffer) is enough to reach
-        // the accept branch and set the flag before the mismatched OUT
-        // token below arrives.
+        // endpoint with epinfo_active='1' (usb_dma.m.vhdl epinfo_iso derives
+        // from the descriptor's TYPE_PERIODIC bit). The firmware
+        // (caliptra_ss_usb_hs_dev_err_iso_token_mismatch.c,
+        // usb_ep2_in_arm_iso()) arms EP2 IN as ACTIVE and TYPE_PERIODIC with
+        // NBYTES bits [11:10] = "01" so iso_in_pending_r survives this first
+        // IN data packet instead of being cleared immediately - see that
+        // function's header comment for the NBYTES rationale. A bare
+        // directed IN token is enough to reach the accept branch and set
+        // the flag before the mismatched OUT token below arrives; no data
+        // payload is needed since the RTL checks the token/endpoint state,
+        // not the payload content.
         send_mismatched_token(usb_cfg, svt_usb_packet::IN,    "in_arm_seq");
         send_mismatched_token(usb_cfg, svt_usb_packet::OUT,   "out_mismatch_seq");
         #ERROR_SETTLE_DELAY;
