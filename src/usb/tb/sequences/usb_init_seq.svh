@@ -57,6 +57,8 @@ class usb_init_seq extends usb_base_seq;
   byte unsigned current_configuration;
   int unsigned serviced_request_count;
   bit host_scenario_completed;
+  // Per-invocation, persistent notification for the first host SETUP gate.
+  uvm_event dut_ep0_ready;
 
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
@@ -122,6 +124,7 @@ class usb_init_seq extends usb_base_seq;
         do begin
           ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
           if (!(command & vbus_mask)) begin
+            // Pace VBUS polling while the PHY attach/debounce completes.
             #100ns;
           end
         end while (!(command & vbus_mask));
@@ -137,6 +140,7 @@ class usb_init_seq extends usb_base_seq;
     end
 
     `uvm_info("USB_INIT_SEQ", "VBUS detected; allowing the remote PHY to settle before DEV_EN/DCON", UVM_LOW)
+    // Match the remote PHY's 20us poweron_auto_attach_delay in usb_vip_cfg_builder.
     #20us;
     write_devcmdstat(enable_connect_value);
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
@@ -167,6 +171,8 @@ class usb_init_seq extends usb_base_seq;
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
     command &= ~dev_addr_mask;
     write_devcmdstat(command);
+    dut_ep0_ready.trigger();
+    `uvm_info("USB_INIT_SEQ", "USB reset handled and EP0 rearmed; initial host traffic may proceed", UVM_LOW)
   endtask
 
   // Decode the two little-endian words written by hardware into the EP0 SETUP
@@ -363,6 +369,7 @@ class usb_init_seq extends usb_base_seq;
           service_setup_request();
         end
       end else begin
+        // Pace EP0 polling while waiting for the next controller interrupt.
         #50ns;
       end
     end
@@ -380,6 +387,7 @@ class usb_init_seq extends usb_base_seq;
     host_scenario_completed = 1'b0;
     host_sequence = usb_init_host_seq::type_id::create("host_sequence");
     host_sequence.control_endpoint = ep0_out_endpoint;
+    host_sequence.dut_ep0_ready = dut_ep0_ready;
     host_sequence.device_address = p_sequencer.cfg.device_address;
     host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
     host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
@@ -392,11 +400,16 @@ class usb_init_seq extends usb_base_seq;
 
   // Initialize the controller, then run the host's transfers and DUT EP0
   // service concurrently. Publish completion only when both sides and the
-  // address/configuration shadows agree on the final enumerated state.
+  // hardware address and protocol shadows agree on the final enumerated state.
   virtual task body();
+    logic [31:0] command;
+    logic [31:0] dev_addr_mask;
+    logic [31:0] expected_dev_addr;
+
     completed = 1'b0;
     host_scenario_completed = 1'b0;
     serviced_request_count = 0;
+    dut_ep0_ready = new("dut_ep0_ready");
     if (p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_INIT_SEQ", "INIT requires the SVT host virtual sequencer")
     end
@@ -420,6 +433,20 @@ class usb_init_seq extends usb_base_seq;
         service_ep0();
       end
     join
+
+    // USB 2.0 9.4.6: later requests use the assigned address. Read after those
+    // SETUPs, not while the controller still exposes its staged address.
+    dev_addr_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_ADDR);
+    expected_dev_addr = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_ADDR, p_sequencer.cfg.device_address);
+    ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
+    if ((command & dev_addr_mask) !== expected_dev_addr) begin
+      `uvm_fatal("USB_INIT_SEQ",
+                 $sformatf("Hardware DEV_ADDR readback mismatch: DEVCMDSTAT=0x%08h expected address=%0d",
+                           command, p_sequencer.cfg.device_address))
+    end
+    `uvm_info("USB_INIT_SEQ",
+              $sformatf("Hardware DEV_ADDR readback verified: address=%0d DEVCMDSTAT=0x%08h", p_sequencer.cfg.device_address, command),
+              UVM_LOW)
 
     completed = host_scenario_completed &&
                 serviced_request_count == expected_setup_request_count() &&
