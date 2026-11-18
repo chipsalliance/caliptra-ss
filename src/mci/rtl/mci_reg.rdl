@@ -34,14 +34,6 @@ addrmap mci_reg {
         desc = "Asserted when a there is a valid AXI request from MCU.";
     } axi_mcu_req;
     
-    // SS_CONFIG_DONE Signals
-    signal {
-        desc = "Indicates when SS configuration is unlocked, inverse of SS_CONFIG_DONE.";
-    } ss_config_unlock;
-    signal {
-        desc = "Indicates when SS sticky configuration is unlocked, inverse of SS_CONFIG_DONE_STICKY.";
-    } ss_config_unlock_sticky;
-    
     // Capabilities Lock Signals
     signal {
         desc = "Indicates when there is a valid AXI request from MCU or SoC Config Agent AND the CAP_LOCK register is not set";
@@ -940,25 +932,27 @@ addrmap mci_reg {
         name = "Subsystem Config Done Sticky";
         desc = "Set to indicate that all sticky configuration registers have been populated in MCI.
                 Locks configuration registers from further modification.
+                [br]Writable by MCU or the SoC Config Agent only.
                 [br]Sticky until cold reset once set.
                 [br]TAP Access [in debug/manuf mode]: RW";
-        field {sw = rw; hw=rw; we; swwe=ss_config_unlock_sticky; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; 
+        field {sw = rw; hw=rw; we; swwe=axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky; swmod=true; resetsignal = mci_pwrgood;} done=1'h0;
     } SS_CONFIG_DONE_STICKY @0x440;
 
     reg {
         name = "Subsystem Config Done";
         desc = "Set to indicate that all configuration registers have been populated in MCI.
                 Locks configuration registers from further modification.
+                [br]Writable by MCU or the SoC Config Agent only.
                 [br]Sticky until warm reset once set.
                 [br]TAP Access [in debug/manuf mode]: RW";
-        field {sw = rw; hw=rw; we; swwe=ss_config_unlock; swmod=true; resetsignal = mci_rst_b;} done=1'h0; 
+        field {sw = rw; hw=rw; we; swwe=axi_mcu_or_mci_soc_config_req__ss_config_unlock; swmod=true; resetsignal = mci_rst_b;} done=1'h0;
     } SS_CONFIG_DONE;
 
     reg {
         name = "Production Debug Unlock PK HASH";
-        desc = "Production Debug Unlock PK HASH. Configured by MCU and locked when SS_CONFIG_DONE_STICKY is set.
+        desc = "Production Debug Unlock PK HASH. Configured by MCU or the SoC Config Agent and locked when SS_CONFIG_DONE_STICKY is set.
                 Once SS_CONFIG_DONE_STICKY is set value persists until cold reset.";
-        field {sw = rw; hw = r; swwe=ss_config_unlock_sticky; resetsignal = mci_pwrgood;} hash[32]=32'h0; 
+        field {sw = rw; hw = r; swwe=axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky; resetsignal = mci_pwrgood;} hash[32]=32'h0;
     } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
 
     // ----------------------------------------

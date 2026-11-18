@@ -13,29 +13,19 @@
 // limitations under the License.
 
 // Exchanges two packets in each direction through double-buffered EP1.
+// Optional response stress then reuses EP1 with one buffer and multiple items.
 //
-// Relies on the Synopsys SVT USB VIP's built-in BULK_OUT_TRANSFER and
-// BULK_IN_TRANSFER sequences (transaction/class_svt_usb_transfer.html) and
-// built-in protocol/link/physical checks (enabled by default via
-// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
-// coverage/class_svt_usb_protocol_ep_sc.html,
-// coverage/class_svt_usb_link_20_sc.html, and
-// coverage/class_svt_usb_physical_20_sc.html):
-//   - svt_usb_transfer::results_status[5]:
-//     Verifies the 2-packet (1024 B) bulk IN transfer is terminated by a
-//     zero-length DATA0 packet when aligned_transfer_ends_with_zero_length == 1.
-//   - svt_usb_protocol_ep_sc:
-//     * data_toggle_check: Checks DATA0 -> DATA1 toggle alternation across
-//       buffers 0 and 1 (and DATA0 on the terminating IN ZLP).
-//     * packet_error_check: Checks PID, CRC5, CRC16, bitstuff, and framing.
-//     * valid_device_data_check: Checks IN packet lengths against 512 B
-//       wMaxPacketSize and expected transfer byte counts.
-//     * valid_device_response_check & valid_host_response_check: Checks
-//       accepting handshakes across both double-buffered packets.
+// Uses native BULK_OUT_TRANSFER/BULK_IN_TRANSFER (transaction/class_svt_usb_transfer.html)
+// and supported link/physical checking. Endpoint protocol checks are unsupported
+// in this UTMI 4-stack topology and are not credited here.
+// Host helpers validate routed responses, completion and payload; this sequence
+// checks descriptor writeback and buffer contents. The native IN result records
+// the terminating ZLP when aligned_transfer_ends_with_zero_length is enabled.
 class usb_double_buffer_bulk_seq extends usb_base_seq;
   `uvm_object_utils(usb_double_buffer_bulk_seq)
 
   localparam int unsigned BUFFER_SELECT_1 = 1;
+  localparam int unsigned RESPONSE_STRESS_BYTES = 16;
 
   int unsigned bytes_per_buffer = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
   logic [31:0] out_buffer_0 = 32'h0000_0200;
@@ -46,6 +36,9 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
   logic [7:0] in_payload_base = 8'h80;
   logic [7:0] packet_tag_stride = 8'h31;
   time transfer_timeout = 500us;
+  // Zero preserves the original two-buffer scenario; nine exceeds UVM's
+  // default response depth within each single active host sequence.
+  int unsigned response_stress_count = 0;
   bit completed;
 
   function new(string name = "usb_double_buffer_bulk_seq");
@@ -168,12 +161,17 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     end
   endtask
 
-  // Compare the two OUT buffers against the contiguous host payload.
-  task verify_out_payload();
+  // Compare the full OUT stream, or a requested prefix, against host intent.
+  task verify_out_payload(int unsigned payload_bytes = 0);
     logic [31:0] observed_word;
     logic [31:0] expected_word;
+    int unsigned checked_bytes;
 
-    for (int unsigned stream_offset = 0; stream_offset < 2 * bytes_per_buffer; stream_offset += 4) begin
+    checked_bytes = (payload_bytes == 0) ? 2 * bytes_per_buffer : payload_bytes;
+    if (checked_bytes > 2 * bytes_per_buffer || checked_bytes % 4 != 0) begin
+      `uvm_fatal("USB_DOUBLE_BUFFER", "OUT payload check requires a word-aligned prefix within the two buffers")
+    end
+    for (int unsigned stream_offset = 0; stream_offset < checked_bytes; stream_offset += 4) begin
       logic [31:0] buffer_offset;
 
       buffer_offset = (stream_offset < bytes_per_buffer) ?
@@ -192,10 +190,92 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
         )
       end
     end
-    `uvm_info("USB_DOUBLE_BUFFER", $sformatf("Verified both OUT buffers and all %0d payload bytes", 2 * bytes_per_buffer), UVM_LOW)
+    `uvm_info("USB_DOUBLE_BUFFER",
+              $sformatf("Verified %s and all %0d payload bytes", (payload_bytes == 0) ? "both OUT buffers" : "OUT buffer prefix", checked_bytes),
+              UVM_LOW)
   endtask
 
-  // Enumerate and exchange two bulk packets through each endpoint direction.
+  // Rearm single buffer zero between checked stress transfers.
+  task arm_response_stress_buffer(usb_endpoint_cfg endpoint);
+    usb_ep_entry_t entry;
+    logic [31:0] buffer_offset;
+
+    buffer_offset = (endpoint.direction == USB_DIRECTION_OUT) ? out_buffer_0 : in_buffer_0;
+    if (endpoint.direction == USB_DIRECTION_OUT) begin
+      fill_endpoint_buffer(buffer_offset, RESPONSE_STRESS_BYTES, 32'heeee_eeee);
+    end
+    clear_endpoint_interrupt(endpoint);
+    arm_endpoint(endpoint, RESPONSE_STRESS_BYTES, buffer_offset, entry);
+  endtask
+
+  // Observe each retirement and rearm while one host sequence remains active.
+  task service_response_stress_buffers(usb_endpoint_cfg endpoint);
+    usb_ep_entry_t expected_entry;
+    logic [31:0] buffer_offset;
+
+    buffer_offset = (endpoint.direction == USB_DIRECTION_OUT) ? out_buffer_0 : in_buffer_0;
+    expected_entry = endpoint_entry(1'b0, 1'b0, 0, buffer_offset);
+    // Programmers Guide 4.2.3 encodes the next buffer in 64-byte units.
+    expected_entry.buffer_offset += (RESPONSE_STRESS_BYTES + 63) / 64;
+    for (int unsigned transfer_index = 0; transfer_index < response_stress_count; transfer_index++) begin
+      wait_for_endpoint_interrupt(endpoint, transfer_timeout);
+      check_endpoint_entry_writeback(endpoint, expected_entry, "Response-stress transfer did not retire");
+      if (endpoint.direction == USB_DIRECTION_OUT) verify_out_payload(RESPONSE_STRESS_BYTES);
+      `uvm_info("USB_BULK_RESPONSE_STRESS",
+                $sformatf("%s retired transfer %0d/%0d", endpoint.short_name(), transfer_index + 1, response_stress_count), UVM_LOW)
+      if (transfer_index + 1 < response_stress_count) arm_response_stress_buffer(endpoint);
+    end
+  endtask
+
+  // Reuse the bulk helpers for nine or more items per active IN/OUT sequence.
+  // Native VIP transfer checking remains active; packet count is not response count.
+  task run_response_stress(
+    usb_endpoint_cfg out_endpoint, usb_endpoint_cfg in_endpoint,
+    usb_bulk_out_host_seq out_host_sequence, usb_bulk_in_host_seq in_host_sequence
+  );
+    if (response_stress_count <= 8) begin
+      `uvm_fatal("USB_BULK_RESPONSE_STRESS", "Response stress requires at least nine transfers per active sequence")
+    end
+    `uvm_info("USB_BULK_RESPONSE_STRESS",
+              $sformatf("Starting same-sequence response stress: transfers_per_direction=%0d bytes=%0d",
+                        response_stress_count, RESPONSE_STRESS_BYTES), UVM_LOW)
+
+    // The original scenario has already returned EPBUFCFG/EPINUSE to zero.
+    out_host_sequence.transfer_count = response_stress_count;
+    out_host_sequence.payload_byte_count = RESPONSE_STRESS_BYTES;
+    out_host_sequence.transfer_label = "Response-stress bulk OUT";
+    arm_response_stress_buffer(out_endpoint);
+    fork
+      out_host_sequence.start(p_sequencer.host_sequencer);
+      service_response_stress_buffers(out_endpoint);
+    join
+    if (!out_host_sequence.completed ||
+        out_host_sequence.completed_transfer_count !== response_stress_count ||
+        out_host_sequence.routed_response_count !== response_stress_count) begin
+      `uvm_fatal("USB_BULK_RESPONSE_STRESS", "OUT stress did not validate all routed responses in one active sequence")
+    end
+
+    in_host_sequence.transfer_count = response_stress_count;
+    in_host_sequence.payload_byte_count = RESPONSE_STRESS_BYTES;
+    in_host_sequence.expect_zero_length_termination = 1'b0;
+    in_host_sequence.transfer_label = "Response-stress bulk IN";
+    fill_incrementing_buffer(in_buffer_0, 0);
+    arm_response_stress_buffer(in_endpoint);
+    fork
+      in_host_sequence.start(p_sequencer.host_sequencer);
+      service_response_stress_buffers(in_endpoint);
+    join
+    if (!in_host_sequence.completed ||
+        in_host_sequence.completed_transfer_count !== response_stress_count ||
+        in_host_sequence.routed_response_count !== response_stress_count) begin
+      `uvm_fatal("USB_BULK_RESPONSE_STRESS", "IN stress did not validate all routed responses in one active sequence")
+    end
+    `uvm_info("USB_BULK_RESPONSE_STRESS",
+              $sformatf("Same-sequence response stress complete: OUT=%0d IN=%0d routed responses checked",
+                        out_host_sequence.routed_response_count, in_host_sequence.routed_response_count), UVM_LOW)
+  endtask
+
+  // Enumerate, exchange two packets per direction, then run optional response stress.
   virtual task body();
     usb_init_seq init_sequence;
     usb_bulk_out_host_seq out_host_sequence;
@@ -329,6 +409,9 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     ral_write32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, 32'h0);
     ral_write32("EPBUFCFG", p_sequencer.reg_model.combo.dev0_csr.EPBUFCFG, 32'h0);
 
+    if (response_stress_count != 0) begin
+      run_response_stress(out_endpoint, in_endpoint, out_host_sequence, in_host_sequence);
+    end
     completed = 1'b1;
     `uvm_info("USB_DOUBLE_BUFFER", "Double-buffer bulk IN and OUT scenario completed with both buffers verified", UVM_LOW)
   endtask

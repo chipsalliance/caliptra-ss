@@ -31,8 +31,9 @@ task smoke_test_mci_soc_config_disable();
     logic [31:0] orig_val, read_val;
     logic [31:0] test_val;
 
-    // Wait for MCU to come out of reset
-    wait_mcu_rst_b_deassert();
+    // Access MCI at the boot breakpoint while MCU remains in reset.
+    wait_mci_rst_b_deassert();
+    wait_mci_boot_fsm_in_state(BOOT_BREAKPOINT);
 
 
     for (int i = 0; i < $size(reg_addrs); i++) begin
@@ -70,6 +71,8 @@ task smoke_test_mci_soc_config_disable();
         // Restore original value for next test
         bfm_axi_write_single_mcu_lsu(reg_addrs[i], orig_val);
     end
+
+    check_mci_ss_config_access(1'b0, 1'b0);
 
     end_test_successful_req();
 

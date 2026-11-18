@@ -1326,7 +1326,14 @@ endtask
     fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
+    // USB compound functional coverage.
+    // - usb_cov_bind carries the bind statements for the SystemVerilog
+    //   observation points
+    // - The probe instantiates usb_hub_cov and feeds it from the VHDL
+    //   compound, which a bind cannot target.
+    // Both are empty unless USB_FCOV is defined.
     usb_cov_bind i_usb_cov_bind();
+    usb_cov_probe_caliptra_ss  u_usb_cov_probe();
 `endif
 
 

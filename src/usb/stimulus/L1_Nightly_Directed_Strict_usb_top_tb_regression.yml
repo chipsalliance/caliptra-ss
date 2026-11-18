@@ -15,6 +15,7 @@ contents:
         - ../tests/usb_bad_crc5.yml
         - ../tests/usb_bad_pid.yml
         - ../tests/usb_bulk_ping.yml
+        - ../tests/usb_bulk_response_stress.yml
         - ../tests/usb_dev_skip.yml
         - ../tests/usb_dev_skip_during_rx.yml
         - ../tests/usb_double_buffer_bulk.yml
