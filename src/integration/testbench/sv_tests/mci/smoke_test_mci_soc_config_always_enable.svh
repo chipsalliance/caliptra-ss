@@ -31,8 +31,9 @@ task smoke_test_mci_soc_config_always_enable();
     logic [31:0] read_val;
     logic [31:0] test_val;
 
-    // Wait for MCU to come out of reset
-    wait_mcu_rst_b_deassert();
+    // Access MCI at the boot breakpoint while MCU remains in reset.
+    wait_mci_rst_b_deassert();
+    wait_mci_boot_fsm_in_state(BOOT_BREAKPOINT);
 
 
     for (int i = 0; i < $size(reg_addrs); i++) begin
@@ -68,6 +69,8 @@ task smoke_test_mci_soc_config_always_enable();
             $error("ERROR: Register 0x%h did not change after MCU_LSU user write! Was 0x%h, expected 0x%h", reg_addrs[i], read_val, test_val);
         end
     end
+
+    check_mci_ss_config_access(1'b1, 1'b1);
 
     end_test_successful_req();
 
