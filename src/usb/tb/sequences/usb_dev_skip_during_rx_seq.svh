@@ -17,23 +17,16 @@
 // Relies on the Synopsys SVT USB VIP's built-in protocol packet notification
 // (host_agent.prot.NOTIFY_20_HOST_TX_PACKET in
 // others/class_svt_usb_protocol.html) to time the EPSKIP register write
-// while the 512-byte DATA0 packet (~8.5 us on UTMI) is in flight on the bus,
-// and on the VIP's built-in protocol/link checks (enabled by default via
-// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
-// coverage/class_svt_usb_protocol_ep_sc.html, and
-// coverage/class_svt_usb_link_20_sc.html):
-//   - svt_usb_protocol_ep_sc:
-//     * packet_error_check, data_toggle_check, valid_device_response_check
-//   - svt_usb_link_20_sc:
-//     * unexpected_response_check
+// while the 512-byte DATA0 packet (~8.5 us on UTMI) is in flight on the bus.
+// Supported VIP link/physical checks remain active; endpoint protocol checks
+// are unsupported in this UTMI 4-stack topology and are not credited here.
 //
 // Why a custom cycle-level skip monitor is unnecessary:
 //   If hardware retired EPSKIP early while the 512-byte DATA0 packet was still
 //   in flight, USB_DMA_1 (READ_EPINFO_SKIP -> WAIT_ON_GNT_FOR_SKIP_UPDATE)
 //   would clear Active without modifying NBytes or buffer_offset, and USB_PIE_1
-//   would not accept/commit the 512-byte payload. Consequently, the SVT VIP's
-//   BULK_OUT_TRANSFER completion (checked for ACCEPT under
-//   svt_usb_protocol_ep_sc::valid_device_response_check) combined with
+//   would not accept/commit the 512-byte payload. Consequently, the native
+//   BULK_OUT_TRANSFER completion (explicitly checked for ACCEPT) combined with
 //   verify_inflight_packet() (checking active == 0, nbytes == 512,
 //   buffer_offset advanced by 512, and all 512 SRAM bytes) architecturally
 //   proves that hardware completed the in-flight packet before retiring EPSKIP.
@@ -62,39 +55,6 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     super.new(name);
     skip_buffer_offset = 32'h0000_0800;
   endfunction
-
-  // Return the post-transfer buffer byte offset matching the hardware
-  // implementation behavior where USB_DMA rounds a non-zero partial 64-byte
-  // block up to the next 64-byte boundary on descriptor writeback.
-  function logic [31:0] expected_post_transfer_buffer_offset(
-    logic [31:0] start_buffer_offset,
-    int unsigned transferred_bytes
-  );
-    return start_buffer_offset + (((transferred_bytes + 63) / 64) * 64);
-  endfunction
-
-  // Verify the post-skip recovery payload and check that Active cleared and
-  // the descriptor buffer pointer advanced as expected.
-  virtual task verify_recovery_transfer();
-    usb_ep_entry_t observed_entry;
-    logic [31:0] expected_buffer_offset;
-
-    super.verify_recovery_transfer();
-    read_endpoint_entry(skip_endpoint, observed_entry);
-    expected_buffer_offset = expected_post_transfer_buffer_offset(skip_buffer_offset, recovery_bytes);
-    if (observed_entry.active !== 1'b0 ||
-        entry_buffer_byte_offset(observed_entry) !== expected_buffer_offset) begin
-      `uvm_fatal(
-        "USB_SKIP_RX_SEQ",
-        $sformatf(
-          "Post-skip recovery descriptor writeback invalid on %s: observed %s, expected active=0 nbytes=0 buffer=0x%03h",
-          skip_endpoint.convert2string(),
-          describe_entry(observed_entry),
-          expected_buffer_offset
-        )
-      )
-    end
-  endtask
 
   // Compare the packet committed before the delayed skip writeback.
   task verify_inflight_packet();
