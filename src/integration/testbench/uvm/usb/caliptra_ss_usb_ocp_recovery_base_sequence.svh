@@ -196,36 +196,19 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input bit check_success = 0);
 
         svt_usb_transfer req;
-        bit completed;
-        bit submission_started;
+        bit [1:0] submission_status;
         bit [7:0] request_payload[$], response_payload[$];
         caliptra_ss_usb_ocp_xfer_result_e request_result;
-        // The completion-event watchdog is 2 ms. This outer infrastructure
-        // guard also covers sequencer acquisition and item_done stalls.
-        localparam time REQUEST_BOUND = 2100us;
+        localparam integer REQUEST_BOUND = 2100;
+
         req = svt_usb_transfer::type_id::create({label, "_req"});
         request_payload = payload_bytes;
-        completed = 1'b0;
-        submission_started = 1'b0;
-        fork : bounded_ocp_request
-            begin
-                ocp_do_class_xfer_impl(req, submission_started, dir_in,
-                    cmd_code, wlength, request_payload, response_payload,
-                    request_result, label);
-                completed = 1'b1;
-            end
-            begin
-                #(REQUEST_BOUND);
-            end
-        join_any
-        if (!completed) begin
-            if (submission_started) req.abort(1'b1);
-            `uvm_fatal("OCP_BASE",
-                {label, ": sequencer submission/completion exceeded request bound."})
-        end
-        disable bounded_ocp_request;
+        ocp_do_class_xfer_impl(req, REQUEST_BOUND, submission_status, dir_in,
+            cmd_code, wlength, request_payload, response_payload,
+            request_result, label);
         resp_bytes = response_payload;
         result = request_result;
+
         ocp_note_xfer_completed(req, result);
         if (check_success && (result != OCP_XFER_SUCCESS)) begin
             `uvm_error("OCP_BASE",
@@ -236,7 +219,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
     protected task ocp_do_class_xfer_impl(
         input svt_usb_transfer req,
-        ref bit submission_started,
+        input integer timeout_us,
+        ref bit [1:0] submission_status,
         input bit dir_in, input ocp_cmd_t cmd_code,
         input bit [15:0] wlength,
         ref bit [7:0] payload_bytes[$],
@@ -248,6 +232,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         bit [15:0]       wvalue_v;
         bit [15:0]       windex_v;
         int              payload_size;
+
+        submission_status = 2'b00; // Not started
 
         bm_dir   = dir_in ? svt_usb_types::DEVICE_TO_HOST
                           : svt_usb_types::HOST_TO_DEVICE;
@@ -296,18 +282,23 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         // STALL may otherwise complete before the event waiter is installed.
         fork
             begin
-                wait_xfer_done(host_agent_h, label);
+                wait_xfer_done(host_agent_h, label, timeout_us);
+                if (xfer_wait_timed_out)
+                    disable BRANCH_REQ_SUBMIT;
             end
-            begin
-                submission_started = 1'b1;
+            begin: BRANCH_REQ_SUBMIT
+                submission_status = 2'b01; // Req started
                 finish_item(req, -1);
                 transfers_issued++;
             end
         join
+        submission_status = 2'b10; // Req completed
         if (xfer_wait_timed_out) begin
             req.abort(1'b1);
             result = OCP_XFER_ABORTED;
+            submission_status = 2'b11; // Req timeout
             resp_bytes.delete();
+            `uvm_fatal("OCP_BASE", {label, ": sequencer submission/completion exceeded request bound."})
             return;
         end
         result = ocp_get_xfer_result(req);
