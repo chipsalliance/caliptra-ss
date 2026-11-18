@@ -46,6 +46,8 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     localparam int unsigned COMMITTED_DWORDS = 2;
     localparam int unsigned MALFORMED_REQUEST_BYTES = 8;
     localparam int unsigned ACKED_REQUEST_BYTES = 12;
+    localparam logic [7:0] FW_CLAIM_ABORT = 8'h07;
+    localparam logic [7:0] FW_CLAIM_ABORT_CLEARED = 8'h01;
     // Give maxWr+1 room in the image so rejection tests the USB envelope,
     // not a simultaneous image-remainder violation. Complete with legal pushes.
     localparam int unsigned IMAGE_DWORDS =
@@ -90,6 +92,21 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
             `uvm_info("OCP_ABORT_BATCH",
                 $sformatf("%s BATCH_ABORTED=%02h matched explicit owner-abort contract.",
                     label, observed), UVM_NONE)
+    endtask
+
+    protected task ocp_abort_do_claim_abort_and_check_self_clear(input string label);
+        logic [7:0] result;
+        logic [15:0] generation;
+        generation = path_generation;
+        ocp_abort_execute_fw_command(FW_CLAIM_ABORT,
+            semantics_vif.FW_STATE_PATH_READY, result, label);
+        if (result !== FW_CLAIM_ABORT_CLEARED)
+            `uvm_fatal("OCP_ABORT_FW",
+                $sformatf("%s generation=%0d claim-abort result=%02h expected=%02h.",
+                    label, generation, result, FW_CLAIM_ABORT_CLEARED))
+        `uvm_info("OCP_ABORT_FW",
+            $sformatf("%s generation=%0d fresh firmware self-clear acknowledgment result=%02h; PATH_DISABLE preserved, GENERAL_ERROR not requested.",
+                label, generation, result), UVM_NONE)
     endtask
 
     protected task ocp_abort_do_commit_and_check_baseline(
@@ -324,15 +341,10 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         ocp_abort_do_check_preservation_and_drain(committed, before_status, 1'b0, "OVERSIZE_PRESERVES_COMMITTED");
     endtask
 
-    protected task ocp_abort_do_acked_data_before_status_and_check_preservation();
-        string label = "OCP_ABORT_006_ACKED_DATA_BEFORE_STATUS";
-        logic [15:0] generation;
-        bit [7:0] committed[$], before_status[$], payload[$], empty_payload[$];
-        bit [7:0] response[$];
-        cb_t::packet_record_t reply, record;
-        int unsigned request_bytes, maximum_transfer, first_record, beat;
-        ocp_abort_do_commit_and_check_baseline(
-            5, committed, before_status, label);
+    protected function void ocp_abort_prepare_legal_fifo_payload(
+        ref bit [7:0] committed[$], ref bit [7:0] before_status[$],
+        ref bit [7:0] payload[$], input string label);
+        int unsigned request_bytes, maximum_transfer;
         // OCP Recovery v1.1 8.2.5/8.5.1/9.2: a legal DWORD-aligned push
         // within all discovered limits. Use a distinct short payload, not
         // bytes from the committed prefix or the image-completion stream.
@@ -348,8 +360,48 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         request_bytes = (request_bytes / 4) * 4;
         if (request_bytes == 0)
             `uvm_fatal("OCP_ABORT_CAPS", {label, ": no legal single-packet DWORD push."})
+        payload.delete();
         for (int unsigned i = 0; i < request_bytes; i++)
             payload.push_back(8'(8'hA0 + i));
+    endfunction
+
+    protected function void ocp_abort_check_data_commit_and_update_fifo_state(
+        ref bit [7:0] committed[$], ref bit [7:0] before_status[$],
+        ref bit [7:0] payload[$], input string label);
+        int unsigned expected_write_index;
+        foreach (payload[i]) committed.push_back(payload[i]);
+        expected_write_index = committed.size() / 4;
+        // The independent packet model must implement the full accepted-DATA
+        // commit boundary. Never manually commit it from captured DATA alone
+        // or substitute DUT indices for clean RX ACK/NYET evidence.
+        if ((fifo_packet_model.committed_byte_count() != committed.size()) ||
+            (fifo_packet_model.partial_byte_count() != 0) ||
+            !fifo_packet_model.lifecycle_idle() ||
+            !fifo_packet_model.indices_match(expected_write_index, 0))
+            `uvm_fatal("OCP_ABORT_EVIDENCE",
+                {label, ": independent model lacks full accepted-DATA commit; STATUS-qualified policy is incompatible."})
+        if (before_status.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS)
+            `uvm_fatal("OCP_ABORT_FIFO", {label, ": truncated baseline FIFO status."})
+        // The nonempty prefix remains below FIFO capacity without wrap.
+        // Only WRITE_INDEX changes; retain every other expected status byte.
+        for (int unsigned i = 0; i < 4; i++)
+            before_status[OCP_OFF_IFS_WRITE_INDEX_B0 + i] =
+                8'(expected_write_index >> (8 * i));
+    endfunction
+
+    protected task ocp_abort_do_accept_data_and_check_no_status(
+        ref bit [7:0] committed[$], ref bit [7:0] before_status[$],
+        input string label);
+        logic [15:0] generation;
+        bit [7:0] payload[$], empty_payload[$];
+        cb_t::packet_record_t reply, record;
+        int unsigned request_bytes, first_record, beat;
+        ocp_abort_prepare_legal_fifo_payload(committed, before_status, payload, label);
+        request_bytes = payload.size();
+        if ((request_bytes != ACKED_REQUEST_BYTES) ||
+            (committed.size() != COMMITTED_DWORDS * 4))
+            `uvm_fatal("OCP_ABORT_CAPS",
+                {label, ": requires the full 8-byte baseline plus legal 12-byte DATA push."})
         ocp_arb_open_observation_window(generation);
         raw_response_callback.enabled = 1'b1;
         ocp_abort_do_setup_and_check_ack(
@@ -402,42 +454,70 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         end
         if ((beat != 3) || checker.packet_callback.overflowed())
             `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": incomplete OUT/DATA1/ACK evidence."})
-        // Closing capture alone is not owner-abort evidence. Preserve the
-        // accepted batch as pending until a separately accepted new SETUP.
+        // Approved local contract: all CRC-valid DATA plus clean RX ACK/NYET
+        // commits the complete payload independently of STATUS. The explicit
+        // interrupted window permits omitted STATUS, not unqualified DATA.
+        // The model must consume this evidence at its DATA-acceptance boundary.
         fifo_scoreboard.observe_fifo_window(checker.packet_callback, generation,
             7'(dev_addr_v), request_bytes, 1'b1, 1'b0, 1'b1);
-        if ((fifo_packet_model.committed_byte_count() != committed.size()) ||
-            (fifo_packet_model.partial_byte_count() != request_bytes) ||
-            fifo_packet_model.lifecycle_idle() ||
-            !fifo_packet_model.indices_match(COMMITTED_DWORDS, 0))
-            `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": accepted bytes did not remain pending."})
+        ocp_abort_check_data_commit_and_update_fifo_state(
+            committed, before_status, payload, label);
         `uvm_info("OCP_ABORT_PACKET",
-            $sformatf("%s generation=%0d accepted OUT/DATA1/RX %s; pending=%0d committed=%0d, STATUS omitted.",
+            $sformatf("%s generation=%0d accepted OUT/DATA1/RX %s; accepted=%0d committed=%0d partial=0 indices=5,0, STATUS omitted.",
                 label, generation, reply.pid_name.name(), request_bytes, committed.size()), UVM_NONE)
         if (semantics_vif.recovery_payload_available !== 1'b0)
-            `uvm_error("OCP_ABORT_FIFO", {label, ": pending batch released the incomplete image."})
-        ocp_abort_check_batch_aborted(1'b0, {label, "_PENDING_ABORT_FLAG"});
+            `uvm_error("OCP_ABORT_FIFO", {label, ": accepted prefix released the incomplete image."})
+        ocp_abort_check_batch_aborted(1'b0, {label, "_ACCEPTED_ABORT_FLAG"});
+    endtask
+
+    protected task ocp_abort_do_accepted_data_teardown_and_check_preservation(
+        input bit firmware_claim_abort);
+        string label;
+        logic [15:0] generation;
+        bit [7:0] committed[$], before_status[$], response[$];
+        label = firmware_claim_abort ?
+            "OCP_ABORT_007_CLAIM_ABORT_PRESERVES_FIFO" :
+            "OCP_ABORT_006_ACKED_DATA_BEFORE_STATUS";
+        ocp_abort_do_commit_and_check_baseline(
+            firmware_claim_abort ? 6 : 5, committed, before_status, label);
+        ocp_abort_do_accept_data_and_check_no_status(
+            committed, before_status, label);
         // USB 2.0 8.5.3: new SETUP supersedes unfinished control transfer.
-        // Local contract: discard this FIFO owner's accepted, uncommitted
-        // bytes and set CALIPTRA_STATUS.BATCH_ABORTED; retain prior commits.
-        ocp_arb_open_observation_window(generation);
-        ocp_abort_do_setup_and_check_ack(
-            1, OCP_CMD_PROT_CAP, wMaxRdTransferSize, {label, "_REPLACEMENT"});
-        ocp_arb_check_and_close_observation_window(generation, 4'h0);
-        ocp_stall_check_single_accepted_setup({label, "_REPLACEMENT"});
+        // Ordinary SETUP cannot cancel accepted draining DATA. The firmware
+        // service here is a post-drain retention test, not an emergency purge
+        // timed inside the nanosecond-scale RX drain. Already-published words
+        // survive; the isolated arbiter unit tests pending emergency discard.
+        if (firmware_claim_abort) begin
+            // No USB replacement may manufacture abort evidence before the
+            // generation-qualified firmware self-clear acknowledgment.
+            ocp_abort_do_claim_abort_and_check_self_clear(label);
+        end else begin
+            ocp_arb_open_observation_window(generation);
+            ocp_abort_do_setup_and_check_ack(
+                1, OCP_CMD_PROT_CAP, wMaxRdTransferSize, {label, "_REPLACEMENT"});
+            ocp_arb_check_and_close_observation_window(generation, 4'h0);
+            ocp_stall_check_single_accepted_setup({label, "_REPLACEMENT"});
+        end
         fifo_scoreboard.observe_fifo_abort(1'b1);
         if ((fifo_packet_model.committed_byte_count() != committed.size()) ||
             (fifo_packet_model.partial_byte_count() != 0) ||
             !fifo_packet_model.lifecycle_idle() ||
-            !fifo_packet_model.indices_match(COMMITTED_DWORDS, 0))
-            `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": owner abort changed the committed prefix."})
-        `uvm_info("OCP_ABORT_PACKET",
-            $sformatf("%s generation=%0d replacement SETUP accepted; owner-aborted pending bytes, committed=%0d partial=0.",
-                label, generation, committed.size()), UVM_NONE)
+            !fifo_packet_model.indices_match(committed.size() / 4, 0))
+            `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": wire teardown changed irrevocably committed DATA."})
+        if (firmware_claim_abort) begin
+            `uvm_info("OCP_ABORT_PACKET",
+                $sformatf("%s fresh firmware abort acknowledged; complete accepted DATA retained, committed=%0d partial=0.",
+                    label, committed.size()), UVM_NONE)
+        end else begin
+            `uvm_info("OCP_ABORT_PACKET",
+                $sformatf("%s generation=%0d replacement SETUP accepted; complete accepted DATA retained, committed=%0d partial=0.",
+                    label, generation, committed.size()), UVM_NONE)
+        end
         raw_response_callback.enabled = 1'b0;
         if (semantics_vif.recovery_payload_available !== 1'b0)
-            `uvm_error("OCP_ABORT_FIFO", {label, ": aborted batch released the incomplete image."})
-        ocp_abort_check_batch_aborted(1'b1, {label, "_REPLACEMENT_ABORT_FLAG"});
+            `uvm_error("OCP_ABORT_FIFO", {label, ": wire teardown released the incomplete image."})
+        ocp_abort_check_batch_aborted(1'b0,
+            {label, firmware_claim_abort ? "_CLAIM_ABORT_FLAG" : "_REPLACEMENT_ABORT_FLAG"});
         ocp_stall_do_read_and_check_no_stall(
             OCP_CMD_PROT_CAP, response, {label, "_CONTINUATION"});
         ocp_stall_do_read_and_check_device_status({label, "_NO_PROTOCOL_ERROR"});
@@ -445,7 +525,45 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         // is checked separately through the firmware CALIPTRA_STATUS service.
         // Preserve the full status comparison, including reserved fields.
         ocp_abort_do_check_preservation_and_drain(
-            committed, before_status, 1'b1, label);
+            committed, before_status, 1'b0, label);
+    endtask
+
+    protected task ocp_abort_do_status_then_claim_abort_and_check_preservation();
+        string label = "OCP_ABORT_008_STATUS_THEN_CLAIM_ABORT";
+        logic [15:0] generation;
+        bit [7:0] committed[$], before_status[$], payload[$], drained_status[$];
+        bit [7:0] repeated_status[$];
+        caliptra_ss_usb_ocp_xfer_result_e result;
+        ocp_abort_do_commit_and_check_baseline(
+            7, committed, before_status, label);
+        ocp_abort_prepare_legal_fifo_payload(committed, before_status, payload, label);
+        ocp_arb_open_observation_window(generation);
+        ocp_do_fifo_data_write(payload, result, {label, "_COMMIT"});
+        // No intervening USB request or delay. Software service latency does
+        // not prove overlap with internal draining; assertions/block tests
+        // must cover claim-abort during a stretched committed drain.
+        ocp_abort_do_claim_abort_and_check_self_clear(label);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
+        ocp_stall_check_single_accepted_setup({label, "_COMMIT"});
+        ocp_abort_check_data_commit_and_update_fifo_state(
+            committed, before_status, payload, label);
+        ocp_stall_do_read_and_check_device_status({label, "_NO_PROTOCOL_ERROR"});
+        // No pending accepted bytes: do not invent a BATCH_ABORTED value.
+        ocp_abort_do_check_preservation_and_drain(
+            committed, before_status, 1'b0, label, 1'b1);
+        ocp_stall_do_read_and_check_no_stall(
+            OCP_CMD_INDIRECT_FIFO_STATUS, drained_status, {label, "_BEFORE_REPEAT"});
+        repeat (2) begin
+            ocp_abort_do_claim_abort_and_check_self_clear({label, "_REPEAT_EMPTY"});
+            ocp_stall_do_read_and_check_no_stall(
+                OCP_CMD_INDIRECT_FIFO_STATUS, repeated_status, {label, "_AFTER_REPEAT"});
+            if (!(drained_status === repeated_status))
+                `uvm_error("OCP_ABORT_FIFO", {label, ": repeated idle claim-abort changed drained FIFO state."})
+            ocp_stall_do_read_and_check_device_status({label, "_REPEAT_NO_PROTOCOL_ERROR"});
+        end
+        `uvm_info("OCP_ABORT_FW",
+            {label, ": exact image drain and two idle self-cleared claim-aborts checked; no cycle-level drain overlap claimed."},
+            UVM_NONE)
     endtask
 
     protected task ocp_abort_do_malformed_fifo_rejection();
@@ -585,7 +703,9 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
             `uvm_fatal("OCP_ABORT_PROFILE",
                 "Nominal packet/content/FIFO checks failed; rejection stimulus is unqualified.")
         ocp_abort_do_oversize_fifo_rejection();
-        ocp_abort_do_acked_data_before_status_and_check_preservation();
+        ocp_abort_do_accepted_data_teardown_and_check_preservation(1'b0);
+        ocp_abort_do_accepted_data_teardown_and_check_preservation(1'b1);
+        ocp_abort_do_status_then_claim_abort_and_check_preservation();
         ocp_abort_do_malformed_fifo_rejection();
         ocp_abort_do_commit_and_check_baseline( 3, committed, before_status, "RESERVED_COMMAND");
         payload = '{8'h00};
