@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CALIPTRA_SS_USB_ERRORTYPE_CHECKER_SV
-`define CALIPTRA_SS_USB_ERRORTYPE_CHECKER_SV
+`ifndef CALIPTRA_SS_USB_ERR_TYPE_CHECKER_SV
+`define CALIPTRA_SS_USB_ERR_TYPE_CHECKER_SV
 
 // =============================================================================
 // Verdict for the PIE error report, pie_errortype.
@@ -125,7 +125,7 @@
 // the one common tail every err-injection sequence already calls.
 // =============================================================================
 
-module caliptra_ss_usb_errortype_checker #(
+module caliptra_ss_usb_err_type_checker #(
 
     // Which compound function this instance accounts for. Compared against
     // pie_dev_selected using the same encoding as usb_dev_ep_cov, i.e. the
@@ -361,6 +361,6 @@ module caliptra_ss_usb_errortype_checker #(
 
 endmodule
 
-`endif // CALIPTRA_SS_USB_ERRORTYPE_CHECKER_SV
+`endif // CALIPTRA_SS_USB_ERR_TYPE_CHECKER_SV
 
 // File contains AI-generated response based on internal company sources

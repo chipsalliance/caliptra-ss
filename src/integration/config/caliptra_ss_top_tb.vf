@@ -965,11 +965,6 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_bind.sv
-${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
-${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
-${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
-${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
-${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_addr_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_power_cov.sv
@@ -979,6 +974,11 @@ ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_enum_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_ep_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_irq_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_compound_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
@@ -1007,7 +1007,7 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_fs_speed_checker.s
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_vbus_driver.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_suspend_resume_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_device_wakeup_checker.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_errortype_checker.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_err_type_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/usb_dev_addr_probe.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/usb_cov_probe_caliptra_ss.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv

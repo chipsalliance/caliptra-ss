@@ -2031,10 +2031,10 @@ module caliptra_ss_top_tb
     // pie_dev_selected points at - hence one instance per device, each
     // ignoring the other's reports. The hierarchy paths below are the same
     // ones usb_cov_probe_caliptra_ss uses for the identical nets.
-    caliptra_ss_usb_errortype_checker #(
+    caliptra_ss_usb_err_type_checker #(
         .MY_SEL (1),
         .NAME   ("USB_ERRTYPE_DEV0")
-    ) i_caliptra_ss_usb_errortype_checker_dev0 (
+    ) i_caliptra_ss_usb_err_type_checker_dev0 (
         .clk              (caliptra_ss_dut.usb_core_i.usb_axi_aclk),
         .rst_n            (caliptra_ss_dut.usb_core_i.usb_axi_aresetn),
         .pie_dev_selected (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_ocp_recovery_post_sync_arb_1.pie_dev_selected_i),
@@ -2045,10 +2045,10 @@ module caliptra_ss_top_tb
         .pie_epinfo_epdir (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_epinfo_epdir)
     );
 
-    caliptra_ss_usb_errortype_checker #(
+    caliptra_ss_usb_err_type_checker #(
         .MY_SEL (2),
         .NAME   ("USB_ERRTYPE_DEV1")
-    ) i_caliptra_ss_usb_errortype_checker_dev1 (
+    ) i_caliptra_ss_usb_err_type_checker_dev1 (
         .clk              (caliptra_ss_dut.usb_core_i.usb_axi_aclk),
         .rst_n            (caliptra_ss_dut.usb_core_i.usb_axi_aresetn),
         .pie_dev_selected (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_ocp_recovery_post_sync_arb_1.pie_dev_selected_i),
@@ -2636,13 +2636,6 @@ module caliptra_ss_top_tb
             null, "uvm_test_top*", "usb_supersession_csr_if",
             usb_setup_debug_csr_access);
     end
-
-    // USB compound functional coverage. usb_cov_bind carries the bind
-    // statements for the SystemVerilog observation points; the probe
-    // instantiates usb_hub_cov and feeds it from the VHDL compound, which a
-    // bind cannot target. Both are empty unless USB_FCOV is defined.
-    usb_cov_bind               u_usb_cov_bind();
-    usb_cov_probe_caliptra_ss  u_usb_cov_probe();
 
 endmodule
 

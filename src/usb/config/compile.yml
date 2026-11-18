@@ -93,7 +93,25 @@ targets:
     directories:
       - $COMPILE_ROOT/coverage
     files:
+      # USB compound functional coverage. The package must precede the observers
+      # that import it; the bind and probe must follow the observers they
+      # instantiate. Everything here is inert unless USB_FCOV is defined.
+      - $COMPILE_ROOT/coverage/usb_cov_pkg.sv
+      - $COMPILE_ROOT/coverage/usb_addr_cov.sv
+      - $COMPILE_ROOT/coverage/usb_power_cov.sv
+      - $COMPILE_ROOT/coverage/usb_hub_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_link_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_enum_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_ep_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_irq_cov.sv
+      - $COMPILE_ROOT/coverage/usb_compound_cov.sv
       - $COMPILE_ROOT/coverage/usb_cov_if.sv
+      # usb_cov_bind.sv binds by MODULE TYPE to ip_xxx_3511_hs_mem_compound_wrapper
+      # and usb_compound_ahb_decoder, both of which are instantiated here. It is
+      # compiled only via this target (not usb_coverage) so that it is not
+      # pulled in a second time when caliptra_ss_top_tb_coverage also requires
+      # usb_coverage, which would redeclare the module.
+      - $COMPILE_ROOT/coverage/usb_cov_bind.sv
 ---
 provides: [usb_top_tb]
 schema_version: 2.4.0
@@ -112,12 +130,6 @@ targets:
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest/sverilog/include
     files:
-      # usb_cov_bind.sv binds by MODULE TYPE to ip_xxx_3511_hs_mem_compound_wrapper
-      # and usb_compound_ahb_decoder, both of which are instantiated here. It is
-      # compiled only via this target (not usb_coverage) so that it is not
-      # pulled in a second time when caliptra_ss_top_tb_coverage also requires
-      # usb_coverage, which would redeclare the module.
-      - $COMPILE_ROOT/coverage/usb_cov_bind.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
       - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv

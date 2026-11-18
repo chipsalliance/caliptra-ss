@@ -104,7 +104,7 @@ class caliptra_ss_usb_hs_dev_err_toggle_test extends caliptra_ss_usb_base_test;
     // UVM_WARNING about a missed microframe boundary, right after the
     // injected out-of-turn DATA1 completes. The errortype checker's own
     // verdict already closes the wrong_data_toggle bin before this fires (see
-    // the PASS log line at caliptra_ss_usb_errortype_checker.sv:340), so this
+    // the PASS log line at caliptra_ss_usb_err_type_checker.sv:340), so this
     // is a VIP self-check artifact riding along with the deliberately
     // malformed stimulus, not a sign that the injection or the DUT's recovery
     // is broken. Same suppression API and precedent as

@@ -448,7 +448,7 @@ virtual class caliptra_ss_usb_err_inject_base_sequence
     // fail a test whose actual checks all passed.
     //
     // This is also the one point every err-injection sequence's body already
-    // calls at its tail, so it is where caliptra_ss_usb_errortype_checker's
+    // calls at its tail, so it is where caliptra_ss_usb_err_type_checker's
     // observation window is closed: triggering usb_errortype_obs_window_done
     // here lets that checker's verdict run in run_phase, while uvm_error still
     // counts toward final_phase, rather than in a `final` block that would run
