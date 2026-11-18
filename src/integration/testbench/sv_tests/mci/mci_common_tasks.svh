@@ -22,7 +22,7 @@
 //
 // Steps:
 // 1. Check allowed and blocked hash writes from invalid, DMA, SoC-config, MCU-IFU, and MCU-LSU users.
-// 2. Check which users can set each configuration lock.
+// 2. Cold-reset between requester cases and check each user's writes with both locks clear.
 // 3. Check that no user can clear either lock once set.
 // 4. Check that all users' hash writes are blocked after the sticky lock is set.
 task automatic check_mci_ss_config_access(input logic soc_config_allowed, input logic any_user_allowed);
@@ -61,19 +61,36 @@ task automatic check_mci_ss_config_access(input logic soc_config_allowed, input 
         end
     end
 
-    for (int lock_idx = 0; lock_idx < $size(lock_addrs); lock_idx++) begin
-        expected_val = 0;
-        bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
-        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+    // Keep firmware from issuing traffic or changing configuration after each reset.
+    force `MCU_PATH.i_cpu_halt_req = 1'b1;
+    wait(cptra_ss_mcu_halt_status_o === 1'b1);
+    for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+        if (user_idx != 0) begin
+            @(negedge core_clk);
+            assert_cptra_rst_b(0, 0);
+            assert_cptra_pwrgood(0, 0);
+            repeat (20) @(negedge core_clk);
+            deassert_cptra_pwrgood(0, 0);
+            repeat (20) @(negedge core_clk);
+            deassert_cptra_rst_b(0, 0);
+            wait_mcu_rst_b_deassert();
+            wait(cptra_ss_mcu_halt_status_o === 1'b1);
+        end
+
+        expected_val = write_allowed[user_idx] ? 32'h1 : 32'h0;
+        for (int lock_idx = 0; lock_idx < $size(lock_addrs); lock_idx++) begin
+            bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, 32'h0);
+            $display("[%t] SS_CONFIG lock check: user_idx=%0d user=0x%08h addr=0x%08h expected=%0d", $time, user_idx, users[user_idx], lock_addrs[lock_idx], expected_val);
             bfm_axi_write_single(lock_addrs[lock_idx], users[user_idx], 32'h1);
-            if (write_allowed[user_idx]) begin
-                expected_val = 1;
-            end
             bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
         end
-        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
-            bfm_axi_write_single(lock_addrs[lock_idx], users[user_idx], 32'h0);
-            bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, 32'h1);
+        if (write_allowed[user_idx]) begin
+            for (int lock_idx = 0; lock_idx < $size(lock_addrs); lock_idx++) begin
+                for (int clear_user_idx = 0; clear_user_idx < $size(users); clear_user_idx++) begin
+                    bfm_axi_write_single(lock_addrs[lock_idx], users[clear_user_idx], 32'h0);
+                    bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, 32'h1);
+                end
+            end
         end
     end
 
@@ -86,6 +103,7 @@ task automatic check_mci_ss_config_access(input logic soc_config_allowed, input 
             bfm_axi_read_check(hash_addr, cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
         end
     end
+    release `MCU_PATH.i_cpu_halt_req;
 endtask
 
 task get_mcu_sram_base_addr(output logic [AXI_AW-1:0] addr);
