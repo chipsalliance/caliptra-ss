@@ -15,29 +15,6 @@
 `ifndef CALIPTRA_SS_USB_OCP_INTERRUPTED_TRANSFER_SEQUENCE_SVH
 `define CALIPTRA_SS_USB_OCP_INTERRUPTED_TRANSFER_SEQUENCE_SVH
 
-class caliptra_ss_usb_ocp_malformed_timeout_catcher extends uvm_report_catcher;
-    bit armed;
-    int unsigned expected_timeouts;
-
-    function new(string name = "ocp_malformed_timeout_catcher");
-        super.new(name);
-    endfunction
-
-    virtual function action_e catch();
-        if (armed && (expected_timeouts == 0) &&
-            (get_severity() == UVM_ERROR) &&
-            (get_id() == {"register_fail:LINK 20 TIMING CHECKS:COMMON:",
-                          "tend_to_end_delay_check"})) begin
-            expected_timeouts++;
-            `uvm_info("OCP_ABORT_EXPECTED_NO_RESPONSE",
-                "Observed expected native no-response timeout for malformed OUT DATA.",
-                UVM_NONE)
-            return CAUGHT;
-        end
-        return THROW;
-    endfunction
-endclass
-
 class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     extends caliptra_ss_usb_ocp_persistent_stall_sequence;
     `uvm_object_utils(caliptra_ss_usb_ocp_interrupted_transfer_sequence)

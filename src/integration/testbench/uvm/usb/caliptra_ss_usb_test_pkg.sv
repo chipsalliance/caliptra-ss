@@ -521,6 +521,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_supersession_expected_report_catcher.svh"
   `include "caliptra_ss_usb_supersession_selftest_catcher.svh"
   `include "caliptra_ss_usb_supersession_checker.svh"
+  `include "caliptra_ss_usb_ocp_malformed_timeout_catcher.svh"
   `include "caliptra_ss_usb_stale_publication_protocol.svh"
   `include "caliptra_ss_usb_supersession_fault_callback.svh"
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
