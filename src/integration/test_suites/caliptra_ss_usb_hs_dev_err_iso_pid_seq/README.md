@@ -80,6 +80,19 @@ link layer starts its End-to-end Signal Delay timer on it regardless. Same
 suppression API and precedent as `caliptra_ss_usb_hs_dev_err_toggle_test`,
 which documents the full rationale.
 
+## Line 2704 is not closed by this suite
+
+usb_pie.m.vhdl line 2704 (`PID_DATA0` unexpected when `iso_mdata_cnt_up /=
+"00"`) is NOT reachable on this endpoint: `iso_mdata_cnt_up` only increments
+on an *accepted* MDATA, which requires a high-bandwidth endpoint - the
+opposite of this suite's deliberately single-buffer, non-HBW configuration.
+Rather than risk this suite's three already-closed lines
+(2632/2655/2680) by changing the endpoint config in place, line 2704 is
+closed by a separate, forked sibling suite,
+`caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw`, which arms a true
+high-bandwidth endpoint and sends a legitimate MDATA before the mismatching
+DATA0. See that suite's README for details.
+
 ## Usage
 
 ```

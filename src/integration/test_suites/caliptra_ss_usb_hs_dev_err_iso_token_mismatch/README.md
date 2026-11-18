@@ -37,9 +37,22 @@ existing 0x3 tests happens to construct.
 - **Firmware** (`caliptra_ss_usb_hs_dev_err_iso_token_mismatch.c`): arms EP2
   OUT as isochronous (`USB_EP_ENTRY_TYPE_PERIODIC | USB_EP_ENTRY_RF_ISO`),
   re-arming it after each normal ISO OUT data-phase completion so the
-  sequence's three OUT data phases each land on a fresh buffer. There is no
-  firmware-side reaction to the mismatched tokens themselves - all four
-  target RTL branches return the FSM to `WF_IDLE` without any DMA/interrupt.
+  sequence's three OUT data phases each land on a fresh buffer. EP2 IN
+  (`usb_ep2_in_arm_iso()`, `ACTIVE | TYPE_PERIODIC`, NBYTES bits `[11:10] =
+  "01"` i.e. 1536 bytes split across two buffer entries) is deliberately
+  **not** armed until the third EP2 OUT completion - i.e. immediately before
+  the sequence's final (line-2211) leg below. Arming it any earlier left EP2
+  IN `ACTIVE` while the sequence's first directed `PID_IN` token (line 2192)
+  was sent, so the DUT answered that bare directed token with a real,
+  unsolicited DATA0 packet instead of leaving it unanswered, which the
+  host-side VIP could not route (`rx_packet_routed_check` failure, confirmed
+  via `svt_debug.transcript`'s `report_xact` table showing a 768-byte DATA0 -
+  exactly `USB_EP2_IN_BUF_BYTES` - landing at the failure timestamp). With
+  EP2 IN armed only right before the line-2211 leg, `iso_in_pending_r` is not
+  cleared immediately on the first IN data packet, which is what that leg
+  needs. There is no firmware-side reaction to the mismatched tokens
+  themselves - all four target RTL branches return the FSM to `WF_IDLE`
+  without any DMA/interrupt.
 - **Sequence** (`caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence.svh`):
   1. Sends an ISO OUT data phase (`do_data_xfer` with `single_isoc_txn=1`,
      the same pattern `caliptra_ss_usb_hs_dev_iso_out_sequence` uses) to arm

@@ -157,6 +157,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh"
 
+  // Forked sibling of the above, high-bandwidth ISO OUT endpoint. Closes
+  // pid_unknown (0x2) at line 2704 (PID_DATA0 unexpected when
+  // iso_mdata_cnt_up /= 00), which the non-HBW suite above cannot reach -
+  // see that suite's README and this sequence's header for the rationale.
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_test.svh"
+
   // Token-direction mismatch while an ISO transaction is pending.
   // Closes RTL line/branch coverage of usb_pie.m.vhdl lines
   // 2192/2211/2231/2251 (packet_unexpected 0x3, same bin as

@@ -85,6 +85,38 @@ class caliptra_ss_usb_hs_dev_err_iso_token_mismatch_test extends caliptra_ss_usb
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction
 
+    // -------------------------------------------------------------------------
+    // tend_to_end_delay_check is EXPECTED in this test.
+    //
+    // None of the four directed tokens the sequence sends (lines 2192/2211/
+    // 2231/2251) is ever answered: each target branch returns the FSM to
+    // WF_IDLE without reaching a DMA/ACK step, and isochronous transfers
+    // never carry a handshake at all (USB 2.0 section 8.5.5). The VIP link
+    // layer does not know the packet was deliberately unanswered, so it
+    // starts its End-to-end Signal Delay timer and fails when nothing
+    // answers. Same suppression API and precedent as
+    // caliptra_ss_usb_hs_dev_err_iso_pid_seq_test and
+    // caliptra_ss_usb_hs_dev_err_toggle_test, which document the full
+    // rationale and the SVT API constraints (chk_cov_mgr.find() +
+    // set_default_fail_effect(), run in end_of_elaboration_phase).
+    // -------------------------------------------------------------------------
+    svt_err_check_stats no_handshake_chk;
+
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+
+        no_handshake_chk =
+            env.host_agent.link.chk_cov_mgr.find("tend_to_end_delay_check");
+        if (no_handshake_chk == null)
+            `uvm_fatal("end_of_elaboration_phase",
+                "chk_cov_mgr.find(\"tend_to_end_delay_check\") returned null")
+        no_handshake_chk.set_default_fail_effect(svt_err_check_stats::EXPECTED);
+
+        `uvm_info("end_of_elaboration_phase",
+            "tend_to_end_delay_check set to EXPECTED: none of the four directed mismatch tokens is ever answered (isochronous transfers never carry a handshake), so the VIP's end-to-end delay timer on them is an expected artifact, not a sign the DUT or injection is broken.",
+            UVM_LOW)
+    endfunction
+
 endclass
 
 `endif // CALIPTRA_SS_USB_HS_DEV_ERR_ISO_TOKEN_MISMATCH_TEST_SV
