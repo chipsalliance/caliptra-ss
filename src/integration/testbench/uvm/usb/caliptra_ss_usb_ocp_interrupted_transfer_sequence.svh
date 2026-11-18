@@ -66,17 +66,11 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         super.new(name);
     endfunction
 
-    protected task ocp_abort_execute_fw_command(
-        input logic [7:0] opcode, input logic [7:0] expected_state,
-        output logic [7:0] data, input string label);
-        ocp_stall_execute_fw_command(opcode, expected_state, data, label);
-    endtask
-
     protected task ocp_abort_check_batch_aborted(
         input bit expected, input string label,
         input bit diagnostic_only = 1'b0);
         logic [7:0] observed;
-        ocp_abort_execute_fw_command(FW_READ_BATCH_ABORTED,
+        ocp_stall_execute_fw_command(FW_READ_BATCH_ABORTED,
             semantics_vif.FW_STATE_PATH_READY, observed, label);
         if (diagnostic_only) begin
             // No local contract requires BATCH_ABORTED for rejected DATA
@@ -98,7 +92,7 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
         logic [7:0] result;
         logic [15:0] generation;
         generation = path_generation;
-        ocp_abort_execute_fw_command(FW_CLAIM_ABORT,
+        ocp_stall_execute_fw_command(FW_CLAIM_ABORT,
             semantics_vif.FW_STATE_PATH_READY, result, label);
         if (result !== FW_CLAIM_ABORT_CLEARED)
             `uvm_fatal("OCP_ABORT_FW",
@@ -193,7 +187,7 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
             `uvm_fatal("OCP_ABORT_FW", {label, ": completed image did not release payload."})
         drain_mismatches = 0;
         foreach (expected[i]) begin
-            ocp_abort_execute_fw_command(FW_READ_FIFO_BYTE,
+            ocp_stall_execute_fw_command(FW_READ_FIFO_BYTE,
                 semantics_vif.FW_STATE_PATH_READY, value, label);
             if (value !== expected[i]) begin
                 drain_mismatches++;
@@ -723,7 +717,7 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
             UVM_NONE)
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::delete(
             host_agent_h.prot, raw_response_callback);
-        ocp_abort_execute_fw_command(semantics_vif.FW_COMMAND_FLOW_COMPLETE,
+        ocp_stall_execute_fw_command(semantics_vif.FW_COMMAND_FLOW_COMPLETE,
             semantics_vif.FW_STATE_FLOW_COMPLETE, ignored_data, "FINAL_COMPLETION");
     endtask
 endclass
