@@ -1025,7 +1025,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.REGION_RESET = new("REGION_RESET");
-            this.REGION_RESET.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.REGION_RESET.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
             this.OVERFLOW = new("OVERFLOW");
             this.OVERFLOW.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
             this.IMAGE_DONE = new("IMAGE_DONE");
