@@ -113,6 +113,33 @@ targets:
       # usb_coverage, which would redeclare the module.
       - $COMPILE_ROOT/coverage/usb_cov_bind.sv
 ---
+provides: [usb_ocp_post_sync_arb_tb]
+schema_version: 3.1.0
+requires:
+  - 3rd_party_frameworks::uvm
+  - lib_usb_compound
+targets:
+  tb:
+    directories:
+      # The reused verification constants package includes address metadata.
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
+    files:
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit_if.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_test_pkg.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_tb.sv
+    tops: [usb_ocp_post_sync_arb_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-sverilog -full64'
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'
+      elab:
+        - '-suppress=SIMU-RESOLUTION,DRTZ'
+---
 provides: [usb_top_tb]
 schema_version: 2.4.0
 requires:

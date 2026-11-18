@@ -33,8 +33,10 @@
 // Replacement-SETUP BATCH_ABORTED trigger:
 //   A new SETUP during an incomplete FIFO write pulses
 //   fifo_batch_abort, clears the OCP claim, and latches
-//   CALIPTRA_STATUS.BATCH_ABORTED (sticky W1C). This sequence delivers
-//   that stimulus without RTL or firmware changes:
+//   CALIPTRA_STATUS.BATCH_ABORTED even if no OUT DATA has arrived.
+//   The flag is read-only and clears on explicit FIFO reset or core reset;
+//   abort notification preserves already committed FIFO contents.
+//   This sequence delivers that stimulus:
 //     (a) Configure INDIRECT_FIFO_CTRL for a modest image window so the
 //         about-to-start INDIRECT_FIFO_DATA is a legal OCP claim.
 //     (b) Arm the arbiter packet callback's live setup-stage-ACK event

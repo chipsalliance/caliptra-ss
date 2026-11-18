@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 372;
+  localparam int USB_PKG_VERSION = 377;
 
 
   import uvm_pkg::*;
@@ -521,6 +521,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_supersession_expected_report_catcher.svh"
   `include "caliptra_ss_usb_supersession_selftest_catcher.svh"
   `include "caliptra_ss_usb_supersession_checker.svh"
+  `include "caliptra_ss_usb_ocp_malformed_timeout_catcher.svh"
   `include "caliptra_ss_usb_stale_publication_protocol.svh"
   `include "caliptra_ss_usb_supersession_fault_callback.svh"
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
@@ -540,6 +541,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_stall_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
   `include "caliptra_ss_usb_ocp_persistent_stall_sequence.svh"
+  `include "caliptra_ss_usb_ocp_fifo_local_behavior_sequence.svh"
   `include "caliptra_ss_usb_ocp_packet_observer_selftest_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
   `include "caliptra_ss_usb_ocp_interrupted_transfer_sequence.svh"
@@ -576,6 +578,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_test.svh"
   `include "caliptra_ss_usb_ocp_interrupted_transfer_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_local_behavior_test.svh"
 
 endpackage
 
