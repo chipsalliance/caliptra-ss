@@ -156,6 +156,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
     function void abort_batch(input bit owns_fifo_data);
         if (!owns_fifo_data) return;
         batch_active = 1'b0;
+        full_data_committed = 1'b0;
         partial_bytes = 0;
         requested_bytes = 0;
     endfunction
@@ -396,8 +397,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
             endcase
         end
         if (saw_stall || owner_abort) begin
-            if (acceptance_allowed && !full_data_committed &&
-                !observe_abort(1'b1)) return 1'b0;
+            if (acceptance_allowed && !observe_abort(1'b1)) return 1'b0;
             return saw_stall || (state != WAIT_SETUP);
         end
         // An explicitly interrupted observation may omit STATUS. Full DATA

@@ -15,8 +15,8 @@
 `ifndef CALIPTRA_SS_USB_OCP_FIFO_LOCAL_BEHAVIOR_SEQUENCE_SVH
 `define CALIPTRA_SS_USB_OCP_FIFO_LOCAL_BEHAVIOR_SEQUENCE_SVH
 
-// Explicit local full-capacity contract. This does NOT replace the normative
-// OCP Recovery v1.1 8.2.5 reserve-slot verdict in the ring testcase.
+// Validates the local full-capacity FIFO contract (USB-OCP-FIFO-001),
+// not the OCP Recovery v1.1 8.2.5 reserved-entry requirement.
 // State space: full/near-full/empty x publication held/released x
 // OUT/PING/status x valid/zero/envelope/remainder length.
 class caliptra_ss_usb_ocp_fifo_local_behavior_sequence
@@ -359,8 +359,8 @@ class caliptra_ss_usb_ocp_fifo_local_behavior_sequence
             // for the independent bound, so no permitted consumer command can
             // establish drain progress. This is a liveness gap, NOT an
             // unreachable-state claim or an executable liveness pass.
-            `uvm_warning("OCP_LOCAL_LIVENESS_UNCLOSED",
-                "LOCAL_4: near-full/PING-NAK reached with 4 free bytes; payload_available did not assert within 200us, prohibiting firmware drain. Bounded progress is unclosed: block/formal must establish publication/consumer progress or specify required host intervention, and cover published near-full drain plus eventual PING readiness. This is not a pass.")
+            `uvm_error("OCP_LOCAL_LIVENESS_UNCLOSED",
+                "LOCAL_4: near-full/PING-NAK reached with 4 free bytes; payload_available did not assert within the test's 200us service bound, prohibiting firmware drain. Required bounded progress was not demonstrated; this is a test failure, not a specification-defined publication deadline. Block/formal must establish publication/consumer progress or specify required host intervention, and cover published near-full drain plus eventual PING readiness.")
             // USB 2.0 8.5.1/8.5.1.1: after PING-NAK the host must remain
             // in PING until ACK; direct short OUT is NOT a legal recovery.
             // End capture with the owner still pending, then explicitly reset

@@ -835,15 +835,43 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                 adapter.lifecycle_idle() && adapter.indices_match(1, 0) &&
                 adapter.observe_abort(0) && (adapter.committed_byte_count() == 4),
                 "explicit owner abort cannot undo full ACK/NYET-accepted DATA");
+            ocp_packet_check_true(!adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "window-consumed full-DATA owner abort cannot be observed again");
             ocp_packet_check_true(adapter.observe_reset(), "reset accepted owner-abort fixture");
 
+            adapter.configure(8, 8, 16, 1'b1, 32, 2);
             ocp_packet_emit_synthetic_fifo_setup();
             ocp_packet_emit_synthetic_fifo_out(
                 svt_usb_packet::DATA1, 4, accepting_replies[i]);
             ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4, 1, 0, 1) &&
-                adapter.observe_drain(1) && adapter.indices_match(1, 1) &&
-                (adapter.committed_byte_count() == 0),
-                "independent drain allowed after full DATA with STATUS omitted");
+                adapter.observe_abort(0) && adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "unrelated abort preserves completed DATA and its first owned abort");
+            ocp_packet_check_true(!adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "duplicate direct full-DATA owner abort rejected without changing contents");
+            ocp_packet_check_true(adapter.observe_drain(1) &&
+                adapter.indices_match(1, 1) && (adapter.committed_byte_count() == 0),
+                "independent drain allowed after full DATA owner retirement without STATUS");
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_fifo_out(
+                svt_usb_packet::DATA1, 4, accepting_replies[i]);
+            ocp_packet_emit_synthetic_fifo_status();
+            ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4) && adapter.indices_match(2, 1),
+                "fresh request completes after full-DATA owner abort and drain");
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4) && adapter.indices_match(2, 1),
+                "owned abort preserves image progress after independent drain");
+            adapter.configure(8, 8, 16, 1'b1, 32, 64);
             ocp_packet_check_true(adapter.observe_reset(), "reset accepted interrupted fixture");
         end
 
@@ -870,7 +898,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             ocp_packet_check_true(adapter.observe_reset(), "reset unaccepted DATA fixture");
         end
         `uvm_info("OCP_PACKET_SELFTEST",
-            "Full ACK/NYET DATA commits independently of STATUS; control completion, replay, owner abort, drain and unaccepted/partial controls checked.",
+            "Full ACK/NYET DATA commits independently of STATUS; control completion, replay, once-only direct/window owner abort, retained image progress, drain and unaccepted/partial controls checked.",
             UVM_NONE)
     endfunction
 
