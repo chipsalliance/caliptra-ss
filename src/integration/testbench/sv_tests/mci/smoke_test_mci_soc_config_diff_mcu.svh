@@ -73,5 +73,7 @@ task smoke_test_mci_soc_config_diff_mcu();
         bfm_axi_write_single_mcu_lsu(reg_addrs[i], orig_val);
     end
 
+    check_mci_ss_config_access(1'b1, 1'b0);
+
     end_test_successful_req();
 endtask

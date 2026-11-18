@@ -13,6 +13,81 @@
 // limitations under the License.
 //
 
+// Summary: Check requester write permissions and lock enforcement for all 96
+// debug-unlock hash words and both SS_CONFIG_DONE locks.
+//
+// Inputs:
+// soc_config_allowed - Expect SoC Config Agent writes to be accepted before locking.
+// any_user_allowed - Expect arbitrary-user and DMA writes to be accepted before locking.
+//
+// Steps:
+// 1. Check allowed and blocked hash writes from invalid, DMA, SoC-config, MCU-IFU, and MCU-LSU users.
+// 2. Check which users can set each configuration lock.
+// 3. Check that no user can clear either lock once set.
+// 4. Check that all users' hash writes are blocked after the sticky lock is set.
+task automatic check_mci_ss_config_access(input logic soc_config_allowed, input logic any_user_allowed);
+    RandInvalidAXIUser invalid_axi_user_gen = new(
+        cptra_ss_strap_mcu_lsu_axi_user_i,
+        cptra_ss_strap_mcu_ifu_axi_user_i,
+        cptra_ss_strap_mcu_sram_config_axi_user_i,
+        cptra_ss_strap_mci_soc_config_axi_user_i
+    );
+    logic [31:0] users[5];
+    logic write_allowed[5];
+    logic [AXI_AW-1:0] lock_addrs[2] = {
+        `SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY,
+        `SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE
+    };
+    logic [AXI_AW-1:0] hash_addr;
+    logic [31:0] expected_val, test_val;
+
+    if (!invalid_axi_user_gen.randomize()) begin
+        $fatal("Randomization failed!");
+    end
+    users = '{invalid_axi_user_gen.rand_user, cptra_ss_strap_caliptra_dma_axi_user_i, cptra_ss_strap_mci_soc_config_axi_user_i, cptra_ss_strap_mcu_ifu_axi_user_i, cptra_ss_strap_mcu_lsu_axi_user_i};
+    write_allowed = '{any_user_allowed, any_user_allowed, soc_config_allowed, 1'b1, 1'b1};
+
+    // Test all eight hashes before either configuration lock is set.
+    for (int word_idx = 0; word_idx < 8 * 12; word_idx++) begin
+        hash_addr = `SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0 + word_idx * 4;
+        bfm_axi_read_single_mcu_lsu(hash_addr, expected_val);
+        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+            test_val = ~expected_val;
+            bfm_axi_write_single(hash_addr, users[user_idx], test_val);
+            if (write_allowed[user_idx]) begin
+                expected_val = test_val;
+            end
+            bfm_axi_read_check(hash_addr, cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
+        end
+    end
+
+    for (int lock_idx = 0; lock_idx < $size(lock_addrs); lock_idx++) begin
+        expected_val = 0;
+        bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
+        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+            bfm_axi_write_single(lock_addrs[lock_idx], users[user_idx], 32'h1);
+            if (write_allowed[user_idx]) begin
+                expected_val = 1;
+            end
+            bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
+        end
+        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+            bfm_axi_write_single(lock_addrs[lock_idx], users[user_idx], 32'h0);
+            bfm_axi_read_check(lock_addrs[lock_idx], cptra_ss_strap_mcu_lsu_axi_user_i, 32'h1);
+        end
+    end
+
+    // The sticky lock must block every requester, including the SoC Config Agent.
+    for (int word_idx = 0; word_idx < 8 * 12; word_idx++) begin
+        hash_addr = `SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0 + word_idx * 4;
+        bfm_axi_read_single_mcu_lsu(hash_addr, expected_val);
+        for (int user_idx = 0; user_idx < $size(users); user_idx++) begin
+            bfm_axi_write_single(hash_addr, users[user_idx], ~expected_val);
+            bfm_axi_read_check(hash_addr, cptra_ss_strap_mcu_lsu_axi_user_i, expected_val);
+        end
+    end
+endtask
+
 task get_mcu_sram_base_addr(output logic [AXI_AW-1:0] addr);
     addr = `SOC_MCI_TOP_MCU_SRAM_BASE_ADDR;
 endtask

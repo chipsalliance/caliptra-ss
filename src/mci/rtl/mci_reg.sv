@@ -10810,7 +10810,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.SS_CONFIG_DONE_STICKY.done.value;
         load_next_c = '0;
-        if(decoded_reg_strb.SS_CONFIG_DONE_STICKY && decoded_req_is_wr && hwif_in.ss_config_unlock_sticky) begin // SW write
+        if(decoded_reg_strb.SS_CONFIG_DONE_STICKY && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky) begin // SW write
             next_c = (field_storage.SS_CONFIG_DONE_STICKY.done.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.SS_CONFIG_DONE_STICKY.done.we) begin // HW Write - we
@@ -10835,7 +10835,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.SS_CONFIG_DONE.done.value;
         load_next_c = '0;
-        if(decoded_reg_strb.SS_CONFIG_DONE && decoded_req_is_wr && hwif_in.ss_config_unlock) begin // SW write
+        if(decoded_reg_strb.SS_CONFIG_DONE && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock) begin // SW write
             next_c = (field_storage.SS_CONFIG_DONE.done.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.SS_CONFIG_DONE.done.we) begin // HW Write - we
@@ -10862,7 +10862,7 @@ module mci_reg (
                 automatic logic load_next_c;
                 next_c = field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value;
                 load_next_c = '0;
-                if(decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && decoded_req_is_wr && hwif_in.ss_config_unlock_sticky) begin // SW write
+                if(decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky) begin // SW write
                     next_c = (field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
                     load_next_c = '1;
                 end
