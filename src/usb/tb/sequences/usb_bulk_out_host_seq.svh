@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Drives one checked bulk OUT transfer on a configured endpoint.
+// Drives checked bulk OUT transfers on a configured endpoint.
 class usb_bulk_out_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_bulk_out_host_seq)
 
@@ -24,6 +24,10 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time bulk_transfer_timeout = 200us;
   string transfer_label = "Bulk OUT";
+  int unsigned transfer_count = 1;
+  int unsigned completed_transfer_count;
+  int unsigned routed_response_count;
+  protected int routed_sequence_id;
 
   function new(string name = "usb_bulk_out_host_seq");
     super.new(name);
@@ -98,15 +102,15 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
     return 1'b1;
   endfunction
 
-  // Submit the transfer and validate its terminal event.
-  virtual task body();
+  // Submit one transfer and validate its routed response and terminal event.
+  task run_transfer();
     svt_usb_transfer bulk_transfer;
+    uvm_sequence_item response;
     uvm_object completed_object;
     string failure_reason;
     bit aligned_payload;
     bit [3:0] target_ep_number;
 
-    completed = 1'b0;
     if (target_endpoint == null) begin
       `uvm_fatal(report_id(), "No target endpoint configuration was supplied")
     end
@@ -162,6 +166,16 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
       bulk_transfer.payload.data[byte_index] = payload_byte(byte_index);
     end
     finish_item(bulk_transfer);
+    // Keep routed response delivery inside the existing transfer deadline.
+    get_response(response, bulk_transfer.get_transaction_id());
+    if (response === null || response.get_sequence_id() !== bulk_transfer.get_sequence_id()) begin
+      `uvm_fatal(report_id(), $sformatf("%s received an invalid routed response", transfer_label))
+    end
+    if (routed_response_count == 0) routed_sequence_id = response.get_sequence_id();
+    if (response.get_sequence_id() !== routed_sequence_id) begin
+      `uvm_fatal(report_id(), $sformatf("%s changed response owner within one active sequence", transfer_label))
+    end
+    routed_response_count++;
 
     end_transfer_watch(completed_object);
     check_transfer_correlation(transfer_label, bulk_transfer, completed_object);
@@ -169,7 +183,29 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
       `uvm_fatal(report_id(), $sformatf("%s completion rejected: %s", transfer_label, failure_reason))
     end
 
-    completed = 1'b1;
+    completed_transfer_count++;
     `uvm_info(report_id(), $sformatf("%s accepted on the bus: bytes=%0d", transfer_label, payload_byte_count), UVM_LOW)
+  endtask
+
+  // Keep all requests in one active originating sequence and drain each response.
+  virtual task body();
+    completed = 1'b0;
+    completed_transfer_count = 0;
+    routed_response_count = 0;
+    routed_sequence_id = -1;
+    if ($isunknown(transfer_count) || transfer_count == 0) begin
+      `uvm_fatal(report_id(), "transfer_count must be nonzero")
+    end
+    for (int unsigned transfer_index = 0; transfer_index < transfer_count; transfer_index++) begin
+      `uvm_info(report_id(), $sformatf("%s transfer %0d/%0d starting", transfer_label, transfer_index + 1, transfer_count), UVM_LOW)
+      run_transfer();
+    end
+    if (completed_transfer_count !== transfer_count || routed_response_count !== transfer_count) begin
+      `uvm_fatal(report_id(), "Bulk OUT sequence did not validate every transfer and routed response")
+    end
+    completed = 1'b1;
+    `uvm_info(report_id(),
+              $sformatf("%s sequence complete: validated_transfers=%0d routed_responses=%0d sequence_id=%0d",
+                        transfer_label, completed_transfer_count, routed_response_count, routed_sequence_id), UVM_LOW)
   endtask
 endclass

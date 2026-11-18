@@ -32,8 +32,8 @@
 //        - The endpoint's INTSTAT bit is set by the skip writeback.
 //   5. Re-arm the endpoint over a sentinel-filled buffer and run
 //      usb_dev_skip_host_seq to send one real bulk OUT transfer.
-//   6. Prove the endpoint still works after the skip: the residual NBytes is
-//      zero and every received byte matches the host payload.
+//   6. Prove the endpoint still works after the skip: Active and NBytes clear,
+//      the buffer pointer advances, and every byte matches the host payload.
 //
 // This drives the USB DMA FSM through IDLE -> READ_EPINFO_SKIP ->
 // WAIT_ON_GNT_FOR_SKIP_UPDATE -> IDLE, which no other test in this
@@ -47,8 +47,8 @@
 //
 // Checking placement: these are one-shot architectural checks of CSR and
 // packet-memory state following directed stimulus, and this bench has no
-// device-side predictor or scoreboard to host them. Continuous USB protocol
-// checking remains active in the Synopsys host VIP throughout. A reusable
+// device-side predictor or scoreboard to host them. Supported VIP link/physical
+// checking remains active; endpoint protocol checks are unsupported here. A reusable
 // endpoint-list and INTSTAT monitor would be the right home for these checks
 // once more endpoint-management scenarios exist.
 class usb_dev_skip_seq extends usb_base_seq;
@@ -148,16 +148,29 @@ class usb_dev_skip_seq extends usb_base_seq;
     `uvm_info("USB_SKIP_SEQ", $sformatf("Re-armed %s after the skip over a buffer filled with 0x%08h", skip_endpoint.convert2string(), recovery_sentinel), UVM_LOW)
   endtask
 
-  // Prove the previously skipped endpoint moved the full host payload into the
-  // buffer it was armed with, overwriting the sentinel everywhere.
-  task verify_recovery_transfer();
+  // Generic descriptors encode address bits [16:6] (Programmers Guide 4.2.3).
+  // Retire a partial final block by advancing to the next 64-byte boundary.
+  function logic [31:0] expected_post_transfer_buffer_offset(logic [31:0] start_buffer_offset, int unsigned transferred_bytes);
+    return start_buffer_offset + (((transferred_bytes + 63) / 64) * 64);
+  endfunction
+
+  // Check descriptor retirement and the full payload in the recovery buffer.
+  virtual task verify_recovery_transfer();
     usb_ep_entry_t observed_entry;
+    logic [31:0] expected_buffer_offset;
     logic [31:0] observed_word;
     logic [31:0] expected_word;
 
     read_endpoint_entry(skip_endpoint, observed_entry);
-    if (observed_entry.nbytes !== 0) begin
-      `uvm_fatal("USB_SKIP_SEQ", $sformatf("Post-skip transfer on %s left %0d residual bytes instead of 0; entry=%s", skip_endpoint.convert2string(), observed_entry.nbytes, describe_entry(observed_entry)))
+    expected_buffer_offset = expected_post_transfer_buffer_offset(skip_buffer_offset, recovery_bytes);
+    if (observed_entry.active !== 1'b0 ||
+        observed_entry.nbytes !== 0 ||
+        entry_buffer_byte_offset(observed_entry) !== expected_buffer_offset) begin
+      `uvm_fatal(
+        "USB_SKIP_SEQ",
+        $sformatf("Post-skip transfer on %s did not retire: expected active=0 nbytes=0 buffer=0x%08h; entry=%s",
+                  skip_endpoint.convert2string(), expected_buffer_offset, describe_entry(observed_entry))
+      )
     end
 
     for (int unsigned offset = 0; offset < recovery_bytes; offset += 4) begin
@@ -170,7 +183,9 @@ class usb_dev_skip_seq extends usb_base_seq;
         `uvm_fatal("USB_SKIP_SEQ", $sformatf("Post-skip payload mismatch at buffer offset 0x%03h: data=0x%08h expected=0x%08h", offset, observed_word, expected_word))
       end
     end
-    `uvm_info("USB_SKIP_SEQ", $sformatf("Post-skip recovery verified: residual=0 and all %0d payload bytes match", recovery_bytes), UVM_LOW)
+    `uvm_info("USB_SKIP_SEQ",
+              $sformatf("Post-skip recovery verified: active=0 residual=0 buffer=0x%08h and all %0d payload bytes match",
+                        expected_buffer_offset, recovery_bytes), UVM_LOW)
   endtask
 
   // Enumerate, exercise the endpoint skip, then prove the endpoint recovers.
