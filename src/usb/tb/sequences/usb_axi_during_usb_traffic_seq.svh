@@ -19,7 +19,10 @@
 //     disabled/disconnected, as the hardware spec requires before modifying it).
 // The base scenario checks the USB payloads; this sequence checks every AXI
 // response and readback beat, and proves that AXI requests on each bridge were
-// outstanding on the bus while USB DATA packets moved through the device.
+// outstanding on the bus while bulk DATA packets moved through the device.
+// A bulk DATA packet counts as overlapped if a scratch request was outstanding on
+// any clock from its EP1 token to the end of the DATA packet. EP0 enumeration
+// DATA packets are excluded from the overlap counts.
 class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
   `uvm_object_utils(usb_axi_during_usb_traffic_seq)
 
@@ -28,6 +31,8 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
   localparam int unsigned SLOT_BYTES = 64;
   localparam int unsigned MAX_GAP_CYCLES = 8;
   localparam logic [31:0] HUB_ACTIVE_MASK = 32'h0001_0001;
+  // The parent scenario's bulk OUT and IN transfers both use endpoint 1.
+  localparam bit [3:0] BULK_EP_NUMBER = 4'd1;
 
   int unsigned axi_pairs;
   int unsigned axi_beats;
@@ -39,7 +44,13 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
   int unsigned rx_overlapped;
   int unsigned tx_hub_overlapped;
   int unsigned rx_hub_overlapped;
+  int unsigned non_bulk_data_packets;
 
+  protected bit last_token_bulk_out;
+  protected bit last_token_bulk_in;
+  protected bit bulk_window_open;
+  protected bit window_ram_outstanding;
+  protected bit window_hub_outstanding;
   protected usb_axi_inflight_callbacks bus_tracker;
   protected usb_axi_inflight_callbacks hub_tracker;
   protected uvm_reg_addr_t scratch_base;
@@ -141,11 +152,28 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     return 1'b0;
   endfunction
 
-  // Count DATA packets in each direction and those that finished while a scratch request was on each bus.
+  protected function void sample_window_overlap();
+    window_ram_outstanding |= scratch_outstanding(bus_tracker, scratch_base, SCRATCH_BYTES);
+    window_hub_outstanding |= scratch_outstanding(hub_tracker, hub_scratch_base, hub_slots * SLOT_BYTES);
+  endfunction
+
+  // Sample every clock between a bulk token and its DATA packet, while the device moves that packet through RAM.
+  protected task sample_bulk_windows();
+    forever begin
+      p_sequencer.cfg.wait_bus_negedge();
+      if (bulk_window_open) sample_window_overlap();
+    end
+  endtask
+
+  // Count bulk DATA packets in each direction and those whose token-to-DATA window overlapped a scratch request.
+  // Each DATA packet belongs to the transaction opened by the latest host token, so the host-TX
+  // thread records whether that token was a bulk OUT or IN; EP0 control DATA is not counted.
   protected task count_data_packets(bit host_tx);
     svt_usb_agent host_agent;
     uvm_object packet_object;
     svt_usb_packet packet;
+    svt_usb_packet::pid_name_enum pid;
+    bit bulk_token;
     bit ram_overlapped;
     bit hub_overlapped;
 
@@ -156,9 +184,27 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
       if (host_tx) host_agent.prot.NOTIFY_20_HOST_TX_PACKET.wait_trigger_data(packet_object);
       else host_agent.prot.NOTIFY_20_HOST_RX_PACKET.wait_trigger_data(packet_object);
       if (!$cast(packet, packet_object) || packet == null) continue;
-      if (!(packet.get_pid_name_val() inside {svt_usb_packet::DATA0, svt_usb_packet::DATA1})) continue;
-      ram_overlapped = scratch_outstanding(bus_tracker, scratch_base, SCRATCH_BYTES);
-      hub_overlapped = scratch_outstanding(hub_tracker, hub_scratch_base, hub_slots * SLOT_BYTES);
+      pid = packet.get_pid_name_val();
+      if (host_tx && pid inside {svt_usb_packet::OUT, svt_usb_packet::IN, svt_usb_packet::SETUP, svt_usb_packet::PING}) begin
+        bulk_token = packet.get_device_address_val() == p_sequencer.cfg.device_address &&
+                     packet.get_ept_num_val() == BULK_EP_NUMBER;
+        last_token_bulk_out = bulk_token && pid == svt_usb_packet::OUT;
+        last_token_bulk_in = bulk_token && pid == svt_usb_packet::IN;
+        bulk_window_open = last_token_bulk_out || last_token_bulk_in;
+        window_ram_outstanding = 1'b0;
+        window_hub_outstanding = 1'b0;
+        if (bulk_window_open) sample_window_overlap();
+        continue;
+      end
+      if (!(pid inside {svt_usb_packet::DATA0, svt_usb_packet::DATA1})) continue;
+      if (!(host_tx ? last_token_bulk_out : last_token_bulk_in)) begin
+        non_bulk_data_packets++;
+        continue;
+      end
+      sample_window_overlap();
+      ram_overlapped = window_ram_outstanding;
+      hub_overlapped = window_hub_outstanding;
+      bulk_window_open = 1'b0;
       if (host_tx) begin
         tx_data_packets++;
         tx_overlapped += ram_overlapped;
@@ -207,6 +253,10 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
         monitors.push_back(process::self());
         count_data_packets(1'b0);
       end
+      begin
+        monitors.push_back(process::self());
+        sample_bulk_windows();
+      end
     join_none
 
     fork
@@ -235,12 +285,12 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     end
     if (!completed) return;
     completed = 1'b0;
-    `uvm_info("USB_AXI_DURING_USB", $sformatf("Scratch AXI: RAM %0d write/read pairs, %0d beats checked; Hub %0d write/read pairs, %0d beats checked; DATA packets host-TX=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d) host-RX=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d)", axi_pairs, axi_beats, hub_pairs, hub_beats, tx_data_packets, tx_overlapped, tx_hub_overlapped, rx_data_packets, rx_overlapped, rx_hub_overlapped), UVM_LOW)
+    `uvm_info("USB_AXI_DURING_USB", $sformatf("Scratch AXI: RAM %0d write/read pairs, %0d beats checked; Hub %0d write/read pairs, %0d beats checked; bulk DATA packets OUT=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d) IN=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d); non-bulk DATA packets ignored=%0d", axi_pairs, axi_beats, hub_pairs, hub_beats, tx_data_packets, tx_overlapped, tx_hub_overlapped, rx_data_packets, rx_overlapped, rx_hub_overlapped, non_bulk_data_packets), UVM_LOW)
     if (tx_overlapped == 0 || rx_overlapped == 0) begin
-      `uvm_fatal("USB_AXI_DURING_USB", "No DATA packet in one direction finished while a RAM scratch AXI request was outstanding")
+      `uvm_fatal("USB_AXI_DURING_USB", "No bulk DATA packet in one direction overlapped an outstanding RAM scratch AXI request")
     end
     if (tx_hub_overlapped == 0 || rx_hub_overlapped == 0) begin
-      `uvm_fatal("USB_AXI_DURING_USB", "No DATA packet in one direction finished while a Hub scratch AXI request was outstanding")
+      `uvm_fatal("USB_AXI_DURING_USB", "No bulk DATA packet in one direction overlapped an outstanding Hub scratch AXI request")
     end
     completed = 1'b1;
   endtask

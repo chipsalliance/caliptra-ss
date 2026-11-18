@@ -17,3 +17,7 @@ seed: 1
 testname: usb_axi_dev_ram_rw
 plusargs:
   - '+UVM_TESTNAME=usb_axi_dev_ram_rw_test'
+  # Deliberate BREADY/RREADY holds fill the bridge FIFOs, so both sides wait
+  # longer than the Axi4PC advisory limit by design.
+  - '+usb_axi_disable_ready_max_wait_recs'
+  - '+usb_axi_disable_resp_ready_max_wait_recs'
