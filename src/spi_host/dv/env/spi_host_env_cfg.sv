@@ -30,6 +30,12 @@ class spi_host_env_cfg extends dv_base_env_cfg #(.RAL_T(spi_host_reg_block));
   // default 0 because tb.sv instantiates dual NOR flash models / directed peripheral responders.
   bit en_reactive_device_rsp = 1'b0;
 
+  // Scoped guard toggled strictly around the intentional same-CSR burst inside
+  // spi_host_base_vseq::run_same_csr_outstanding_vseq() so UVM/FLD/SET/BSY warnings remain
+  // unsuppressed in every other test, phase, and register.
+  bit    allow_same_csr_bsy    = 1'b0;
+  string same_csr_bsy_reg_name = "";
+
   // number of dummy cycles in a dummy segment
   rand int    num_dummy;
   int         max_dummy_cycles = 16;

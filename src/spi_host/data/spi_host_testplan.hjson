@@ -115,13 +115,10 @@
       name: clock_rate
       desc: '''
             Stimulus:
-              - Sweep CSNIDLE, CSNLEAD, and CSNTRAIL across 0..15 (including completed boundary = 15
-                transfers across CS0 and CS1) and verify two-sided ConfigSwitch idle intervals
-                (WaitIdle + CSBSwitch) and all-CSB-high CPOL switch placement
+              - Sweep lower and mid-range 16-bit CLKDIV settings across active transfers on CS0 and CS1
 
             Checking:
-              - Verify completed TX/RX transfers and per-CS lead/trail/two-sided-idle timing bounds,
-                plus early-transition and missing-CPOL-switch negative controls
+              - Verify scoreboard-checked TX/RX operation across swept SPI clock dividers
             '''
       stage: V2
       tests: ["spi_host_speed"]
@@ -142,10 +139,13 @@
       name: chip_select_timing
       desc: '''
             Stimulus:
-              - Sweep lower and mid-range 16-bit CLKDIV settings across active transfers on CS0 and CS1
+              - Sweep CSNIDLE, CSNLEAD, and CSNTRAIL across 0..15 (including completed boundary = 15
+                transfers across CS0 and CS1) and verify two-sided ConfigSwitch idle intervals
+                (WaitIdle + CSBSwitch) and all-CSB-high CPOL switch placement
 
             Checking:
-              - Verify scoreboard-checked TX/RX operation across swept SPI clock dividers
+              - Verify completed TX/RX transfers and per-CS lead/trail/two-sided-idle timing bounds,
+                plus early-transition and missing-CPOL-switch negative controls
             '''
       stage: V2
       tests: ["spi_host_speed"]

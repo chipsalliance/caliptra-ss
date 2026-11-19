@@ -38,6 +38,10 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     //    SECDED fault-injection & recovery verification
     run_axi_upper_addr_burst_and_data_intg_checks();
 
+    // 6. Scoreboard ERROR_STATUS independent-oracle & fixed-settling-window negative controls
+    //    (forged false OVERFLOW mid-transfer & quiescent + dropped UNDERFLOW past settling window)
+    run_error_status_oracle_negative_controls();
+
     `uvm_info(`gfn, "Finished 'spi_host_closure_vseq' successfully", UVM_LOW)
   endtask : body
 
@@ -867,5 +871,108 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
       end
     end
   endtask : run_axi_upper_addr_burst_and_data_intg_checks
+
+  // Verifies that spi_host_scoreboard keeps expected sw_error_bits strictly separate from DUT
+  // readback: catches a forged false OVERFLOW immediately during an active (!quiescent) transfer
+  // without poisoning expected state, catches it when quiescent, and catches a missing expected
+  // ERROR_STATUS[2:0] bit once the fixed settling window (ERROR_SETTLE_CLKS) elapses.
+  virtual task run_error_status_oracle_negative_controls();
+    spi_host_command_t cmd;
+    uvm_status_e       status;
+    uvm_reg_data_t     err_val, rdata;
+    int unsigned       prev_tx_cnt;
+
+    if (!cfg.en_scb) return;
+    `uvm_info(`gfn, "Running ERROR_STATUS independent-oracle & settling-window negative controls", UVM_LOW)
+
+    spi_host_init();
+    program_spi_host_regs();
+    csr_wr(.ptr(ral.error_enable), .value(32'h0));
+    csr_wr(.ptr(ral.intr_state),   .value(32'h3));
+    csr_wr(.ptr(ral.csid),         .value(32'h0));
+    csr_wr(.ptr(ral.configopts),   .value(32'h0111_0040)); // clkdiv=64 for deterministic active overlap
+
+    // 6a. Forged false OVERFLOW during active transfer (!quiescent):
+    //     Must fail immediately on mid-transfer read AND leave sw_error_bits unpoisoned (0x00).
+    prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+    write_txdata(32'hCAFE_BABE, 4'hf, status);
+    `DV_CHECK_EQ(status, UVM_IS_OK)
+    wait_ready_for_command();
+    cmd.direction = TxOnly;
+    cmd.mode      = Standard;
+    cmd.csaat     = 1'b0;
+    cmd.len       = 9'd3;
+    program_command_reg(cmd);
+    wait (cfg.m_spi_agent_cfg.vif.csb[0] === 1'b0);
+
+    begin
+      spi_host_scb_neg_catcher err_catcher = spi_host_scb_neg_catcher::type_id::create("err_active_ovf_catcher");
+      err_catcher.match_pattern = "*Unexpected ERROR_STATUS[2:0] bit asserted during active transfer*";
+      uvm_report_cb::add(null, err_catcher);
+      csr_poke(.ptr(ral.error_status), .value(32'h0000_0002), .predict(1'b0));
+      csr_rd(.ptr(ral.error_status), .value(err_val));
+      uvm_report_cb::delete(null, err_catcher);
+      `DV_CHECK_EQ(err_val[1], 1'b1, "Expected poked false OVERFLOW bit to read back as 1")
+      `DV_CHECK_EQ(err_catcher.caught_err_cnt, 1,
+                   "Expected scoreboard to reject forged false OVERFLOW immediately during active transfer")
+    end
+
+    // Clear forged bit via backdoor only (no W1C write): transfer completes and quiescent read of
+    // 0x00 passes, proving the mid-transfer readback did NOT poison sw_error_bits.
+    csr_poke(.ptr(ral.error_status), .value(32'h0000_0000), .predict(1'b0));
+    csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+    cfg.clk_rst_vif.wait_clks(10);
+    `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                 "Expected active transfer to complete cleanly after clearing forged OVERFLOW")
+    csr_rd_check(.ptr(ral.error_status), .compare_value(32'h0));
+
+    // 6b. Forged false OVERFLOW while quiescent must fail full 6-bit comparison.
+    begin
+      spi_host_scb_neg_catcher err_catcher = spi_host_scb_neg_catcher::type_id::create("err_quiesc_ovf_catcher");
+      err_catcher.match_pattern = "*ERROR_STATUS mismatch on read*";
+      uvm_report_cb::add(null, err_catcher);
+      csr_poke(.ptr(ral.error_status), .value(32'h0000_0002), .predict(1'b0));
+      csr_rd(.ptr(ral.error_status), .value(err_val));
+      uvm_report_cb::delete(null, err_catcher);
+      `DV_CHECK_EQ(err_val[1], 1'b1)
+      `DV_CHECK_EQ(err_catcher.caught_err_cnt, 1,
+                   "Expected scoreboard to reject forged false OVERFLOW when quiescent")
+    end
+    csr_poke(.ptr(ral.error_status), .value(32'h0000_0000), .predict(1'b0));
+    csr_rd_check(.ptr(ral.error_status), .compare_value(32'h0));
+
+    // 6c. Missing expected UNDERFLOW past fixed settling window during active transfer (!quiescent).
+    prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+    write_txdata(32'h1234_5678, 4'hf, status);
+    `DV_CHECK_EQ(status, UVM_IS_OK)
+    wait_ready_for_command();
+    program_command_reg(cmd);
+    wait (cfg.m_spi_agent_cfg.vif.csb[0] === 1'b0);
+
+    ral.rxdata.read(status, 0, rdata); // Genuine UNDERFLOW: sets DUT + scoreboard sw_error_bits[2]
+    `DV_CHECK_EQ(status, UVM_IS_OK)
+    csr_rd(.ptr(ral.error_status), .value(err_val)); // Verifies UNDERFLOW & clears unverified_underflow_cnt
+    `DV_CHECK_EQ(err_val[2], 1'b1)
+    cfg.clk_rst_vif.wait_clks(20); // Exceed fixed ERROR_SETTLE_CLKS (16 core clocks)
+
+    begin
+      spi_host_scb_neg_catcher err_catcher = spi_host_scb_neg_catcher::type_id::create("err_settle_udf_catcher");
+      err_catcher.match_pattern = "*Expected ERROR_STATUS[2] failed to appear past fixed settling window*";
+      uvm_report_cb::add(null, err_catcher);
+      csr_poke(.ptr(ral.error_status), .value(32'h0000_0000), .predict(1'b0));
+      csr_rd(.ptr(ral.error_status), .value(err_val));
+      uvm_report_cb::delete(null, err_catcher);
+      `DV_CHECK_EQ(err_val[2], 1'b0)
+      `DV_CHECK_EQ(err_catcher.caught_err_cnt, 1,
+                   "Expected scoreboard to flag missing ERROR_STATUS[2] past fixed settling window")
+    end
+
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0004)); // Clear scoreboard sw_error_bits[2]
+    csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+    cfg.clk_rst_vif.wait_clks(10);
+    `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                 "Expected active transfer to complete cleanly after settling-window negative control")
+    program_spi_host_regs();
+  endtask : run_error_status_oracle_negative_controls
 
 endclass : spi_host_closure_vseq

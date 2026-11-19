@@ -72,6 +72,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   local int                         spi_clk_half_period;
   local int                         cur_tx_fifo_bytes = 0;
   local bit [5:0]                   sw_error_bits = 6'b0;
+  // Fixed settling window (in core clocks) before checking expected ERROR_STATUS[2:0] bits
+  // during an active (!quiescent) transfer; unexpected DUT error bits in [2:0] fail immediately.
+  localparam int unsigned           ERROR_SETTLE_CLKS = 16;
+  local realtime                    sw_err_set_time[3] = '{default: 0};
 
   // interrupt bit vector
   local bit [NumSpiHostIntr-1:0]    intr_state = 2'b00;
@@ -1039,7 +1043,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         cmd_inval  = !cmd_busy && (!(spi_cmd_reg.mode inside {Standard, Dual, Quad}) ||
                                    (spi_cmd_reg.mode != Standard && spi_cmd_reg.direction == Bidir));
 
-        if (cmd_busy)   sw_error_bits[0] = 1'b1;
+        if (cmd_busy) begin
+          if (!sw_error_bits[0]) sw_err_set_time[0] = $realtime();
+          sw_error_bits[0] = 1'b1;
+        end
         if (cmd_inval)  sw_error_bits[3] = 1'b1;
         if (csid_inval) sw_error_bits[4] = 1'b1;
 
@@ -1155,6 +1162,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           end
           pending_invalid_cmd_q = kept_q;
         end
+        for (int b = 0; b < 3; b++) begin
+          if (value[b]) sw_err_set_time[b] = 0;
+        end
         sw_error_bits &= ~value[5:0];
         if (had_sw_err && (sw_error_bits == 6'b0) && (wait_idle_ref_time > 0)) begin
           wait_idle_ref_time = $realtime();
@@ -1199,16 +1209,36 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       "error_status": begin
         if (cfg.en_scb) begin
           bit quiescent = (write_segment_q.size() == 0) && (in_tx_seg_cnt == checked_tx_seg_cnt);
-          // Compare deterministic CSR-input errors (accessinval[5], csidinval[4], cmdinval[3]) always,
-          // and full 6-bit ERROR_STATUS vector whenever quiescent (Comment #12).
+          longint settle_bound_ps = longint'(ERROR_SETTLE_CLKS) *
+                                    longint'(cfg.clk_rst_vif.clk_period_ps);
+          // Expected error state (sw_error_bits) is kept strictly separate from DUT readback:
+          // - Check full 6-bit ERROR_STATUS vector whenever quiescent.
+          // - During an active transfer (!quiescent): always check deterministic CSR errors [5:3],
+          //   immediately reject any unexpectedly asserted DUT error bit in [2:0], and check
+          //   expected bits in [2:0] once the fixed settling period (ERROR_SETTLE_CLKS) has elapsed.
           if (quiescent && (value[5:0] !== sw_error_bits)) begin
             `uvm_error(`gfn, $sformatf(
               "ERROR_STATUS mismatch on read: actual=0x%02h != predicted=0x%02h",
               value[5:0], sw_error_bits))
-          end else if (!quiescent && (value[5:3] !== sw_error_bits[5:3])) begin
-            `uvm_error(`gfn, $sformatf(
-              "ERROR_STATUS[5:3] mismatch on read: actual=0x%0h != predicted=0x%0h",
-              value[5:3], sw_error_bits[5:3]))
+          end else if (!quiescent) begin
+            if (value[5:3] !== sw_error_bits[5:3]) begin
+              `uvm_error(`gfn, $sformatf(
+                "ERROR_STATUS[5:3] mismatch on read: actual=0x%0h != predicted=0x%0h",
+                value[5:3], sw_error_bits[5:3]))
+            end
+            if ((value[2:0] & ~sw_error_bits[2:0]) != 3'b0) begin
+              `uvm_error(`gfn, $sformatf(
+                "Unexpected ERROR_STATUS[2:0] bit asserted during active transfer: actual=0x%0h predicted=0x%0h",
+                value[2:0], sw_error_bits[2:0]))
+            end
+            for (int b = 0; b < 3; b++) begin
+              if (sw_error_bits[b] && !value[b] &&
+                  ((($realtime() - sw_err_set_time[b]) / 1ps) >= settle_bound_ps)) begin
+                `uvm_error(`gfn, $sformatf(
+                  "Expected ERROR_STATUS[%0d] failed to appear past fixed settling window (%0d clks): actual=0x%02h predicted=0x%02h",
+                  b, ERROR_SETTLE_CLKS, value[5:0], sw_error_bits))
+              end
+            end
           end
         end
         if (value[2] && sw_error_bits[2]) begin
@@ -1409,6 +1439,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         sw_error_bits[5] = 1'b1;
       end
       if (exp_full) begin
+        if (!sw_error_bits[1]) sw_err_set_time[1] = $realtime();
         sw_error_bits[1] = 1'b1;
       end
 
@@ -1443,6 +1474,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       if (exp_empty) begin
         // Expected underflow: RXDATA read on empty RX FIFO must return 0x0 and set underflow error.
         // Unverified zero-valued reads are flagged by check_unverified_underflows() (Comment #12).
+        if (!sw_error_bits[2]) sw_err_set_time[2] = $realtime();
         sw_error_bits[2] = 1'b1;
         if (cfg.en_scb) unverified_underflow_cnt++;
         if (cfg.en_scb && (value[31:0] != 32'h0)) begin
@@ -1500,6 +1532,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       spi_intr_enable_reg  = '{default: '0};
       spi_intr_test_reg    = '{default: '0};
       sw_error_bits        = 6'b0;
+      sw_err_set_time      = '{default: 0};
       spi_configopts       = '{default: '0};
       for (int i = 0; i < SPI_HOST_NUM_CS; i++) begin
         spi_configopts_per_cs[i] = '{default: '0};

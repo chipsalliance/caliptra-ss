@@ -782,6 +782,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
         rd_mask = get_mask_excl_fields(csrs[i], CsrExclWriteCheck, csr_test_type);
         wr_mask = get_mask_excl_fields(csrs[i], CsrExclWrite, csr_test_type);
 
+        // Suppress UVM/FLD/SET/BSY strictly during this intentional non-blocking burst to csrs[i]
+        cfg.same_csr_bsy_reg_name = csrs[i].get_full_name();
+        cfg.allow_same_csr_bsy    = 1'b1;
         repeat ($urandom_range(2, 8)) begin
           if ($urandom_range(0, 1) &&
               !csr_excl.is_excl(csrs[i], CsrExclWriteCheck, csr_test_type)) begin
@@ -796,6 +799,8 @@ class spi_host_base_vseq extends dv_base_vseq #(
           end
         end
         csr_utils_pkg::wait_no_outstanding_access();
+        cfg.allow_same_csr_bsy    = 1'b0;
+        cfg.same_csr_bsy_reg_name = "";
       end
     end
   endtask
