@@ -271,5 +271,3 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_err_iso_pid_seq/caliptra_ss_usb_hs_dev_err_iso_pid_seq: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw/caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_err_iso_token_mismatch/caliptra_ss_usb_hs_dev_err_iso_token_mismatch: { weight: 100 }
-
-# File contains AI-generated response based on internal company sources
