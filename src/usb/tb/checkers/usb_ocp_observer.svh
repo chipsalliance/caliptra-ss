@@ -17,12 +17,14 @@ class usb_ocp_observer extends uvm_component;
 
   protected usb_ocp_event pending[$];
   protected usb_ocp_event completions[$];
+  protected longint unsigned completion_version;
   protected longint unsigned started_at[int unsigned];
   protected longint unsigned started_serial[int unsigned];
   longint unsigned transfer_starts;
   longint unsigned next_order;
   int unsigned packet_count;
   int unsigned transfer_count;
+  int unsigned reordered_completions;
   int unsigned axi_count[4];
   int unsigned outstanding_axi[4];
   localparam int unsigned QUEUE_LIMIT = 16384;
@@ -32,7 +34,9 @@ class usb_ocp_observer extends uvm_component;
     next_order = 0;
     packet_count = 0;
     transfer_count = 0;
+    reordered_completions = 0;
     transfer_starts = 0;
+    completion_version = 0;
     axi_count = '{default:0};
     outstanding_axi = '{default:0};
   endfunction
@@ -167,6 +171,7 @@ class usb_ocp_observer extends uvm_component;
     transfer_count++;
     ocp_publish_snapshot(item);
     completions.push_back(item);
+    completion_version++;
   endfunction
 
   // Callback tasks call this only after Avery read_done/write_done. No
@@ -212,22 +217,49 @@ class usb_ocp_observer extends uvm_component;
     item = pending.pop_front();
   endtask
 
-  // Completion correlation uses a post-submission ordering floor plus the
-  // complete SETUP tuple and address, not the first global ended event.
-  // Bringup serializes host transfers; packet generation is cross-checked
-  // independently by the scoreboard before the scenario can finish.
+  function int ocp_find_completion(logic [6:0] address, logic [7:0] setup[8],
+                                   longint unsigned floor);
+    int match_index;
+    match_index = -1;
+    foreach (completions[i]) begin
+      if (completions[i].order >= floor &&
+          completions[i].transfer_start_order >= floor &&
+          completions[i].address === address &&
+          completions[i].endpoint === 0 && completions[i].setup === setup) begin
+        if (match_index != -1)
+          `uvm_fatal("OCP_CORRELATION", "Ambiguous control-transfer completion identity")
+        match_index = i;
+      end
+    end
+    return match_index;
+  endfunction
+
+  // Preserve other devices' completions until their own waiters consume them.
+  // A monotonic version wakes waiters even when the queue size returns to its
+  // prior value after another waiter consumes an entry.
   task ocp_wait_completion(logic [6:0] address, logic [7:0] setup[8],
                            longint unsigned floor, time timeout,
                            output usb_ocp_event result);
     bit done;
+    int match_index;
+    longint unsigned version;
     result = null;
     done = 0;
     fork
       begin
         fork
           begin
-            wait (completions.size() != 0);
-            result = completions.pop_front();
+            while (result == null) begin
+              version = completion_version;
+              match_index = ocp_find_completion(address,setup,floor);
+              if (match_index != -1) begin
+                if (match_index != 0) reordered_completions++;
+                result = completions[match_index];
+                completions.delete(match_index);
+                completion_version++;
+              end else
+                wait (completion_version != version);
+            end
             if (result.order < floor || result.transfer_start_order < floor ||
                 result.address !== address ||
                 result.endpoint !== 0 || result.setup !== setup)

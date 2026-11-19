@@ -19,6 +19,10 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     super.new(name);
   endfunction
 
+  virtual function usb_ocp_base_host_seq ocp_prepare_host();
+    return usb_ocp_base_host_seq::type_id::create("host");
+  endfunction
+
   task body();
     usb_ocp_base_host_seq host;
     usb_ocp_base_mcu_seq mcu;
@@ -30,7 +34,9 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     if (!uvm_config_db#(usb_ocp_observer)::get(p_sequencer,"","ocp_observer",observer) ||
         !uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
       `uvm_fatal("OCP_BRINGUP", "Missing mandatory passive checker")
-    host = usb_ocp_base_host_seq::type_id::create("host");
+    if (scoreboard.negative_overlap && !scoreboard.model.require_dev1_ep0_overlap)
+      `uvm_fatal("OCP_NEGATIVE_CONTROL", "Overlap injection requires a dev1 EP0 overlap scenario")
+    host = ocp_prepare_host();
     mcu = usb_ocp_base_mcu_seq::type_id::create("mcu");
     caliptra = usb_ocp_base_caliptra_seq::type_id::create("caliptra");
     soc = usb_ocp_base_soc_seq::type_id::create("soc");

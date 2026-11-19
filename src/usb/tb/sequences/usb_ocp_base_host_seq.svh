@@ -25,9 +25,20 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   int unsigned cms_count;
   int unsigned fifo_depth;
   int unsigned fifo_max;
+  bytes_t device_descriptor_bytes[3];
+  logic [7:0] configuration_value[3];
 
   function new(string name = "usb_ocp_base_host_seq");
     super.new(name);
+  endfunction
+
+  virtual task ocp_do_control_interleave(svt_usb_transfer tr, int device);
+  endtask
+
+  virtual task ocp_wait_peer_completion(svt_usb_transfer tr, int device);
+  endtask
+
+  virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
   endfunction
 
   // One bounded submission, exact routed response, and independently copied
@@ -88,12 +99,19 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                     foreach (payload.data[i]) payload.data[i] == local::write_data[i];
                   }
                 }) `uvm_fatal("OCP_HOST", "Control transfer randomization failed")
-            finish_item(tr);
-            get_response(response,tr.get_transaction_id());
-            if (response == null || response.get_sequence_id() != tr.get_sequence_id() ||
-                response.get_transaction_id() != tr.get_transaction_id())
-              `uvm_fatal("OCP_HOST", "Wrong routed UVM response")
-            observer.ocp_wait_completion(addr,setup,floor,ocp_cfg.control_transfer_timeout,observed);
+            ocp_configure_control_request(tr,device);
+            fork
+              ocp_do_control_interleave(tr,device);
+              begin
+                finish_item(tr);
+                get_response(response,tr.get_transaction_id());
+                if (response == null || response.get_sequence_id() != tr.get_sequence_id() ||
+                    response.get_transaction_id() != tr.get_transaction_id())
+                  `uvm_fatal("OCP_HOST", "Wrong routed UVM response")
+                ocp_wait_peer_completion(tr,device);
+                observer.ocp_wait_completion(addr,setup,floor,ocp_cfg.control_transfer_timeout,observed);
+              end
+            join
             done = 1;
           end
           begin #(ocp_cfg.control_transfer_timeout); end
@@ -130,6 +148,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       host_agent.reconfigure(usb_cfg);
     end
     ocp_do_check_control(device,8'h80,6,16'h0100,0,18,empty,data);
+    device_descriptor_bytes[device] = data;
     if (data.size() != 18 || data[0] !== 18 || data[1] !== 1 || data[7] !== 64)
       `uvm_fatal("OCP_ENUM", "Invalid EP0 device descriptor")
     ocp_do_check_control(device,0,5,16'(ocp_cfg.assigned_address[device]),0,0,empty,data);
@@ -160,6 +179,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     ocp_do_check_control(device,8'h80,8,0,0,1,empty,data);
     if (data.size() != 1 || data[0] !== 1)
       `uvm_fatal("OCP_ENUM", "SET_CONFIGURATION did not take effect")
+    configuration_value[device] = data[0];
   endtask
 
   task ocp_do_check_port(int port);
