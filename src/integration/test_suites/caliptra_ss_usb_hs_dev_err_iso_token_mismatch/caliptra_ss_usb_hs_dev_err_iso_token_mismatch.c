@@ -25,48 +25,61 @@
 // WHY THIS SUITE DOES NOT USE usb_err_inject_fw_common.h
 //
 // Same reason as caliptra_ss_usb_hs_dev_err_iso_pid_seq: the firmware's only
-// job is to arm EP2 OUT as isochronous ONCE and then get out of the way. The
-// actual stimulus (ISO OUT data phases interleaved with directed mismatched
-// tokens on the packet sequencer) is driven entirely by
-// caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence - see that file's
-// header for why the VIP transfer layer cannot express "send this token
-// before the DUT's pending ISO state has cleared."
+// job is to arm EP2 OUT/IN as isochronous ONCE and then get out of the way.
+// The actual stimulus is driven entirely by
+// caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence on the packet
+// sequencer - see that file's header for why the VIP transfer layer cannot
+// express "send this token before the DUT's pending ISO state has cleared."
 //
-// WHY THE FIRMWARE NEVER SEES AN EP2OUT COMPLETION FROM THE MISMATCHED TOKENS
+// WHY BOTH EP2 OUT AND EP2 IN ARE HIGH-BANDWIDTH (2-TRANSACTION) ENDPOINTS
 //
-// All four usb_pie.m.vhdl branches this test targets (lines 2192/2211/2231/
-// 2251) clear iso_out_pending_r/iso_in_pending_r and return the protocol FSM
-// straight to USB_PROT_WF_IDLE without ever reaching the DMA handoff that
-// would raise DEV0_CSR_INTSTAT_EP2OUT or EP2IN. The sequence's own ISO OUT
-// data phases (used only to arm iso_out_pending_r before each mismatch) DO
-// complete normally, so this firmware re-arms EP2 OUT each time it sees a
-// completion, exactly as caliptra_ss_usb_hs_dev_iso_out_sequence's firmware
-// would, just without an ISO IN response path since no real ISO IN transfer
-// is ever requested.
+// Reading usb_pie.m.vhdl's USB_PROT_WF_TOKEN_BYTE3 case statement shows the
+// four target PACKET_UNEXPECTED branches (lines 2192/2211/2231/2251) are
+// keyed ONLY on iso_out_pending_r/iso_in_pending_r, independent of which
+// endpoint the stray token addresses. iso_out_pending_r/iso_in_pending_r are
+// set on the FIRST OUT/IN of an isochronous transfer and cleared again as
+// soon as the LAST transaction of that transfer completes
+// (iso_transact_cnt_down reaches "00"). For a single-transaction transfer
+// (NBYTES bits [11:10]="00"), that happens on the very first data phase, so
+// by the time the FSM returns to USB_PROT_WF_TOKEN_BYTE3 waiting for a new
+// token, the pending flag has ALREADY cleared and the mismatched token can
+// never land in the "unexpected" window - this was the root cause of the
+// original (now-superseded) design's failure to hit any of the four lines.
 //
-// WHY EP2 IN IS ARMED AFTER THE THIRD EP2 OUT COMPLETION, NOT ON THE FIRST
-// CONTROL TRANSFER
+// The fix is to configure BOTH EP2 OUT and EP2 IN as 2-transaction
+// high-bandwidth (HBW) isochronous endpoints (NBYTES bits [11:10]="01",
+// USB_EP2_NBYTES_HBW below). iso_transact_cnt_down then loads to "01" on
+// the first transaction and only DECREMENTS (to "00") when that first
+// transaction completes - iso_out_pending_r/iso_in_pending_r stay asserted
+// throughout, exactly the window the sequence's mismatched token needs.
+// The sequence completes only the first transaction (legal MDATA for OUT,
+// ordinary data for IN - see its header for the required PID framing) and
+// then substitutes a mismatched token for what would have been the second
+// transaction's token.
 //
-// A regression run proved arming EP2 IN immediately (alongside EP2 OUT, on
-// the first SETUP transfer) is a bug: the sequence's very first leg sends a
-// directed, unanswered PID_IN token to EP2 meant to hit line 2192 (PID_IN
-// while iso_out_pending_r='1'). With EP2 IN already ACTIVE at that point,
-// the DUT does not take the "unexpected" branch at all - it treats the bare
-// IN token as an ordinary isochronous IN request and answers it with a real
-// 768-byte DATA0 packet (confirmed in svt_debug.transcript: a report_xact
-// entry for DATA0, Payload Size=768, lands exactly at the moment
-// [register_fail:...rx_packet_routed_check] fires). The VIP never registered
-// a transfer-level request for that bare IN token, so it has no routing
-// entry to match the DUT's unsolicited response against, and the check
-// fails with "No device with matching address found."
+// WHY EP2 IN CAN BE ARMED UP FRONT NOW
 //
-// The sequence's body() issues exactly three do_iso_out() arming transfers
-// (for the 2192/2231/2251 legs) before reaching the final leg, which pairs
-// a directed IN (to arm iso_in_pending_r) with a directed OUT (to hit line
-// 2211). EP2 IN must stay inactive until that final leg, so it is armed
-// only after the third EP2 OUT completion - one poll loop iteration after
-// the third do_iso_out() finishes - instead of on the first control
-// transfer.
+// The superseded design deferred arming EP2 IN until after the third EP2
+// OUT completion, reasoning (incorrectly) that an already-armed EP2 IN
+// would make the DUT answer a bare directed IN token as an ordinary ISO IN
+// request instead of taking the "unexpected" branch. That reasoning
+// conflated two unrelated bugs: the PID_IN branch's decision depends only
+// on iso_out_pending_r (see above), not on EP2 IN's arm state. With the
+// pending flags now correctly held across the token boundary by the HBW
+// transaction count, EP2 IN can be armed alongside EP2 OUT on the very
+// first control transfer with no interaction between the two endpoints.
+//
+// WHY THE FIRMWARE SEES EXACTLY ONE EP2OUT/EP2IN COMPLETION PER LEG, THEN
+// NONE FROM THE MISMATCHED TOKENS
+//
+// Each leg's first (legitimate) data phase completes normally through the
+// DMA and raises DEV0_CSR_INTSTAT_EP2OUT or EP2IN once; the firmware re-arms
+// the endpoint after each such completion so the next leg starts fresh. The
+// mismatched token that follows is discarded by one of the four target RTL
+// branches before any DMA handoff, so it raises no further completion -
+// confirmed by usb_pie.m.vhdl: all four branches route straight to
+// USB_PROT_WF_IDLE via set_pie_error/clear_pie_success without touching the
+// DMA interface.
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -87,29 +100,24 @@
 #define USB_SRAM_EP2_OUT_BUF_OFFSET    0x600u
 #define USB_EP_LIST_EP2_OUT_OFFSET     0x020u
 
-// EP2 IN buffer and list offsets, needed for the line-2211 leg
-// (iso_in_pending_r = '1'). Same convention as
-// caliptra_ss_usb_hs_dev_err_pkt_unexpected.c: two buffer entries at
-// 0x028/0x02C, SRAM placed after the OUT buffer so the two never overlap.
+// EP2 IN buffer and list offset, needed for the line-2211 leg
+// (iso_in_pending_r = '1'). Single descriptor only (see header note on why
+// two separate buffer entries is wrong for this purpose) - SRAM placed well
+// after the OUT buffer so the two never overlap.
 #define USB_SRAM_EP2_IN_BUF_OFFSET     0xA00u
 #define USB_EP_LIST_EP2_IN_BUF0_OFFSET 0x028u
-#define USB_EP_LIST_EP2_IN_BUF1_OFFSET 0x02Cu
 
-// HS isochronous max packet (USB 2.0 table 5-7).
-#define USB_ISO_TRANSFER_BYTES         1024u
-
-// NBYTES for the EP2 IN descriptor. iso_transact_cnt_down loads from
-// epinfo_nbytes(11 downto 10) (usb_dma.m.vhdl load_iso_transact_cnt_down).
-// 1536 has bits [11:10] = "01", so the first IN data packet only
-// decrements iso_transact_cnt_down (usb_pie.m.vhdl USB_PROT_IN_TX_CRC16_BYTE2,
-// "else decr_iso_transact_cnt_down") instead of clearing iso_in_pending_r
-// (the "elsif iso_transact_cnt_down = 00 then clear_iso_in_pending" leg) -
-// this is what lets iso_in_pending_r survive to the end of the microframe so
-// the sequence's directed PID_OUT token (line 2211) lands while it is still
-// set. Each of the two buffer entries carries half (768 bytes).
-#define USB_EP2_IN_NBYTES_TOTAL        1536u
-#define USB_EP2_IN_BUF_BYTES           (USB_EP2_IN_NBYTES_TOTAL / 2u)
-
+// NBYTES value placing iso_transact_cnt_down in the "01" (2-transaction)
+// high-bandwidth bucket on load (usb_dma.m.vhdl load_iso_transact_cnt_down
+// reads epinfo_nbytes(11 downto 10)). 1536 = 0x600 has bits [11:10] = "01".
+// Used for BOTH EP2 OUT and EP2 IN - see the file header for why both
+// endpoints must be HBW for the pending flags to survive the first
+// transaction. Each endpoint uses a single descriptor sized to this value;
+// the first (and only, in this test) transaction's actual on-wire payload
+// is capped at 1024 bytes by packetsize_decod's "first transactions" branch
+// (usb_pie.m.vhdl ~line 858/866), with the remaining bytes never sent since
+// the sequence never completes a second transaction.
+#define USB_EP2_NBYTES_HBW             1536u
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -119,15 +127,16 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-// Arm EP2 OUT as isochronous: T=1 (periodic) with the RF bit clear (ISO
-// selector). Re-armed after every normal completion so each of the
-// sequence's three OUT data phases lands on a freshly armed endpoint.
-static void usb_ep2_out_arm_iso(void) {
+// Arm EP2 OUT as a 2-transaction high-bandwidth isochronous endpoint: T=1
+// (periodic) with the RF bit clear (ISO selector), NBYTES in the "01"
+// bucket. Re-armed after every completion so each leg's first data phase
+// lands on a freshly armed endpoint.
+static void usb_ep2_out_arm_iso_hbw(void) {
     uint32_t inten;
     uint32_t ep2_out = USB_EP_ENTRY_ACTIVE
                      | USB_EP_ENTRY_TYPE_PERIODIC
                      | USB_EP_ENTRY_RF_ISO
-                     | USB_EP_ENTRY_NBYTES(USB_ISO_TRANSFER_BYTES)
+                     | USB_EP_ENTRY_NBYTES(USB_EP2_NBYTES_HBW)
                      | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR
                                              + USB_SRAM_EP2_OUT_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_OUT_OFFSET, ep2_out);
@@ -135,52 +144,40 @@ static void usb_ep2_out_arm_iso(void) {
     inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
                  inten | DEV0_CSR_INTSTAT_EP2OUT_MASK);
-    VPRINTF(LOW, "MCU: EP2 OUT (ISO, single-buffer) armed for %d bytes\n",
-            USB_ISO_TRANSFER_BYTES);
+    VPRINTF(LOW, "MCU: EP2 OUT (ISO, HBW 2-transaction) armed for %d bytes\n",
+            USB_EP2_NBYTES_HBW);
 }
 
-// Arm EP2 IN as isochronous, needed for the line-2211 leg (iso_in_pending_r
-// = '1' at the moment a mismatching PID_OUT token arrives). Mirrors
-// caliptra_ss_usb_hs_dev_err_pkt_unexpected.c's usb_ep2_in_arm_iso(): both
-// buffers get USB_EP_ENTRY_ACTIVE and USB_EP_ENTRY_TYPE_PERIODIC (the
-// periodic bit is what makes epinfo_iso = '1' on this endpoint - see
-// usb_dma.m.vhdl "epinfo_iso <= epinfo_periodic = '1' and epinfo_rf_tv = '0'"
-// - omitting it is why this endpoint previously never reached
-// set_iso_in_pending at all).
-static void usb_ep2_in_arm_iso(void) {
+// Arm EP2 IN as a 2-transaction high-bandwidth isochronous endpoint,
+// needed for the line-2211 leg (iso_in_pending_r = '1' at the moment a
+// mismatching PID_OUT token arrives). Single descriptor, NBYTES in the
+// same "01" bucket as EP2 OUT - see the file header for why.
+static void usb_ep2_in_arm_iso_hbw(void) {
     uint32_t inten;
 
-    for (uint32_t i = 0; i < USB_EP2_IN_NBYTES_TOTAL; i += 4) {
+    for (uint32_t i = 0; i < USB_EP2_NBYTES_HBW; i += 4) {
         uint32_t w = 0x11223344u + i;
         lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET + i, w);
     }
 
     uint32_t ep2_in_buf0 = USB_EP_ENTRY_ACTIVE
                          | USB_EP_ENTRY_TYPE_PERIODIC
-                         | USB_EP_ENTRY_NBYTES(USB_EP2_IN_BUF_BYTES)
+                         | USB_EP_ENTRY_NBYTES(USB_EP2_NBYTES_HBW)
                          | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR
                                                   + USB_SRAM_EP2_IN_BUF_OFFSET);
-    uint32_t ep2_in_buf1 = USB_EP_ENTRY_ACTIVE
-                         | USB_EP_ENTRY_TYPE_PERIODIC
-                         | USB_EP_ENTRY_NBYTES(USB_EP2_IN_BUF_BYTES)
-                         | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR
-                                                  + USB_SRAM_EP2_IN_BUF_OFFSET
-                                                  + USB_EP2_IN_BUF_BYTES);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF0_OFFSET, ep2_in_buf0);
-    lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF1_OFFSET, ep2_in_buf1);
 
     inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
                  inten | DEV0_CSR_INTSTAT_EP2IN_MASK);
-    VPRINTF(LOW, "MCU: EP2 IN (ISO) armed for %d bytes total - line-2211 leg\n",
-            USB_EP2_IN_NBYTES_TOTAL);
+    VPRINTF(LOW, "MCU: EP2 IN (ISO, HBW 2-transaction) armed for %d bytes\n",
+            USB_EP2_NBYTES_HBW);
 }
 
 // Has the host told us it is finished with the device?
 //
 // Reuses the MCI generic-wire command channel from the OCP-recovery work -
 // see caliptra_ss_usb_hs_dev_err_pkt_unexpected.c for the full note.
-
 static bool usb_err_host_stop_seen(void) {
     uint32_t command = lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
 
@@ -202,11 +199,12 @@ void main(void) {
     uint32_t poll_count;
     uint32_t transfers_handled = 0;
     uint32_t ep2out_completions = 0;
-    bool     ep2_armed          = false;
+    uint32_t ep2in_completions = 0;
+    bool     ep2_out_armed      = false;
     bool     ep2_in_armed       = false;
     bool     host_stop_seen     = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - ISO token-direction mismatch\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB error injection - ISO token-direction mismatch (HBW)\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -232,16 +230,16 @@ void main(void) {
             uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
             if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
-                if (ep2_armed) {
+                if (ep2_out_armed) {
                     // A bus reset wipes the descriptor, so the arm has to be
                     // redone once enumeration restarts.
-                    ep2_armed = false;
-                    VPRINTF(LOW, "MCU: Bus reset - EP2 arm cleared\n");
+                    ep2_out_armed = false;
+                    VPRINTF(LOW, "MCU: Bus reset - EP2 OUT arm cleared\n");
                 }
                 if (ep2_in_armed) {
                     ep2_in_armed = false;
+                    VPRINTF(LOW, "MCU: Bus reset - EP2 IN arm cleared\n");
                 }
-
             }
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
@@ -252,16 +250,16 @@ void main(void) {
             if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 transfers_handled++;
-                if (!ep2_armed) {
-                    usb_ep2_out_arm_iso();
-                    ep2_armed = true;
+                // Both EP2 OUT and EP2 IN are armed up front - see the file
+                // header's "WHY EP2 IN CAN BE ARMED UP FRONT NOW" note.
+                if (!ep2_out_armed) {
+                    usb_ep2_out_arm_iso_hbw();
+                    ep2_out_armed = true;
                 }
-                // EP2 IN is intentionally NOT armed here - see the file
-                // header's "WHY EP2 IN IS ARMED AFTER THE THIRD EP2 OUT
-                // COMPLETION" note. It is armed below, after the third EP2
-                // OUT completion, once the sequence's three 2192/2231/2251
-                // legs are done and it is about to send the line-2211 leg's
-                // IN/OUT pair.
+                if (!ep2_in_armed) {
+                    usb_ep2_in_arm_iso_hbw();
+                    ep2_in_armed = true;
+                }
             } else {
                 // Status-stage ZLP OUT of a control read completed; re-arm
                 // EP0 OUT or enumeration stalls.
@@ -273,29 +271,24 @@ void main(void) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
-        // Each of the sequence's ISO OUT data phases completes normally
-        // (they arm iso_out_pending_r, they are not themselves the
-        // mismatch). Re-arm EP2 OUT so the next OUT data phase in the
-        // sequence has a fresh buffer.
+        // Each leg's first (legitimate) OUT data phase completes normally.
+        // Re-arm EP2 OUT so the next leg starts with a fresh buffer.
         if (reg_data & DEV0_CSR_INTSTAT_EP2OUT_MASK) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP2OUT_MASK);
             ep2out_completions++;
-            usb_ep2_out_arm_iso();
+            usb_ep2_out_arm_iso_hbw();
+        }
 
-            // The sequence's three 2192/2231/2251 legs each complete one
-            // ISO OUT data phase before their mismatched token. Once the
-            // third one lands, the body() is about to move on to the final
-            // 2211 leg (directed IN then OUT), so EP2 IN is armed now - see
-            // the file header's "WHY EP2 IN IS ARMED AFTER THE THIRD EP2
-            // OUT COMPLETION" note for why this cannot happen any earlier.
-            if (!ep2_in_armed && ep2out_completions == 3) {
-                usb_ep2_in_arm_iso();
-                ep2_in_armed = true;
-            }
+        // Each leg's first (legitimate) IN data phase completes normally.
+        // Re-arm EP2 IN so the next leg starts with a fresh buffer.
+        if (reg_data & DEV0_CSR_INTSTAT_EP2IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP2IN_MASK);
+            ep2in_completions++;
+            usb_ep2_in_arm_iso_hbw();
         }
 
         if (poll_count % 10000 == 0 && poll_count > 0) {
-            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP2=0x%x\n",
+            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP2OUT=0x%x\n",
                     poll_count,
                     lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT),
                     lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT),
@@ -314,8 +307,8 @@ void main(void) {
         VPRINTF(LOW, "MCU: no host STOP within %d poll iterations; halting anyway\n",
                 poll_count);
 
-    VPRINTF(LOW, "MCU: ISO token-direction mismatch: %d control transfers, %d EP2 OUT completions\n",
-            transfers_handled, ep2out_completions);
+    VPRINTF(LOW, "MCU: ISO token-direction mismatch: %d control transfers, %d EP2 OUT completions, %d EP2 IN completions\n",
+            transfers_handled, ep2out_completions, ep2in_completions);
 
     VPRINTF(LOW, "MCU: USB error injection - halting\n");
     csr_write_mpmc_halt();
