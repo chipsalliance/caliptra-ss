@@ -28,6 +28,7 @@ class usb_ocp_base_service_callback extends svt_usb_protocol_callback;
   logic [6:0] expected_abort_address;
   logic [7:0] expected_abort_setup[8];
   usb_ocp_event mixed_native_abort;
+  usb_ocp_suspend_service_record l2_record;
 
   function new(string name = "usb_ocp_base_service_callback");
     super.new(name);
@@ -84,6 +85,16 @@ class usb_ocp_base_service_callback extends svt_usb_protocol_callback;
       svt_usb_protocol component, svt_usb_protocol_service protocol_service);
     if (protocol_service == null)
       `uvm_fatal("OCP_EPN_COMMAND", "Missing completed native service descriptor")
+    if (l2_record != null && protocol_service.service_type == svt_usb_protocol_service::SOF) begin
+      if ((l2_record.operation == usb_ocp_suspend_service_record::SOF_OFF &&
+           protocol_service.protocol_20_command_type !== svt_usb_protocol_service::USB_20_SOF_OFF) ||
+          (l2_record.operation == usb_ocp_suspend_service_record::SOF_ON &&
+           protocol_service.protocol_20_command_type !== svt_usb_protocol_service::USB_20_SOF_ON) ||
+          l2_record.operation == usb_ocp_suspend_service_record::LINK_CLEAR)
+        `uvm_fatal("OCP_L2_SERVICE", "Mismatched executed SOF service in serial operation window")
+      // SOF is not CMD: return_status has no success meaning here.
+      l2_record.ocp_capture_end(protocol_service,protocol_service.status);
+    end
     if (protocol_service.service_type != svt_usb_protocol_service::CMD ||
         !(protocol_service.protocol_command_type inside {
           svt_usb_protocol_service::USB_PAUSE_TRANSFER_PROCESSING,
