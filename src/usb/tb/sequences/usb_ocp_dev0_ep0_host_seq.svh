@@ -85,7 +85,6 @@ class usb_ocp_dev0_ep0_host_seq extends usb_ocp_base_host_seq;
                                     logic [15:0] length, bytes_t write_data,
                                     output bytes_t read_data, input bit expect_replacement = 0);
     bytes_t accepted;
-    bytes_t remaining;
     bit selected;
     if (expect_replacement)
       `uvm_fatal("OCP_SUPERSESSION", "Nested replacement request is unsupported")
@@ -110,18 +109,11 @@ class usb_ocp_dev0_ep0_host_seq extends usb_ocp_base_host_seq;
         if (accepted[i] !== read_data[i])
           `uvm_fatal("OCP_SUPERSESSION", "Canceled capability prefix differs from fresh discovery")
     end else begin
-      if (accepted.size() == 0 || accepted.size() > write_data.size() ||
+      // This single-packet write must be accepted before STATUS is superseded.
+      if (accepted.size() == 0 || accepted.size() != write_data.size() ||
           accepted.size()%4 != 0)
-        `uvm_fatal("OCP_SUPERSESSION", "FIFO replacement lacks a legal accepted DWORD prefix")
-      for (int i = accepted.size(); i < write_data.size(); i++)
-        remaining.push_back(write_data[i]);
-      `uvm_info("OCP_SUPERSESSION",$sformatf(
-        "Resubmit only unaccepted FIFO suffix: accepted_bytes=%0d remaining_bytes=%0d",
-        accepted.size(),remaining.size()),UVM_LOW)
+        `uvm_fatal("OCP_SUPERSESSION", "FIFO replacement requires a fully accepted DWORD-aligned write")
       read_data.delete();
-      if (remaining.size() != 0)
-        super.ocp_do_check_control(device,bm,request,value,index,
-                                  16'(remaining.size()),remaining,read_data);
       // Discharge canceled-control obligations before continuing the image.
       scoreboard.ocp_check_replacements();
       `uvm_info("OCP_SUPERSESSION_PHASE",$sformatf(
