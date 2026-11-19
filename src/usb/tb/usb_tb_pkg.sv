@@ -303,7 +303,11 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_dev1_ep0_service_seq.svh"
   `include "sequences/usb_ocp_dev1_ep0_host_seq.svh"
   `include "sequences/usb_ocp_dev1_ep0_overlap_seq.svh"
+  `include "sequences/usb_ocp_dev0_ep0_service_seq.svh"
+  `include "sequences/usb_ocp_dev0_ep0_host_seq.svh"
+  `include "sequences/usb_ocp_dev0_ep0_interleave_seq.svh"
   `include "tests/usb_ocp_base_test.svh"
   `include "tests/usb_ocp_bringup_test.svh"
   `include "tests/usb_ocp_dev1_ep0_overlap_test.svh"
+  `include "tests/usb_ocp_dev0_ep0_interleave_test.svh"
 endpackage

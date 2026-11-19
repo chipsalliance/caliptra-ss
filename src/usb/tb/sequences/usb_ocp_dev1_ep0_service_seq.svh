@@ -29,20 +29,8 @@ class usb_ocp_dev1_ep0_service_seq extends usb_ocp_base_host_seq;
   endfunction
 
   task body();
-    bytes_t data;
-    bytes_t empty;
     resolve_host_context(1);
-    // USB 2.0 9.4.2/9.4.3: compare with this device's earlier USB discovery,
-    // not another device's data or an RTL/RDL expected-value oracle.
-    ocp_do_check_control(2,8'h80,svt_usb_types::GET_CONFIGURATION,0,0,1,empty,data);
-    if (data.size() != 1 || data[0] !== expected_configuration)
-      `uvm_fatal("OCP_PEER", "Dev1 GET_CONFIGURATION differs from prior discovery")
-    ocp_do_check_control(2,8'h80,svt_usb_types::GET_DESCRIPTOR,16'h0100,0,18,empty,data);
-    if (data.size() != expected_descriptor.size())
-      `uvm_fatal("OCP_PEER", "Dev1 device descriptor length changed during OCP")
-    foreach (data[i])
-      if (data[i] !== expected_descriptor[i])
-        `uvm_fatal("OCP_PEER", "Dev1 descriptor data changed or crossed device identity")
+    ocp_do_check_standard_controls(2,expected_configuration,expected_descriptor);
     completed = 1;
   endtask
 endclass
