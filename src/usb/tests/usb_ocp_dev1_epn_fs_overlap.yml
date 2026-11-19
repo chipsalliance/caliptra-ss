@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_ocp_dev1_epn_fs_overlap
+plusargs:
+  - '+UVM_TESTNAME=usb_ocp_dev1_epn_fs_overlap_test'
+  - '+usb_ocp_cov'
+  - '+usb_ocp_epn_type=BULK'
+  - '+usb_ocp_image_words=130'
+  - '+UVM_TIMEOUT=25000000'
