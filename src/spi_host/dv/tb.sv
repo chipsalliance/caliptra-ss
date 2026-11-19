@@ -156,12 +156,20 @@ module tb;
     .intr_spi_event_o (intr_event)
   );
 
-  // Contention-free single-bit TL-UL cmd_intg SECDED fault injection on internal link
+  // Contention-free single-bit TL-UL cmd_intg & data_intg SECDED fault injection on internal link
   always @(spi_passthrough_if.inject_cmd_intg_err or dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg) begin
     if (spi_passthrough_if.inject_cmd_intg_err) begin
       force dut.tl_h2d.a_user.cmd_intg = dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg ^ 7'h01;
     end else begin
       release dut.tl_h2d.a_user.cmd_intg;
+    end
+  end
+
+  always @(spi_passthrough_if.inject_data_intg_err or dut.u_axi2tlul_spi_host.i_sub2tlul.data_intg) begin
+    if (spi_passthrough_if.inject_data_intg_err) begin
+      force dut.tl_h2d.a_user.data_intg = dut.u_axi2tlul_spi_host.i_sub2tlul.data_intg ^ 7'h01;
+    end else begin
+      release dut.tl_h2d.a_user.data_intg;
     end
   end
 

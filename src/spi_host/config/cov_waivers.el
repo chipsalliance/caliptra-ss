@@ -29,6 +29,15 @@
 //==================================================
 
 //==================================================
+// 0. SUBSYSTEM WRAPPER TOP (tb.dut : spi_host_axi)
+//==================================================
+// [TARGET-CFG] NumCS = 2 elaborates gen_passthrough_ignore and PassthroughNumCSCompat_Bound_A
+// requires passthrough_i.passthrough_en == 1'b0 on every active clock edge.
+INSTANCE: tb.dut
+ANNOTATION: "[TARGET-CFG] NumCS=2 structurally disables passthrough_en per PassthroughNumCSCompat_Bound_A"
+Toggle passthrough_i.passthrough_en "logic passthrough_i.passthrough_en"
+
+//==================================================
 // 1. SPI HOST CORE TOP (tb.dut.u_caliptra_ss_spi_host : caliptra_ss_spi_host)
 //==================================================
 // [DESIGN-UNR] In spi_host.sv:154-166, test_speed_inval is only set to 1 in the default
@@ -60,9 +69,11 @@ INSTANCE: tb.dut.u_caliptra_ss_spi_host
 ANNOTATION: "[TARGET-CFG] Production axi_sub / sub2tlul / TL-UL SECDED constants for spi_host_axi (AxiIw=1)"
 Toggle tl_i.a_user.instr_type "logic tl_i.a_user.instr_type[3:0]"
 Toggle tl_i.a_user.rsvd "logic tl_i.a_user.rsvd[2:0]"
+Toggle tl_i.a_address [1:0] "logic tl_i.a_address[31:0]"
 Toggle tl_i.a_source [7:1] "logic tl_i.a_source[7:0]"
 Toggle tl_i.a_param "logic tl_i.a_param[2:0]"
 Toggle tl_i.a_opcode [1] "logic tl_i.a_opcode[2:0]"
+Toggle tl_o.d_user.rsp_intg [6] "logic tl_o.d_user.rsp_intg[6:0]"
 Toggle tl_o.d_source [7:1] "logic tl_o.d_source[7:0]"
 Toggle tl_o.d_param "logic tl_o.d_param[2:0]"
 Toggle tl_o.d_sink "logic tl_o.d_sink[0:0]"
@@ -137,26 +148,32 @@ Condition 7 "3660748963" "(rvalid_o && rready_i) 1 -1" (1 "01")
 // 5. SYNC FIFOs (cmd_fifo, u_tx_fifo, u_rx_fifo)
 //==================================================
 // [DESIGN-UNR] In caliptra_prim_fifo_sync.sv:69-85, under_rst is a synchronous post-reset flop and
-// wready_o / rvalid_o already include ~gen_normal_fifo.under_rst as a factor, so (wvalid_i & wready_o)==1
-// or (rvalid_o & rready_i)==1 structurally implies ~under_rst == 1 (row "110" is impossible, Comment #7).
+// wready_o / rvalid_o already include ~gen_normal_fifo.under_rst as a factor, so:
+//   - On line 84 (rvalid_o = ~empty & ~under_rst): rst_ni==0 resets empty=1, and while under_rst==1
+//     wready_o is forced to 0 so no push can occur; hence (~empty=1, ~under_rst=0) is impossible.
+//   - On lines 105-106: (wvalid_i & wready_o)==1 or (rvalid_o & rready_i)==1 structurally implies
+//     ~under_rst == 1 (row "110" is impossible, Comment #7).
 // In u_tx_fifo, tx_valid_checked = tx_valid & ~error_overflow = tx_valid & tx_ready, gating wvalid_i
 // with wready_o so row "101" (wvalid_i=1, wready_o=0) is also structurally impossible.
 CHECKSUM: "4004715651 3111044606"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_cmd_queue.cmd_fifo
-ANNOTATION: "[DESIGN-UNR] wready_o and rvalid_o already include ~under_rst in caliptra_prim_fifo_sync.sv"
+ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o already include ~under_rst"
+Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 
 CHECKSUM: "4004715651 3686475193"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_data_fifos.u_tx_fifo
-ANNOTATION: "[DESIGN-UNR] wready_o/rvalid_o include ~under_rst; tx_valid_checked gated by tx_ready in spi_host.sv:358"
+ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o include ~under_rst; tx_valid_checked gated by tx_ready"
+Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "101")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 
 CHECKSUM: "4004715651 2903083481"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_data_fifos.u_rx_fifo
-ANNOTATION: "[DESIGN-UNR] wready_o and rvalid_o already include ~under_rst in caliptra_prim_fifo_sync.sv"
+ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o already include ~under_rst"
+Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 
@@ -203,3 +220,245 @@ INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_reg
 ANNOTATION: "[DESIGN-UNR] reg_we_err checks one-hotness of mutually exclusive CSR address decode comparators"
 Condition 1 "258898769" "(intg_err || reg_we_err) 1 -1" (2 "01")
 Condition 31 "8186339" "(err_q | intg_err | reg_we_err) 1 -1" (2 "001")
+
+// (c) [TARGET-CFG / DESIGN-UNR] Propagation of structural TL-UL bus constants on u_reg & u_window ports:
+//   - Upstream tl_i / tl_win_o[0..1] constants identical to Section 1 (instr_type=MuBi4False, rsvd=0,
+//     a_address[1:0]=2'b00, a_source[7:1]=0, a_param=0, a_opcode[1]=0; upper a_address[31:2] bits
+//     are NOT waived and toggle dynamically).
+//   - Window D-channel constants: u_window.u_adapter_rx (tlul_adapter_reg with EnableDataIntgGen=0,
+//     EnableRspIntgGen=0) ties rx_win_o.d_user = '0, and u_window.u_adapter_tx (tlul_adapter_sram with
+//     ErrOnRead=1, EnableDataIntgGen=0, EnableRspIntgGen=0, rdata_i='0) ties tx_win_o.d_data = 32'h0
+//     and tx_win_o.d_user = '0.
+INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_reg
+ANNOTATION: "[TARGET-CFG] Propagated TL-UL bus & window adapter structural port constants (AxiIw=1)"
+Toggle tl_i.a_user.instr_type "logic tl_i.a_user.instr_type[3:0]"
+Toggle tl_i.a_user.rsvd "logic tl_i.a_user.rsvd[2:0]"
+Toggle tl_i.a_address [1:0] "logic tl_i.a_address[31:0]"
+Toggle tl_i.a_source [7:1] "logic tl_i.a_source[7:0]"
+Toggle tl_i.a_param "logic tl_i.a_param[2:0]"
+Toggle tl_i.a_opcode [1] "logic tl_i.a_opcode[2:0]"
+Toggle tl_o.d_user.rsp_intg [6] "logic tl_o.d_user.rsp_intg[6:0]"
+Toggle tl_o.d_sink "logic tl_o.d_sink[0:0]"
+Toggle tl_o.d_source [7:1] "logic tl_o.d_source[7:0]"
+Toggle tl_o.d_param "logic tl_o.d_param[2:0]"
+Toggle tl_o.d_opcode [2:1] "logic tl_o.d_opcode[2:0]"
+Toggle tl_win_o[0].a_user.instr_type "logic tl_win_o[0].a_user.instr_type[3:0]"
+Toggle tl_win_o[0].a_user.rsvd "logic tl_win_o[0].a_user.rsvd[2:0]"
+Toggle tl_win_o[0].a_address [1:0] "logic tl_win_o[0].a_address[31:0]"
+Toggle tl_win_o[0].a_source [7:1] "logic tl_win_o[0].a_source[7:0]"
+Toggle tl_win_o[0].a_param "logic tl_win_o[0].a_param[2:0]"
+Toggle tl_win_o[0].a_opcode [1] "logic tl_win_o[0].a_opcode[2:0]"
+Toggle tl_win_o[1].a_user.instr_type "logic tl_win_o[1].a_user.instr_type[3:0]"
+Toggle tl_win_o[1].a_user.rsvd "logic tl_win_o[1].a_user.rsvd[2:0]"
+Toggle tl_win_o[1].a_address [1:0] "logic tl_win_o[1].a_address[31:0]"
+Toggle tl_win_o[1].a_source [7:1] "logic tl_win_o[1].a_source[7:0]"
+Toggle tl_win_o[1].a_param "logic tl_win_o[1].a_param[2:0]"
+Toggle tl_win_o[1].a_opcode [1] "logic tl_win_o[1].a_opcode[2:0]"
+Toggle tl_win_i[0].d_user.data_intg "logic tl_win_i[0].d_user.data_intg[6:0]"
+Toggle tl_win_i[0].d_user.rsp_intg "logic tl_win_i[0].d_user.rsp_intg[6:0]"
+Toggle tl_win_i[0].d_sink "logic tl_win_i[0].d_sink[0:0]"
+Toggle tl_win_i[0].d_source [7:1] "logic tl_win_i[0].d_source[7:0]"
+Toggle tl_win_i[0].d_param "logic tl_win_i[0].d_param[2:0]"
+Toggle tl_win_i[0].d_opcode [2:1] "logic tl_win_i[0].d_opcode[2:0]"
+Toggle tl_win_i[1].d_user.data_intg "logic tl_win_i[1].d_user.data_intg[6:0]"
+Toggle tl_win_i[1].d_user.rsp_intg "logic tl_win_i[1].d_user.rsp_intg[6:0]"
+Toggle tl_win_i[1].d_data "logic tl_win_i[1].d_data[31:0]"
+Toggle tl_win_i[1].d_sink "logic tl_win_i[1].d_sink[0:0]"
+Toggle tl_win_i[1].d_source [7:1] "logic tl_win_i[1].d_source[7:0]"
+Toggle tl_win_i[1].d_param "logic tl_win_i[1].d_param[2:0]"
+Toggle tl_win_i[1].d_opcode [2:1] "logic tl_win_i[1].d_opcode[2:0]"
+
+//==================================================
+// 8. FIFO WINDOW WRAPPER (tb.dut.u_caliptra_ss_spi_host.u_window)
+//==================================================
+INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_window
+ANNOTATION: "[TARGET-CFG] Propagated TL-UL bus & window adapter structural port constants (AxiIw=1)"
+Toggle rx_win_i.a_user.instr_type "logic rx_win_i.a_user.instr_type[3:0]"
+Toggle rx_win_i.a_user.rsvd "logic rx_win_i.a_user.rsvd[2:0]"
+Toggle rx_win_i.a_address [1:0] "logic rx_win_i.a_address[31:0]"
+Toggle rx_win_i.a_source [7:1] "logic rx_win_i.a_source[7:0]"
+Toggle rx_win_i.a_param "logic rx_win_i.a_param[2:0]"
+Toggle rx_win_i.a_opcode [1] "logic rx_win_i.a_opcode[2:0]"
+Toggle rx_win_o.d_user.data_intg "logic rx_win_o.d_user.data_intg[6:0]"
+Toggle rx_win_o.d_user.rsp_intg "logic rx_win_o.d_user.rsp_intg[6:0]"
+Toggle rx_win_o.d_sink "logic rx_win_o.d_sink[0:0]"
+Toggle rx_win_o.d_source [7:1] "logic rx_win_o.d_source[7:0]"
+Toggle rx_win_o.d_param "logic rx_win_o.d_param[2:0]"
+Toggle rx_win_o.d_opcode [2:1] "logic rx_win_o.d_opcode[2:0]"
+Toggle tx_win_i.a_user.instr_type "logic tx_win_i.a_user.instr_type[3:0]"
+Toggle tx_win_i.a_user.rsvd "logic tx_win_i.a_user.rsvd[2:0]"
+Toggle tx_win_i.a_address [1:0] "logic tx_win_i.a_address[31:0]"
+Toggle tx_win_i.a_source [7:1] "logic tx_win_i.a_source[7:0]"
+Toggle tx_win_i.a_param "logic tx_win_i.a_param[2:0]"
+Toggle tx_win_i.a_opcode [1] "logic tx_win_i.a_opcode[2:0]"
+Toggle tx_win_o.d_user.data_intg "logic tx_win_o.d_user.data_intg[6:0]"
+Toggle tx_win_o.d_user.rsp_intg "logic tx_win_o.d_user.rsp_intg[6:0]"
+Toggle tx_win_o.d_data "logic tx_win_o.d_data[31:0]"
+Toggle tx_win_o.d_sink "logic tx_win_o.d_sink[0:0]"
+Toggle tx_win_o.d_source [7:1] "logic tx_win_o.d_source[7:0]"
+Toggle tx_win_o.d_param "logic tx_win_o.d_param[2:0]"
+Toggle tx_win_o.d_opcode [2:1] "logic tx_win_o.d_opcode[2:0]"
+
+//==================================================
+// 9. AXI-TO-TL-UL GASKET STRUCTURAL INVARIANTS (tb.dut.u_axi2tlul_spi_host)
+//==================================================
+// Note: Complex sub2tlul combinational condition tables and all AXI_SUB_*_HSHAKE_ERR SVA assertions
+// remain intentionally UNWAIVED. Only strictly RTL-proven structural constants for spi_host_axi
+// (AxiIw=1, AxiDw=32 / DSZ=2, EX_EN=0) and provable [DESIGN-UNR] FSM/skidbuffer invariants follow.
+
+// (a) [DESIGN-UNR] sub2tlul.sv:91,94: pending_txn gates tl_o.a_valid (`dv & ~pending_txn`),
+// forcing cur_txn back to no_txn on AccessAck/AccessAckData before a new request can assert a_valid.
+CHECKSUM: "2553605572 984500570"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_sub2tlul
+ANNOTATION: "[DESIGN-UNR] pending_txn gates tl_o.a_valid, forcing cur_txn through no_txn between requests"
+Fsm cur_txn "984500570"
+Transition valid_get_txn->valid_put_txn "1->2"
+Fsm cur_txn "984500570"
+Transition valid_put_txn->valid_get_txn "2->1"
+
+// (b) [TARGET-CFG] axi_sub_wr.sv:157 hardwires s_axi_if_ctx.lock = 1'b0 when CALIPTRA_AXI_SUB_EX_EN
+// is undefined (spi_host_axi.sv:54 sets EX_EN=0), so AXI_RESP_EXOKAY at lines 341-342 is unreachable.
+CHECKSUM: "1738911288 1896776429"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr
+ANNOTATION: "[TARGET-CFG] EX_EN=0 hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
+Condition 17 "1180556428" "(txn_allow && txn_ctx.lock) 1 -1" (3 "11")
+Condition 18 "4215928670" "((txn_allow && txn_ctx.lock) ? AXI_RESP_EXOKAY : AXI_RESP_OKAY) 1 -1" (2 "1")
+
+CHECKSUM: "1738911288 936540671"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr
+ANNOTATION: "[TARGET-CFG] EX_EN=0 hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
+Branch 0 "166815847" "(txn_allow && (txn_err || err))" (1) "(txn_allow && (txn_err || err)) 0,1"
+
+// (c) [TARGET-CFG] axi_addr.v:180 (2'b11 8-byte alignment arm): spi_host_axi fixes AxiDw=32 (DSZ=2),
+// capping legal AXI4 AxSIZE to 3'b010 (4 bytes); 2'b11 (8 bytes) and MISSING_DEFAULT are unreachable.
+CHECKSUM: "2805675034 3365616828"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 (DSZ=2) caps legal AXI4 AxSIZE at 3'b010 (4B); 8B case arm unreachable"
+Block 30 "203408636" "aligned_addr[(((AW - 1) > 2) ? 2 : (AW - 1)):0] = 0;"
+
+CHECKSUM: "2805675034 3365616828"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 (DSZ=2) caps legal AXI4 AxSIZE at 3'b010 (4B); 8B case arm unreachable"
+Block 30 "203408636" "aligned_addr[(((AW - 1) > 2) ? 2 : (AW - 1)):0] = 0;"
+
+CHECKSUM: "2805675034 2099123372"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 (DSZ=2): DSZ!=3, 8B i_size=2'b11, and case MISSING_DEFAULT unreachable"
+Branch 0 "500883511" "(DSZ == 0)" (10) "(DSZ == 0) 0,0,-,0,-,-,1,MISSING_DEFAULT"
+Branch 2 "3983581749" "(i_burst != FIXED)" (5) "(i_burst != FIXED) 1,0,-,1,2'b11 ,-"
+Branch 2 "3983581749" "(i_burst != FIXED)" (6) "(i_burst != FIXED) 1,0,-,1,MISSING_DEFAULT,-"
+
+CHECKSUM: "2805675034 2099123372"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 (DSZ=2): DSZ!=3, 8B i_size=2'b11, and case MISSING_DEFAULT unreachable"
+Branch 0 "500883511" "(DSZ == 0)" (10) "(DSZ == 0) 0,0,-,0,-,-,1,MISSING_DEFAULT"
+Branch 2 "3983581749" "(i_burst != FIXED)" (5) "(i_burst != FIXED) 1,0,-,1,2'b11 ,-"
+Branch 2 "3983581749" "(i_burst != FIXED)" (6) "(i_burst != FIXED) 1,0,-,1,MISSING_DEFAULT,-"
+
+// (d) [DESIGN-UNR] skidbuffer.v:143:
+//   - OPT_OUTREG=0: o_valid = i_valid || r_valid and o_ready = !r_valid, so (i_valid=0, o_ready=1,
+//     o_valid=1) and (i_valid=1, o_ready=1, o_valid=0) are boolean contradictions.
+//   - OPT_OUTREG=1 (i_rsp_skd): axi_sub_wr.sv:180 gates req_ready on rp_ready (o_ready), guaranteeing
+//     a free response slot so (i_valid=1, o_ready=0) cannot occur.
+CHECKSUM: "2730301546 2739831295"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_req_skd
+ANNOTATION: "[DESIGN-UNR] OPT_OUTREG=0 skidbuffer: o_valid=(i_valid||r_valid) and o_ready=!r_valid"
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (1 "0111")
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (3 "1101")
+
+CHECKSUM: "2730301546 2739831295"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_dp_skd
+ANNOTATION: "[DESIGN-UNR] OPT_OUTREG=0 skidbuffer: o_valid=(i_valid||r_valid) and o_ready=!r_valid"
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (1 "0111")
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (3 "1101")
+
+CHECKSUM: "2730301546 2739831295"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.DATA_PIPELINE[0].i_dp_skd
+ANNOTATION: "[DESIGN-UNR] OPT_OUTREG=0 skidbuffer: o_valid=(i_valid||r_valid) and o_ready=!r_valid"
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (1 "0111")
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (3 "1101")
+
+CHECKSUM: "2730301546 2418819841"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_rsp_skd
+ANNOTATION: "[DESIGN-UNR] axi_sub_wr.sv:180 gates req_ready on rp_ready (o_ready), preventing i_valid&&!o_ready"
+Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (2 "1011")
+
+// (e) [TARGET-CFG] Structural port constants on u_axi2tlul_spi_host hierarchy (AxiIw=1, AxiDw=32, EX_EN=0):
+//   - Same 11 TL-UL bus constants as Section 1 on axi2tlul / sub2tlul ports.
+//   - Word-aligned addr[1:0]=2'b00 on sub2tlul / axi_sub_arb; size[2]=1'b0 (AxiDw=32 -> max AxSIZE=2).
+//   - EX_EN=0 hardwires lock=0 (i_req_skd data[0]) and resp[0]=0 (i_rsp_skd & rd i_dp_skd data[1]);
+//     AxiDw=32 hardwires awsize[2]=0 (i_req_skd data[44]).
+INSTANCE: tb.dut.u_axi2tlul_spi_host
+ANNOTATION: "[TARGET-CFG] Structural TL-UL port constants for spi_host_axi (AxiIw=1, AxiDw=32)"
+Toggle tl_o.a_user.instr_type "logic tl_o.a_user.instr_type[3:0]"
+Toggle tl_o.a_user.rsvd "logic tl_o.a_user.rsvd[2:0]"
+Toggle tl_o.a_address [1:0] "logic tl_o.a_address[31:0]"
+Toggle tl_o.a_source [7:1] "logic tl_o.a_source[7:0]"
+Toggle tl_o.a_param "logic tl_o.a_param[2:0]"
+Toggle tl_o.a_opcode [1] "logic tl_o.a_opcode[2:0]"
+Toggle tl_i.d_user.rsp_intg [6] "logic tl_i.d_user.rsp_intg[6:0]"
+Toggle tl_i.d_sink "logic tl_i.d_sink[0:0]"
+Toggle tl_i.d_source [7:1] "logic tl_i.d_source[7:0]"
+Toggle tl_i.d_param "logic tl_i.d_param[2:0]"
+Toggle tl_i.d_opcode [2:1] "logic tl_i.d_opcode[2:0]"
+
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_sub2tlul
+ANNOTATION: "[TARGET-CFG] Structural TL-UL & word-aligned AxiDw=32/AxiIw=1 port constants"
+Toggle addr [1:0] "logic addr[31:0]"
+Toggle size [2] "logic size[2:0]"
+Toggle tl_o.a_user.instr_type "logic tl_o.a_user.instr_type[3:0]"
+Toggle tl_o.a_user.rsvd "logic tl_o.a_user.rsvd[2:0]"
+Toggle tl_o.a_address [1:0] "logic tl_o.a_address[31:0]"
+Toggle tl_o.a_source [7:1] "logic tl_o.a_source[7:0]"
+Toggle tl_o.a_param "logic tl_o.a_param[2:0]"
+Toggle tl_o.a_opcode [1] "logic tl_o.a_opcode[2:0]"
+Toggle tl_i.d_user.rsp_intg [6] "logic tl_i.d_user.rsp_intg[6:0]"
+Toggle tl_i.d_sink "logic tl_i.d_sink[0:0]"
+Toggle tl_i.d_source [7:1] "logic tl_i.d_source[7:0]"
+Toggle tl_i.d_param "logic tl_i.d_param[2:0]"
+Toggle tl_i.d_opcode [2:1] "logic tl_i.d_opcode[2:0]"
+
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_arb
+ANNOTATION: "[TARGET-CFG] AxiDw=32 caps AxSIZE[2]=0; axi_sub_{rd,wr} word-align addr[1:0]=2'b00"
+Toggle r_size [2] "logic r_size[2:0]"
+Toggle w_size [2] "logic w_size[2:0]"
+Toggle addr [1:0] "logic addr[31:0]"
+Toggle size [2] "logic size[2:0]"
+
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd
+ANNOTATION: "[TARGET-CFG] AxiDw=32 caps AxSIZE[2]=0"
+Toggle size [2] "logic size[2:0]"
+
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 caps AxSIZE[2]=0"
+Toggle wsize [2] "logic wsize[2:0]"
+
+CHECKSUM: "2805675034 3375835418"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 caps AxSIZE[2]=0"
+Toggle i_size [2] "logic i_size[2:0]"
+
+CHECKSUM: "2805675034 3375835418"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_axi_addr
+ANNOTATION: "[TARGET-CFG] AxiDw=32 caps AxSIZE[2]=0"
+Toggle i_size [2] "logic i_size[2:0]"
+
+CHECKSUM: "2730301546 619868591"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_req_skd
+ANNOTATION: "[TARGET-CFG] EX_EN=0 ties awlock (bit 0)=0; AxiDw=32 ties awsize[2] (bit 44)=0"
+Toggle i_data [0] "logic i_data[78:0]"
+Toggle i_data [44] "logic i_data[78:0]"
+Toggle o_data [0] "logic o_data[78:0]"
+Toggle o_data [44] "logic o_data[78:0]"
+
+CHECKSUM: "2730301546 1462248156"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_rsp_skd
+ANNOTATION: "[TARGET-CFG] EX_EN=0 ties rp_resp[0] (bit 1, EXOKAY LSB)=0"
+Toggle i_data [1] "logic i_data[2:0]"
+Toggle o_data [1] "logic o_data[2:0]"
+
+CHECKSUM: "2730301546 1129095229"
+INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.DATA_PIPELINE[0].i_dp_skd
+ANNOTATION: "[TARGET-CFG] EX_EN=0 ties dp_xfer_ctx[0].resp[0] (bit 1, EXOKAY LSB)=0"
+Toggle i_data [1] "logic i_data[67:0]"
+Toggle o_data [1] "logic o_data[67:0]"

@@ -34,6 +34,10 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     //    Standard/Dual/Quad lane significance (Comment #18)
     run_reactive_device_driver_validation();
 
+    // 5. Stage A wrapper/gasket upper-address, 256-beat AxLEN=0xFF burst, and TXDATA data_intg
+    //    SECDED fault-injection & recovery verification
+    run_axi_upper_addr_burst_and_data_intg_checks();
+
     `uvm_info(`gfn, "Finished 'spi_host_closure_vseq' successfully", UVM_LOW)
   endtask : body
 
@@ -565,5 +569,303 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     csr_wr(.ptr(ral.configopts),   .value(32'h0111_0002));
     csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0002));
   endtask : run_reactive_device_driver_validation
+
+  virtual task run_axi_upper_addr_burst_and_data_intg_checks();
+    axi_mgr_agent      agt = p_sequencer.axi_agent_h;
+    bit                orig_en_scb;
+    uvm_status_e       status;
+    uvm_reg_data_t     rdata;
+    spi_host_command_t cmd;
+
+    if (agt == null) return;
+    `uvm_info(`gfn, "Running AXI4 upper-address, 256-beat AxLEN=0xFF burst, and TXDATA data_intg checks", UVM_LOW)
+
+    orig_en_scb = cfg.en_scb;
+    cfg.en_scb  = 1'b0;
+    csr_utils_pkg::wait_no_outstanding_access();
+    spi_host_init();
+    csr_wr(.ptr(ral.control), .value(32'h2000_007F)); // spien=0 while exercising raw gasket bursts
+
+    // 5a. Upper-address (0xFFFF_FFxx -> 0x0000_00xx) single-beat 4B & narrow 1B R/W toggles
+    begin
+      bit [31:0]   rd_addrs[4] = '{32'hFFFF_FF10, 32'h0000_0010, 32'hFFFF_FF93, 32'h0000_0010};
+      bit [2:0]    rd_sizes[4] = '{3'd2,          3'd2,          3'd2,          3'd0};
+      bit [3:0]    rd_masks[4] = '{4'b1111,       4'b1111,       4'b1111,       4'b0001};
+      bit [31:0]   wr_addrs[5] = '{32'hFFFF_FF28, 32'h0000_0028, 32'hFFFF_FFAB, 32'hFFFF_FF83, 32'h0000_0028};
+      bit [2:0]    wr_sizes[5] = '{3'd2,          3'd2,          3'd2,          3'd2,          3'd0};
+      bit [3:0]    wr_masks[5] = '{4'b1111,       4'b1111,       4'b1000,       4'b1000,       4'b0001};
+
+      foreach (rd_addrs[i]) begin
+        axi_mgr_read_burst_vseq rd_u = axi_mgr_read_burst_vseq::type_id::create($sformatf("rd_up_%0d", i));
+        rd_u.set_sequencers(agt.get_read_request_sequencer(), agt.get_read_data_sequencer());
+        rd_u.set_read_response_router(agt.get_read_response_router());
+        rd_u.m_req.m_id     = 0;
+        rd_u.m_req.m_addr   = rd_addrs[i];
+        rd_u.m_req.m_region = 0;
+        rd_u.m_req.m_len    = 0;
+        rd_u.m_req.m_size   = rd_sizes[i];
+        rd_u.m_req.m_burst  = BurstIncr;
+        rd_u.m_req.m_lock   = 0;
+        rd_u.m_req.m_cache  = 0;
+        rd_u.m_req.m_prot   = 0;
+        rd_u.m_req.m_qos    = 0;
+        rd_u.m_req.m_user   = (128'(rd_masks[i]) << 18);
+        rd_u.start(null);
+        `DV_CHECK_EQ(rd_u.m_read_data_items.size(), 1)
+        `DV_CHECK_EQ(rd_u.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay)
+      end
+
+      foreach (wr_addrs[i]) begin
+        axi_mgr_write_burst_vseq wr_u = axi_mgr_write_burst_vseq::type_id::create($sformatf("wr_up_%0d", i));
+        wr_u.set_sequencers(agt.get_write_request_sequencer(),
+                            agt.get_write_data_sequencer(),
+                            agt.get_write_response_sequencer());
+        wr_u.set_write_response_router(agt.get_write_response_router());
+        wr_u.m_req.m_id     = 0;
+        wr_u.m_req.m_addr   = wr_addrs[i];
+        wr_u.m_req.m_region = 0;
+        wr_u.m_req.m_len    = 0;
+        wr_u.m_req.m_size   = wr_sizes[i];
+        wr_u.m_req.m_burst  = BurstIncr;
+        wr_u.m_req.m_lock   = 0;
+        wr_u.m_req.m_cache  = 0;
+        wr_u.m_req.m_prot   = 0;
+        wr_u.m_req.m_qos    = 0;
+        wr_u.m_req.m_user   = (128'(wr_masks[i]) << 18);
+        wr_u.m_fixed_strb   = 128'(wr_masks[i]);
+        wr_u.start(null);
+        `DV_CHECK_NE(wr_u.rsp.m_write_response, null)
+        `DV_CHECK_EQ(wr_u.rsp.m_write_response.m_resp,
+                     (i == 3) ? axi_write_response_item::BRespSlverr :
+                                axi_write_response_item::BRespOkay)
+      end
+    end
+
+    // 5b. Maximum-length 256-beat (AxLEN = 8'hFF) AXI4 INCR read & write bursts + 1-beat/2-beat follow-ups
+    begin
+      int unsigned rd_lens[2]  = '{255, 0};
+      bit [31:0]   rd_baddr[2] = '{32'hFFFF_FC00, 32'h0000_0010};
+      int unsigned wr_lens[3]  = '{255, 0, 1};
+      bit [31:0]   wr_baddr[3] = '{32'hFFFF_FC00, 32'h0000_0028, 32'h0000_0028};
+
+      foreach (rd_lens[k]) begin
+        axi_mgr_read_burst_vseq rd_b = axi_mgr_read_burst_vseq::type_id::create($sformatf("rd_max_%0d", k));
+        rd_b.set_sequencers(agt.get_read_request_sequencer(), agt.get_read_data_sequencer());
+        rd_b.set_read_response_router(agt.get_read_response_router());
+        rd_b.m_req.m_id     = 0;
+        rd_b.m_req.m_addr   = rd_baddr[k];
+        rd_b.m_req.m_region = 0;
+        rd_b.m_req.m_len    = rd_lens[k][7:0];
+        rd_b.m_req.m_size   = 3'd2;
+        rd_b.m_req.m_burst  = BurstIncr;
+        rd_b.m_req.m_lock   = 0;
+        rd_b.m_req.m_cache  = 0;
+        rd_b.m_req.m_prot   = 0;
+        rd_b.m_req.m_qos    = 0;
+        rd_b.m_req.m_user   = (128'hf << 18);
+        rd_b.start(null);
+        `DV_CHECK_EQ(rd_b.m_read_data_items.size(), rd_lens[k] + 1)
+        `DV_CHECK_EQ(rd_b.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay)
+        if (k == 0) begin
+          `DV_CHECK_EQ(rd_b.m_read_data_items[10].m_resp, axi_read_data_item::RRespSlverr,
+                       "Expected RRespSlverr on TXDATA write-only beat (offset 0x28) of 256-beat read")
+          `DV_CHECK_EQ(rd_b.m_read_data_items[15].m_resp, axi_read_data_item::RRespSlverr,
+                       "Expected RRespSlverr on unmapped beat (offset 0x3c) of 256-beat read")
+        end
+      end
+
+      foreach (wr_lens[k]) begin
+        axi_mgr_write_burst_vseq wr_b = axi_mgr_write_burst_vseq::type_id::create($sformatf("wr_max_%0d", k));
+        bit [3:0] strb = (k == 0) ? 4'h0 : 4'hf;
+        wr_b.set_sequencers(agt.get_write_request_sequencer(),
+                            agt.get_write_data_sequencer(),
+                            agt.get_write_response_sequencer());
+        wr_b.set_write_response_router(agt.get_write_response_router());
+        wr_b.m_req.m_id     = 0;
+        wr_b.m_req.m_addr   = wr_baddr[k];
+        wr_b.m_req.m_region = 0;
+        wr_b.m_req.m_len    = wr_lens[k][7:0];
+        wr_b.m_req.m_size   = 3'd2;
+        wr_b.m_req.m_burst  = (k == 2) ? BurstFixed : BurstIncr;
+        wr_b.m_req.m_lock   = 0;
+        wr_b.m_req.m_cache  = 0;
+        wr_b.m_req.m_prot   = 0;
+        wr_b.m_req.m_qos    = 0;
+        wr_b.m_req.m_user   = (128'(strb) << 18);
+        wr_b.m_fixed_strb   = 128'(strb);
+        wr_b.start(null);
+        `DV_CHECK_NE(wr_b.rsp.m_write_response, null)
+        `DV_CHECK_EQ(wr_b.rsp.m_write_response.m_resp,
+                     (k == 0) ? axi_write_response_item::BRespSlverr :
+                                axi_write_response_item::BRespOkay)
+      end
+
+      // 5b-arb. Write-first concurrent Read arbitration: start 16-beat write burst 2 clocks before
+      //         4-beat read burst so r_dv==1 arrives while w_dv==1 && r_win==0 (axi_sub_arb.sv:105).
+      begin
+        axi_mgr_write_burst_vseq wr_a = axi_mgr_write_burst_vseq::type_id::create("wr_arb_first");
+        axi_mgr_read_burst_vseq  rd_a = axi_mgr_read_burst_vseq::type_id::create("rd_arb_second");
+        wr_a.set_sequencers(agt.get_write_request_sequencer(),
+                            agt.get_write_data_sequencer(),
+                            agt.get_write_response_sequencer());
+        wr_a.set_write_response_router(agt.get_write_response_router());
+        wr_a.m_req.m_id     = 0;
+        wr_a.m_req.m_addr   = 32'h28;
+        wr_a.m_req.m_region = 0;
+        wr_a.m_req.m_len    = 8'd15;
+        wr_a.m_req.m_size   = 3'd2;
+        wr_a.m_req.m_burst  = BurstFixed;
+        wr_a.m_req.m_lock   = 0;
+        wr_a.m_req.m_cache  = 0;
+        wr_a.m_req.m_prot   = 0;
+        wr_a.m_req.m_qos    = 0;
+        wr_a.m_req.m_user   = (128'hf << 18);
+        wr_a.m_fixed_strb   = 128'hf;
+
+        rd_a.set_sequencers(agt.get_read_request_sequencer(), agt.get_read_data_sequencer());
+        rd_a.set_read_response_router(agt.get_read_response_router());
+        rd_a.m_req.m_id     = 0;
+        rd_a.m_req.m_addr   = 32'h10;
+        rd_a.m_req.m_region = 0;
+        rd_a.m_req.m_len    = 8'd3;
+        rd_a.m_req.m_size   = 3'd2;
+        rd_a.m_req.m_burst  = BurstFixed;
+        rd_a.m_req.m_lock   = 0;
+        rd_a.m_req.m_cache  = 0;
+        rd_a.m_req.m_prot   = 0;
+        rd_a.m_req.m_qos    = 0;
+        rd_a.m_req.m_user   = (128'hf << 18);
+
+        fork
+          wr_a.start(null);
+          begin
+            cfg.clk_rst_vif.wait_clks(2);
+            rd_a.start(null);
+          end
+        join
+        `DV_CHECK_NE(wr_a.rsp.m_write_response, null)
+        `DV_CHECK_EQ(wr_a.rsp.m_write_response.m_resp, axi_write_response_item::BRespOkay)
+        `DV_CHECK_EQ(rd_a.m_read_data_items.size(), 4)
+        `DV_CHECK_EQ(rd_a.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay)
+      end
+    end
+
+    spi_host_init();
+    csr_wr(.ptr(ral.event_enable), .value(32'h0));
+    csr_wr(.ptr(ral.error_enable), .value(32'h0));
+    csr_wr(.ptr(ral.error_status), .value(32'h3f));
+    csr_wr(.ptr(ral.intr_state),   .value(2'b11));
+    cfg.en_scb = orig_en_scb;
+
+    // 5c. TXDATA (0x28) TL-UL data_intg SECDED fault injection (sec_cm_bus_integrity):
+    //     Verify SLVERR, sticky intg_error_o==1, zero TXQD corruption, HARD reset recovery, and
+    //     checked Bidir transfer.
+    spi_host_init();
+    program_spi_host_regs();
+    csr_rd_check(.ptr(ral.status.txqd), .compare_value(8'd0));
+    `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
+                 "Expected intg_error_o==0 prior to TXDATA data_intg fault injection")
+
+    cfg.spi_passthrough_vif.inject_data_intg_err = 1'b1;
+    write_txdata(32'hDEAD_FA11, 4'hf, status);
+    `DV_CHECK_EQ(status, UVM_NOT_OK, "Expected SLVERR on corrupted TL-UL data_intg TXDATA write")
+    `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
+                 "Expected intg_error_o==1 on TL-UL data_intg fault")
+    cfg.spi_passthrough_vif.inject_data_intg_err = 1'b0;
+    cfg.clk_rst_vif.wait_clks(2);
+    `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
+                 "Expected intg_error_o to remain latched high until HARD reset")
+    csr_rd_check(.ptr(ral.status.txqd), .compare_value(8'd0));
+
+    // Recover via HARD reset while an AXI AW request is asserted (exercises axi_sub_wr.sv:145
+    // awvalid & axi_out_of_rst = (1,0)), then verify clean post-reset Bidir recovery.
+    cfg.en_scb = 1'b0;
+    begin
+      axi_mgr_write_burst_vseq wr_rst = axi_mgr_write_burst_vseq::type_id::create("wr_mid_rst");
+      wr_rst.set_sequencers(agt.get_write_request_sequencer(),
+                            agt.get_write_data_sequencer(),
+                            agt.get_write_response_sequencer());
+      wr_rst.set_write_response_router(agt.get_write_response_router());
+      wr_rst.m_req.m_id     = 0;
+      wr_rst.m_req.m_addr   = 32'h28;
+      wr_rst.m_req.m_region = 0;
+      wr_rst.m_req.m_len    = 0;
+      wr_rst.m_req.m_size   = 3'd2;
+      wr_rst.m_req.m_burst  = BurstFixed;
+      wr_rst.m_req.m_lock   = 0;
+      wr_rst.m_req.m_cache  = 0;
+      wr_rst.m_req.m_prot   = 0;
+      wr_rst.m_req.m_qos    = 0;
+      wr_rst.m_req.m_user   = (128'hf << 18);
+      wr_rst.m_fixed_strb   = 128'hf;
+      fork
+        wr_rst.start(null);
+        begin
+          wait (cfg.m_axi_agent_cfg.write_request_vif.awvalid === 1'b1);
+          apply_reset("HARD");
+        end
+      join
+    end
+    ral.reset("HARD");
+    cfg.en_scb = orig_en_scb;
+    `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
+                 "Expected intg_error_o to clear to 0 after HARD reset")
+    spi_host_init();
+    program_spi_host_regs();
+    begin
+      int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+      write_txdata(32'h9669_5AA5, 4'hf, status);
+      `DV_CHECK_EQ(status, UVM_IS_OK)
+      wait_ready_for_command();
+      cmd.direction = Bidir;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd3;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active),  .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      ral.rxdata.read(status, 0, rdata);
+      `DV_CHECK_EQ(status, UVM_IS_OK)
+      cfg.clk_rst_vif.wait_clks(10);
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected scoreboard TX check on post-data_intg recovery transfer")
+        `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                     "Expected scoreboard RX check on post-data_intg recovery transfer")
+      end
+
+      // 5d. CS0 Dual TxOnly and Mode-1 (CPOL=0, CPHA=1) Quad TxOnly protocol & SVA stability checks
+      prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      csr_wr(.ptr(ral.csid),       .value(32'h0));
+      csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
+      write_txdata(32'h0000_00A5, 4'b0001, status);
+      `DV_CHECK_EQ(status, UVM_IS_OK)
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Dual;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd0;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+
+      csr_wr(.ptr(ral.configopts), .value(32'h4111_0002)); // Mode 1 (CPOL=0, CPHA=1)
+      write_txdata(32'h3C5A_A5C3, 4'hf, status);
+      `DV_CHECK_EQ(status, UVM_IS_OK)
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Quad;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd3;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      cfg.clk_rst_vif.wait_clks(10);
+      csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 2,
+                     "Expected scoreboard TX checks on CS0 Dual TxOnly and Mode-1 Quad TxOnly transfers")
+      end
+    end
+  endtask : run_axi_upper_addr_burst_and_data_intg_checks
 
 endclass : spi_host_closure_vseq

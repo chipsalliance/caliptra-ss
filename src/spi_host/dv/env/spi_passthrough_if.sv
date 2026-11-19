@@ -26,7 +26,8 @@ interface spi_passthrough_if
   logic [3:0] cio_sd_o;
   logic [3:0] cio_sd_en_o;
 
-  // Contention-free internal TL-UL SECDED fault injection control (wired in tb.sv)
+  // Contention-free internal TL-UL SECDED fault injection controls (wired in tb.sv)
   bit         inject_cmd_intg_err  = 1'b0;
+  bit         inject_data_intg_err = 1'b0;
 
 endinterface : spi_passthrough_if

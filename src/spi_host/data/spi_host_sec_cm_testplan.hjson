@@ -25,9 +25,11 @@
   testpoints: [
     {
       name: sec_cm_bus_integrity
-      desc: "Verify the countermeasure(s) BUS.INTEGRITY."
+      desc: '''Verify the countermeasure(s) BUS.INTEGRITY across both CSR command integrity
+               (a_user.cmd_intg -> u_reg.u_chk) and TXDATA window data integrity
+               (a_user.data_intg -> u_window.u_adapter_tx) SECDED fault injection.'''
       stage: V2S
-      tests: ["spi_host_tl_intg_err"]
+      tests: ["spi_host_closure"]
     }
   ]
 }
