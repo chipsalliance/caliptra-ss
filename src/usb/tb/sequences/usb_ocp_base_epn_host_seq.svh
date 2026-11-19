@@ -32,6 +32,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
   task body();
     svt_usb_transfer tr;
     svt_usb_transfer::transfer_type_enum transfer_type;
+    svt_usb_types::speed_enum connected_speed;
     uvm_sequence_item response;
     usb_ocp_event actual;
     usb_ocp_base_epn_profile::bytes_t expected;
@@ -44,6 +45,9 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
         ocp_cfg == null || !(device inside {1,2}))
       `uvm_fatal("OCP_EPN_HOST", "Missing discovered endpoint or supported host context")
     resolve_host_context(1);
+    connected_speed = usb_cfg.remote_device_cfg[device].connected_bus_speed;
+    if (!(connected_speed inside {svt_usb_types::FS,svt_usb_types::HS}))
+      `uvm_fatal("OCP_EPN_HOST", "Only discovered FS/HS USB2 endpoints are supported")
     if (device == 2 && address !== usb_cfg.remote_device_cfg[device].device_address)
       `uvm_fatal("OCP_EPN_HOST", "EPN wire address does not match its enumerated native slot")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(endpoint.direction,phase,data_tag);
@@ -79,7 +83,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
           xfer_type == local::transfer_type;
           device_address == local::address;
           endpoint_number == local::ep_number;
-          device_connected_bus_speed == svt_usb_types::HS;
+          device_connected_bus_speed == local::connected_speed;
           payload_intended_byte_count == local::size;
           payload_start_ix == 0;
           schedule_priority == 99;
@@ -108,6 +112,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
       `uvm_fatal("OCP_EPN_HOST", "Wrong native routed EPN response")
     tr.end_event.wait_on();
     native_ok = (tr.status === svt_sequence_item::ACCEPT && tr.results_status === 0 &&
+                 tr.device_connected_bus_speed === connected_speed &&
                  tr.xfer_type === transfer_type && tr.device_address === address &&
                  tr.endpoint_number === ep_number && tr.completed_payload_bytes() === size);
     negative_native = $test$plusargs("usb_ocp_negative_epn_native");

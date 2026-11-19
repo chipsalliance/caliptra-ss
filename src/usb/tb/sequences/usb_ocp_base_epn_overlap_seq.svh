@@ -40,8 +40,11 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     // Native legal scheduling cannot be used to manufacture an illegal poll.
     profile = usb_ocp_base_epn_profile::type_id::create("nak_probe_profile");
     profile.device = epn_device;
+    profile.full_speed = ocp_cfg.full_speed;
     profile.transfer_type = USB_TRANSFER_TYPE_INTERRUPT;
     probe = usb_ocp_base_epn_model::type_id::create("nak_probe");
+    probe.full_speed = ocp_cfg.full_speed;
+    probe.discovery.full_speed = ocp_cfg.full_speed;
     probe.device = epn_device;
     probe.discovery.ocp_check_parse(profile.ocp_prepare_descriptor(epn_device,16'h0200));
     probe.enabled = 1;
@@ -87,9 +90,10 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     if (!uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
       `uvm_fatal("OCP_EPN_PROFILE", "Missing mandatory passive checker")
     if (!(epn_device inside {1,2}))
-      `uvm_fatal("OCP_EPN_PROFILE", "Only device0 or device1 HS EPN ownership is supported")
+      `uvm_fatal("OCP_EPN_PROFILE", "Only device0 or device1 USB2 EPN ownership is supported")
     profile = usb_ocp_base_epn_profile::type_id::create("firmware_profile");
     profile.device = epn_device;
+    profile.full_speed = ocp_cfg.full_speed;
     // One type per run, one row. No flags or profile constants discover USB.
     profile.transfer_type = usb_ocp_base_epn_profile::ocp_prepare_selected_type();
     if (scoreboard.negative_overlap || scoreboard.negative_replacement ||
