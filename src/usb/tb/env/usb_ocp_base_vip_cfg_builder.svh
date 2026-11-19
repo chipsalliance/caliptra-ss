@@ -28,6 +28,7 @@ class usb_ocp_base_vip_cfg_builder extends usb_vip_cfg_builder;
     super.configure_endpoints(cfg);
     host_cfg.remote_device_cfg[0].device_timeout = vip_ps(100ms);
     host_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak = 100000;
+    host_cfg.remote_device_cfg[0].endpoint_cfg[0].allow_aligned_transfer_without_zero_length = 1;
     for (int i = 1; i < 3; i++) begin
       device = usb_ocp_base_device_cfg::type_id::create($sformatf("device%0d", i-1));
       ep = usb_ocp_base_endpoint_cfg::type_id::create($sformatf("device%0d_ep0", i-1));
@@ -45,6 +46,7 @@ class usb_ocp_base_vip_cfg_builder extends usb_vip_cfg_builder;
       ep.max_packet_size = 64;
       ep.interval = 1;
       ep.max_retry_due_to_nak = 100000;
+      ep.allow_aligned_transfer_without_zero_length = 1;
       device.endpoint_cfg[0] = ep;
       host_cfg.remote_device_cfg.push_back(device);
     end
