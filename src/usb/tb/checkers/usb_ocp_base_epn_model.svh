@@ -21,6 +21,7 @@ class usb_ocp_base_epn_model extends uvm_object;
   usb_ocp_event token;
   usb_ocp_event candidate;
   int unsigned device = 1;
+  int unsigned data_tag;
   logic [6:0] address;
   // Learned from device0 SET_ADDRESS, never the peer's descriptor EP0.
   logic [6:0] control_address;
@@ -137,7 +138,7 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (phase > 1 || phase != token_phase)
       `uvm_fatal("OCP_EPN_STREAM", "Extra, duplicate, or wrong-phase accepted stream")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
-      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase);
+      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,data_tag);
     if (data.bytes.size() != expected.size() || data.bytes.size() > ep.max_packet_size)
       `uvm_fatal("OCP_EPN_STREAM", "Accepted EPN packet length differs from planned stream")
     foreach (expected[i]) begin
@@ -287,7 +288,7 @@ class usb_ocp_base_epn_model extends uvm_object;
         item.order < accepted_order[dir][phase])
       `uvm_fatal("OCP_EPN_CORRELATION", "Unsuccessful/unmatched actual EPN transfer")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
-      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase);
+      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,data_tag);
     if (item.completed_bytes !== expected.size() || item.bytes !== expected)
       `uvm_fatal("OCP_EPN_CORRELATION", "Monitor bytes differ from accepted independent stream")
     crosschecked[dir]++;
@@ -331,7 +332,7 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (!item.write_access && retired[0] && phase < 2 &&
         offset >= usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT) &&
         offset < usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT)+64) begin
-      expected = usb_ocp_base_epn_profile::ocp_prepare_stream(USB_DIRECTION_OUT,phase);
+      expected = usb_ocp_base_epn_profile::ocp_prepare_stream(USB_DIRECTION_OUT,phase,data_tag);
       if (offset != usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT)+read_offset ||
           item.bytes.size() != 4 || item.response_ok !== 1)
         `uvm_fatal("OCP_EPN_SRAM", "OUT SRAM proof is unordered or unsuccessful")
