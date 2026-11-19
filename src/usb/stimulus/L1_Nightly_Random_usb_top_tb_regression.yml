@@ -14,4 +14,5 @@ contents:
       templates:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_stress: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_bringup: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev0_ep0_interleave: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_ep0_overlap: { weight: 100 }

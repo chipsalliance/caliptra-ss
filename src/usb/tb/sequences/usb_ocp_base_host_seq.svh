@@ -25,6 +25,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   int unsigned cms_count;
   int unsigned fifo_depth;
   int unsigned fifo_max;
+  time recovery_status_timeout = 100ms;
   bytes_t device_descriptor_bytes[3];
   logic [7:0] configuration_value[3];
 
@@ -41,12 +42,16 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
   endfunction
 
+  virtual task ocp_wait_replaced_prefix(usb_ocp_event observed, output bytes_t prefix);
+    `uvm_fatal("OCP_SUPERSESSION", "Native replacement requires checked ACK-prefix routing")
+  endtask
+
   // One bounded submission, exact routed response, and independently copied
   // protocol-monitor completion. No first-ended-event matching is used.
-  task ocp_do_check_control(int device, logic [7:0] bm, logic [7:0] request,
+  virtual task ocp_do_check_control(int device, logic [7:0] bm, logic [7:0] request,
                             logic [15:0] value, logic [15:0] index,
                             logic [15:0] length, bytes_t write_data,
-                            output bytes_t read_data);
+                            output bytes_t read_data, input bit expect_replacement = 0);
     svt_usb_transfer tr;
     uvm_sequence_item response;
     usb_ocp_event observed;
@@ -110,6 +115,16 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                   `uvm_fatal("OCP_HOST", "Wrong routed UVM response")
                 ocp_wait_peer_completion(tr,device);
                 observer.ocp_wait_completion(addr,setup,floor,ocp_cfg.control_transfer_timeout,observed);
+                if (expect_replacement) begin
+                  allowed_results = 0;
+                  if (!bm[7]) allowed_results[5] = 1;
+                  allowed_results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] = 1;
+                  if (observed.transfer_ok ||
+                      observed.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] !== 1 ||
+                      (observed.results & ~allowed_results) !== 0)
+                    `uvm_fatal("OCP_SUPERSESSION", "Requested clean native abort did not occur")
+                  ocp_wait_replaced_prefix(observed,read_data);
+                end
               end
             join
             done = 1;
@@ -122,18 +137,44 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (!done) `uvm_fatal("OCP_HOST", "Bounded control submission/completion timed out")
     allowed_results = 0;
     if (!bm[7]) allowed_results[5] = 1;
-    if (!observed.transfer_ok || (observed.results & ~allowed_results) !== 0)
+    if (!expect_replacement &&
+        (!observed.transfer_ok || (observed.results & ~allowed_results) !== 0))
       `uvm_fatal("OCP_HOST", "VIP reported unsuccessful control completion")
-    if (bm[7]) read_data = observed.bytes;
-    else begin
-      if (observed.bytes.size() != write_data.size())
+    if (bm[7] && !expect_replacement) read_data = observed.bytes;
+    if (!bm[7]) begin
+      if ((!expect_replacement && observed.bytes.size() != write_data.size()) ||
+          observed.bytes.size() > write_data.size())
         `uvm_fatal("OCP_HOST", "Completed OUT byte count differs from request")
-      foreach (write_data[i])
+      foreach (observed.bytes[i])
         if (observed.bytes[i] !== write_data[i])
           `uvm_fatal("OCP_HOST", "Completed OUT payload differs from independently prepared image")
     end
-    `uvm_info("OCP_HOST",$sformatf("Completed slot=%0d addr=%0d setup=%p bytes=%0d",
-              device,addr,setup,observed.bytes.size()),UVM_MEDIUM)
+    if (expect_replacement)
+      `uvm_info("OCP_SUPERSESSION",$sformatf(
+        "Native-aborted slot=%0d addr=%0d setup=%p bytes=%0d",
+        device,addr,setup,observed.bytes.size()),UVM_LOW)
+    else
+      `uvm_info("OCP_HOST",$sformatf("Completed slot=%0d addr=%0d setup=%p bytes=%0d",
+                device,addr,setup,observed.bytes.size()),UVM_MEDIUM)
+  endtask
+
+  task ocp_do_check_standard_controls(int device, logic [7:0] expected_configuration,
+                                      bytes_t expected_descriptor);
+    bytes_t data;
+    bytes_t empty;
+    // USB 2.0 9.4.2/9.4.3: use this device's earlier USB discovery.
+    ocp_do_check_control(device,8'h80,svt_usb_types::GET_CONFIGURATION,0,0,1,empty,data);
+    if (data.size() != 1 || data[0] !== expected_configuration)
+      `uvm_fatal("OCP_PEER",$sformatf(
+        "Dev%0d GET_CONFIGURATION differs from prior discovery",device-1))
+    ocp_do_check_control(device,8'h80,svt_usb_types::GET_DESCRIPTOR,16'h0100,0,18,empty,data);
+    if (data.size() != expected_descriptor.size())
+      `uvm_fatal("OCP_PEER",$sformatf(
+        "Dev%0d device descriptor length changed during OCP",device-1))
+    foreach (data[i])
+      if (data[i] !== expected_descriptor[i])
+        `uvm_fatal("OCP_PEER",$sformatf(
+          "Dev%0d descriptor data changed or crossed device identity",device-1))
   endtask
 
   task ocp_do_check_enumeration(int device);
@@ -193,7 +234,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       `uvm_fatal("OCP_PORT", "Downstream port not connected/powered")
     ocp_do_check_control(0,8'h23,1,16,16'(port),0,empty,data);
     ocp_do_check_control(0,8'h23,3,4,16'(port),0,empty,data);
-    deadline = $time + 100ms;
+    deadline = $time + recovery_status_timeout;
     do begin
       #(usb_cfg.tdrst * 1ps);
       ocp_do_check_control(0,8'ha3,0,0,16'(port),4,empty,data);
@@ -347,7 +388,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       offset += chunk_words;
       #(service_gap);
     end
-    deadline = $time + 100ms;
+    deadline = $time + recovery_status_timeout;
     do begin
       ocp_do_check_read(OCP_CMD_DEVICE_STATUS,data);
       if (data.size() < OCP_SPEC_MIN_LEN_DEVICE_STATUS)

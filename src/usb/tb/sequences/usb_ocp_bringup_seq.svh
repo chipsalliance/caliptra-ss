@@ -36,6 +36,9 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
       `uvm_fatal("OCP_BRINGUP", "Missing mandatory passive checker")
     if (scoreboard.negative_overlap && !scoreboard.model.require_dev1_ep0_overlap)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "Overlap injection requires a dev1 EP0 overlap scenario")
+    if ((scoreboard.negative_replacement || scoreboard.negative_abort_prefix) &&
+        !scoreboard.model.require_dev0_ep0_replacement)
+      `uvm_fatal("OCP_NEGATIVE_CONTROL", "Replacement injection requires a dev0 EP0 interleave scenario")
     host = ocp_prepare_host();
     mcu = usb_ocp_base_mcu_seq::type_id::create("mcu");
     caliptra = usb_ocp_base_caliptra_seq::type_id::create("caliptra");

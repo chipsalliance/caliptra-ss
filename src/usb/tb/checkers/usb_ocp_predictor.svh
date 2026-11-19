@@ -24,6 +24,7 @@ class usb_ocp_predictor extends uvm_object;
   status_version_t setup_status_versions[2][$];
 
   usb_ocp_base_control control[3];
+  usb_ocp_base_control replaced_controls[3][$];
   logic [6:0] address[3] = '{0,126,127};
   int unsigned default_device;
   int unsigned ready_controls[$];
@@ -85,6 +86,13 @@ class usb_ocp_predictor extends uvm_object;
   bit require_dev1_ep0_overlap;
   int unsigned dev1_ep0_read_overlap;
   int unsigned dev1_ep0_write_overlap;
+  bit require_dev0_ep0_replacement;
+  int unsigned dev0_ep0_read_replacements;
+  int unsigned dev0_ep0_write_replacements;
+  int unsigned replacement_crosschecks;
+  bytes_t checked_replacement_bytes[3];
+  longint unsigned checked_replacement_serial[3];
+  bit checked_replacement_valid[3];
 
   function new(string name = "usb_ocp_predictor");
     super.new(name);
@@ -136,6 +144,11 @@ class usb_ocp_predictor extends uvm_object;
     require_dev1_ep0_overlap = 0;
     dev1_ep0_read_overlap = 0;
     dev1_ep0_write_overlap = 0;
+    require_dev0_ep0_replacement = 0;
+    dev0_ep0_read_replacements = 0;
+    dev0_ep0_write_replacements = 0;
+    replacement_crosschecks = 0;
+    checked_replacement_valid = '{default:0};
   endfunction
 
   function void ocp_configure_map(usb_reg_model ral);
@@ -261,11 +274,30 @@ class usb_ocp_predictor extends uvm_object;
 
   function void ocp_accept_setup(int device, usb_ocp_event data);
     usb_ocp_base_control c;
+    usb_ocp_base_control fresh;
     c = control[device];
     if (data.bytes.size() != 8 || data.pid != svt_usb_packet::DATA0)
       `uvm_fatal("OCP_SETUP", "SETUP requires eight DATA0 bytes")
-    // USB 2.0 5.5.5: supersession cancels control obligations, not accepted
-    // FIFO prefixes. The recovery ledger below is deliberately untouched.
+    if (require_dev0_ep0_replacement && device == 1 && c.active &&
+        c.setup[0] inside {8'ha1,8'h21} && data.bytes[0][6:5] === 0) begin
+      if (replaced_controls[device].size() >= 16384)
+        `uvm_fatal("OCP_SUPERSESSION", "Uncrosschecked replaced-control queue exceeded bound")
+      // Freeze the old ACK-qualified data only when the replacement SETUP
+      // itself is ACKed. A native abort alone cannot retire DUT obligations.
+      c.replaced_at = token.order;
+      c.active = 0;
+      replaced_controls[device].push_back(c);
+      if (c.setup[0][7]) dev0_ep0_read_replacements++;
+      else dev0_ep0_write_replacements++;
+      fresh = usb_ocp_base_control::type_id::create("replacement_control");
+      fresh.epoch = c.epoch;
+      fresh.generation = c.generation;
+      fresh.configuration = c.configuration;
+      control[device] = fresh;
+      c = fresh;
+    end
+    // USB 2.0 5.5.5 cancels the control operation on a new SETUP.
+    // The recovery contract retains ACK/NYET-accepted FIFO bytes below.
     c.generation++;
     c.active = 1;
     c.status_acked = 0;
