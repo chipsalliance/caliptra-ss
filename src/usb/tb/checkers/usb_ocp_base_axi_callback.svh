@@ -24,12 +24,12 @@ class usb_ocp_base_axi_callback extends aaxi_callbacks;
 
   virtual task master_read_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
     if (observer == null) `uvm_fatal("OCP_CALLBACK", "Missing observer")
-    observer.outstanding_axi[manager]++;
+    observer.ocp_capture_axi_accept(tn,manager);
   endtask
 
   virtual task master_write_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
     if (observer == null) `uvm_fatal("OCP_CALLBACK", "Missing observer")
-    observer.outstanding_axi[manager]++;
+    observer.ocp_capture_axi_accept(tn,manager);
   endtask
 
   virtual task read_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
