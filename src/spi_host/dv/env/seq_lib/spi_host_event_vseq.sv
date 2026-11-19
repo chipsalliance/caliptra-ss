@@ -144,11 +144,7 @@ class spi_host_event_vseq extends spi_host_tx_rx_vseq;
     check_isolated_spi_event_pin(1'b1, "IDLE re-asserted after transfer completes");
 
     // 5. One-hot RXWM (bit 2 = 6'h04): below (RXQD=1), equal (RXQD=2), above (RXQD=3), drain
-    // NOTE (Pending Designer Confirmation - Comment #25):
-    // RTL (spi_host_data_fifos.sv:129) implements rx_wm_o = (rx_qd_o >= rx_watermark_i), matching
-    // CONTROL.RX_WATERMARK ("reaches"), whereas STATUS.RXWM and EVENT_ENABLE.RXWM RDL descriptions
-    // say "exceeds"/"greater than". Explicit below/equal/above checks are retained against current
-    // RTL >= pending designer/spec-owner confirmation and RDL reconciliation.
+    // Confirmed Option A contract (Comment #25): rx_wm_o = (rx_qd_o >= rx_watermark_i).
     csr_wr(.ptr(ral.configopts),   .value(32'h0000_0001)); // Fast clkdiv=1
     csr_wr(.ptr(ral.control),      .value(32'hA000_0002)); // rx_watermark = 2
     csr_wr(.ptr(ral.event_enable), .value(32'h04));        // ONLY rxwm enabled
@@ -247,15 +243,15 @@ class spi_host_event_vseq extends spi_host_tx_rx_vseq;
     for (int i = 0; i < command.size(); i++) begin
       command_snd = command[i];
       snd_cmd(command_snd);
-      if (i == 0) check_event(ral.status.active, 1, 1);
-      csr_rd(.ptr(ral.status.txqd), .value(txqd));
-      `DV_CHECK_EQ(txqd, spi_host_ctrl_reg.tx_watermark - i)
+      if (i == 0) check_event(ral.status.active, 0, 1);
       csr_spinwait(.ptr(ral.status.rxempty), .exp_data(0));
       csr_spinwait(.ptr(ral.status.active), .exp_data(0));
-      if (txqd == (spi_host_ctrl_reg.tx_watermark - 1)) begin
+      csr_rd(.ptr(ral.status.txqd), .value(txqd));
+      `DV_CHECK_EQ(txqd, segms_words - 1 - i)
+      if (txqd < spi_host_ctrl_reg.tx_watermark) begin
         check_event(ral.status.txwm, 1, 1);
-      end else if (txqd < (spi_host_ctrl_reg.tx_watermark - 1)) begin
-        check_event(ral.status.txwm, 0, 1);
+      end else begin
+        check_event(ral.status.txwm, 0, 0);
       end
       read_rx_fifo();
     end
@@ -279,7 +275,7 @@ class spi_host_event_vseq extends spi_host_tx_rx_vseq;
         csr_spinwait(.ptr(ral.status.rxqd), .exp_data(spi_host_ctrl_reg.rx_watermark + 1));
         csr_spinwait(.ptr(ral.status.active), .exp_data(0));
       end
-      check_event(ral.status.rxwm, 0, 1);
+      check_event(ral.status.rxwm, 1, 1);
       if (spi_host_ctrl_reg.rx_watermark > 0) read_rx_fifo();
 
       // Efficient multi-word RX fill (63 words + 1 word) instead of 64 single-word polled loops (Comment #23)

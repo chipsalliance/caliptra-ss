@@ -90,22 +90,23 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
         wait (cfg.m_spi_agent_cfg.vif.csb[0] === 1'b0);
         repeat (3) @(cfg.m_spi_agent_cfg.vif.sck);
 
-        // Deassert CONTROL.SPIEN = 0 mid-byte via frontdoor AXI write
+        // Deassert CONTROL.SPIEN = 0 mid-byte via frontdoor AXI write and snapshot pins immediately
         csr_wr(.ptr(ral.control), .value(32'h2000_007F)); // spien=0, output_en=1
         spinwait_ctrl_obj.stop = 1;
         start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-        cfg.clk_rst_vif.wait_clks(2);
-
-        // Prove active-transfer overlap while SPIEN == 0
-        `DV_CHECK_EQ(cfg.m_spi_agent_cfg.vif.csb[0], 1'b0,
-                     "SPIEN=0 must overlap active in-flight transfer with CSB[0]==0")
-        csr_rd_check(.ptr(ral.status.active), .compare_value(1'b1));
+        cfg.clk_rst_vif.wait_clks(1);
 
         hold_sck   = cfg.spi_passthrough_vif.cio_sck_o;
         hold_csb   = cfg.m_spi_agent_cfg.vif.csb;
         hold_sd    = cfg.spi_passthrough_vif.cio_sd_o;
         hold_sd_en = cfg.spi_passthrough_vif.cio_sd_en_o;
+        `DV_CHECK_EQ(hold_csb[0], 1'b0,
+                     "SPIEN=0 must overlap active in-flight transfer with CSB[0]==0")
         `DV_CHECK_EQ(hold_sd_en, 4'b0001, "Expected SD_EN[0]=1 held steady during SPIEN=0 pause")
+
+        // Prove STATUS.ACTIVE == 1 and verify pins stayed frozen across the CSR read itself
+        csr_rd_check(.ptr(ral.status.active), .compare_value(1'b1));
+        check_spien_pause_hold(hold_sck, hold_csb, hold_sd, hold_sd_en, 0);
 
         // Continuously sample and verify pin hold on every core clock for 60 cycles (>2 full SCK periods)
         for (int unsigned cyc = 0; cyc < 60; cyc++) begin

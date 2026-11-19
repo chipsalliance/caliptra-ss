@@ -38,10 +38,14 @@ class spi_segment_item extends uvm_sequence_item;
   bit [CSB_WIDTH-1:0]           csid               = '0;
   spi_host_configopts_t         configopts;
   bit                           internal_exec      = 1'b0;
+  bit                           is_cmd_inval       = 1'b0;
 
   constraint command_reg_direction_c {
     //make sure the direction matches the segtype /cmd address are always tx/standard
 
+    if (seg_type == Dummy) {
+      command_reg.direction == None;
+    } else
     // Alternative command just generates any kind of allowed segment combination
     if (cmd inside {AltCmd} && (seg_type inside {Dummy, Data})) {
       // Bidirectional commands only allow in standard speed
@@ -107,8 +111,8 @@ class spi_segment_item extends uvm_sequence_item;
       command_reg.len inside {[spi_len_min - 1 : spi_len_max - 1]};
     }
 
-    // ensure we only half or full word writes
-    !(seg_type == Dummy) -> (command_reg.len + 1) % 4 == 0;
+    // ensure we only half or full word writes on data-bearing segments
+    (command_reg.direction != None) -> (command_reg.len + 1) % 4 == 0;
     // default set keep transaction going
     command_reg.csaat == 1;
   }
@@ -134,8 +138,11 @@ class spi_segment_item extends uvm_sequence_item;
     cmd                   = rhs_.cmd;
     rx_only_weight        = rhs_.rx_only_weight;
     tx_only_weight        = rhs_.tx_only_weight;
+    dummy_weight          = rhs_.dummy_weight;
     num_dummy             = rhs_.num_dummy;
     num_cmd_bytes         = rhs_.num_cmd_bytes;
+    spi_len_min           = rhs_.spi_len_min;
+    spi_len_max           = rhs_.spi_len_max;
     seg_type              = rhs_.seg_type;
     command_reg.csaat     = rhs_.command_reg.csaat;
     command_reg.direction = rhs_.command_reg.direction;
@@ -145,6 +152,7 @@ class spi_segment_item extends uvm_sequence_item;
     csid                  = rhs_.csid;
     configopts            = rhs_.configopts;
     internal_exec         = rhs_.internal_exec;
+    is_cmd_inval          = rhs_.is_cmd_inval;
   endfunction
 
 

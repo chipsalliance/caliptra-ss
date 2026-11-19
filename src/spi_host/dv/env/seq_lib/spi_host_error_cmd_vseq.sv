@@ -33,7 +33,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       program_command_reg(cmd);
     end
     check_error(ral.error_status.csidinval, 1);
-    csr_wr(.ptr(ral.error_status.csidinval), .value(1'b1)); // W1C
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0010)); // One-hot W1C csidinval
     csr_wr(.ptr(ral.csid), .value(0)); // Restore valid CSID
 
     spi_host_init();
@@ -49,7 +49,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       cmd.len       = 9'd0;
       program_command_reg(cmd);
       check_error(ral.error_status.cmdinval, 1);
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1)); // W1C
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008)); // One-hot W1C cmdinval
 
       spi_host_init();
       csr_wr(.ptr(ral.control.spien), .value(1'b0));
@@ -61,7 +61,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       cmd.len       = 9'd0;
       program_command_reg(cmd);
       check_error(ral.error_status.cmdinval, 1);
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1)); // W1C
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008)); // One-hot W1C cmdinval
     end
 
     // 2b. Directed Reserved SPEED = 2'b11 (RsvdSpd) rejection, non-execution on pins while
@@ -100,8 +100,8 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
 
       // Flush halted u_cmd_queue via SW_RST before clearing ERROR_STATUS so RsvdSpd descriptor is drained
       program_spi_host_sw_reset();
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1));
-      csr_wr(.ptr(ral.intr_state),            .value(32'h3));
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008));
+      csr_wr(.ptr(ral.intr_state),   .value(32'h3));
       check_error(ral.error_status.cmdinval, 0);
     end
 
@@ -119,7 +119,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
     end
     send_cmd();
     check_error(ral.error_status.cmdbusy, 1);
-    csr_wr(.ptr(ral.error_status.cmdbusy), .value(1'b1)); // W1C
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0001)); // One-hot W1C cmdbusy
 
     spi_host_init();
     csr_wr(.ptr(ral.control.spien), .value(1'b0));
@@ -136,7 +136,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
         check_error(ral.error_status.accessinval, 1);
         // Verify rejected write was not enqueued in the TX FIFO
         csr_rd_check(.ptr(ral.status.txqd), .compare_value(8'h0));
-        csr_wr(.ptr(ral.error_status.accessinval), .value(1'b1)); // W1C
+        csr_wr(.ptr(ral.error_status), .value(32'h0000_0020)); // One-hot W1C accessinval
         check_error(ral.error_status.accessinval, 0);
       end
     end
@@ -222,7 +222,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       program_command_reg(cmd);
     end
     check_error(ral.error_status.csidinval, 1);
-    csr_wr(.ptr(ral.error_status.csidinval), .value(1'b1)); // W1C
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0010)); // One-hot W1C csidinval
     csr_wr(.ptr(ral.csid), .value(0));
 
     // 5b. Command invalid with error_enable = 0 (Dual+Bidir, Quad+Bidir, and RsvdSpd)
@@ -234,7 +234,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       cmd.len       = 9'd0;
       program_command_reg(cmd);
       check_error(ral.error_status.cmdinval, 1);
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1)); // W1C
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008)); // One-hot W1C cmdinval
 
       cmd.direction = Bidir;
       cmd.mode      = Quad;
@@ -244,7 +244,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       cmd.csaat     = 1'b0;
       program_command_reg(cmd);
       check_error(ral.error_status.cmdinval, 1);
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1)); // W1C
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008)); // One-hot W1C cmdinval
 
       // Masked RsvdSpd (ERROR_ENABLE.CMDINVAL == 0 while other error enables == 1: 32'h17)
       spi_host_init();
@@ -264,7 +264,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
       `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b0,
                    "intr_error_o must stay 0 when ERROR_ENABLE.CMDINVAL==0")
       program_spi_host_sw_reset();
-      csr_wr(.ptr(ral.error_status.cmdinval), .value(1'b1));
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0008));
     end
 
     // 5c. Cmdbusy with error_enable = 0
@@ -277,7 +277,7 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
     end
     send_cmd();
     check_error(ral.error_status.cmdbusy, 1);
-    csr_wr(.ptr(ral.error_status.cmdbusy), .value(1'b1)); // W1C
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0001)); // One-hot W1C cmdbusy
 
     spi_host_init();
     csr_wr(.ptr(ral.error_status), .value(32'h3f));

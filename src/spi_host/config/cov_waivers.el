@@ -1,4 +1,4 @@
-// Copyright 2026 Google LLC(OpenTitan project).
+// Copyright 2026 Google LLC (OpenTitan project).
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //==================================================
@@ -7,14 +7,20 @@
 // ExclMode: default
 //
 // Categories explicitly distinguished below (Comments #6, #7, #22, #24):
-//   [DESIGN-UNR]  Structurally unreachable RTL expressions/transitions across all parameterizations.
-//   [TARGET-CFG]  Parameterized target restrictions of spi_host_axi (NumCS=2, AxiIw=1, AxiDw=32,
-//                 ByteOrder=1, TxDepth=72, RxDepth=64).
+//   [DESIGN-UNR]       Structurally unreachable RTL expressions/transitions across all parameterizations.
+//   [TARGET-CFG]       Parameterized target restrictions of spi_host_axi (NumCS=2, AxiIw=1, AxiDw=32,
+//                      ByteOrder=1, TxDepth=72, RxDepth=64).
+//   [SW-CONTRACT-UNR]  Defensive RTL arms guarded by firmware contracts & assertions (documented below,
+//                      intentionally kept UNWAIVED in raw code coverage per Comment #7).
 //
 // Additional documented structural UNR notes in spi_host_axi wrapper (unwaived in raw score):
 //   - spi_host.sv:122 (`assign unused_pt_en = passthrough_i.passthrough_en;` in gen_passthrough_ignore):
-//     [TARGET-CFG] For NumCS=2, PassthroughNumCSCompat_A requires !passthrough_i.passthrough_en on
-//     every active clock edge; sub-cycle coverage pulses were removed per Comment #22.
+//     [TARGET-CFG] For NumCS=2, PassthroughNumCSCompat_Bound_A (bound in spi_host_bind.sv with active
+//     !rst_ni reset disable) requires !passthrough_i.passthrough_en on every active clock edge;
+//     sub-cycle coverage pulses were removed per Comment #22.
+//   - spi_host_fsm.sv:423,629 & spi_host_shift_register.sv:59,64 (`speed_i == RsvdSpd (2'b11)`):
+//     [SW-CONTRACT-UNR] Unreachable under confirmed Option A firmware contract requiring CONTROL.SW_RST
+//     queue flush before clearing ERROR_STATUS.CMDINVAL (guarded by ValidSpeed_Bound_A); kept unwaived.
 //   - sub2tlul.sv:91,94 (cur_txn direct valid_get_txn <-> valid_put_txn FSM transitions):
 //     [DESIGN-UNR] pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), forcing cur_txn back to
 //     no_txn upon AccessAck/AccessAckData before a new request can assert tl_o.a_valid.
@@ -34,20 +40,24 @@ ANNOTATION: "[DESIGN-UNR] test_speed_inval=1 always implies test_dir_inval=1 in 
 Condition 5 "2312135264" "(test_speed_inval | test_dir_inval) 1 -1" (3 "10")
 
 // [TARGET-CFG] NumCS = 2 target-configuration exclusion (Comment #22):
-// PassthroughNumCSCompat_A requires passthrough_i.passthrough_en == 1'b0 when NumCS > 1.
+// PassthroughNumCSCompat_Bound_A requires passthrough_i.passthrough_en == 1'b0 when NumCS > 1.
 INSTANCE: tb.dut.u_caliptra_ss_spi_host
-ANNOTATION: "[TARGET-CFG] NumCS=2 structurally disables passthrough_en per PassthroughNumCSCompat_A"
+ANNOTATION: "[TARGET-CFG] NumCS=2 structurally disables passthrough_en per PassthroughNumCSCompat_Bound_A"
 Toggle passthrough_i.passthrough_en "logic passthrough_i.passthrough_en"
 
 // [TARGET-CFG / DESIGN-UNR] Structural constants driven by production u_axi2tlul_spi_host (sub2tlul.sv)
-// and TL-UL device responses on spi_host_axi (AxiIw=1):
+// and TL-UL device responses on spi_host_axi (AxiIw=1, AxiDw=32):
 //   - sub2tlul.sv:70,155 ties instr_type to MuBi4False (4'b1001) and upper a_user rsvd bits to 3'b0.
+//   - axi_sub_{wr,rd}.sv:252,208 hardwires word-aligned addr[1:0] = BW'(0) = 2'b00 (while upper
+//     a_address[31:2] bits toggle dynamically on AXI4 bus traffic).
 //   - sub2tlul.sv:123 zero-extends 1-bit AXI ID (AxiIw=1) into 8-bit tl_a_source / tl_d_source [7:1].
 //   - sub2tlul.sv:116,137 fixes a_param=3'h0 and encodes only PutFullData(0)/PutPartialData(1)/Get(4)
 //     so a_opcode[1] is structurally 1'b0 (while a_opcode[0] and a_size[1:0] DO toggle dynamically).
-//   - TL-UL device responses use only AccessAck(0)/AccessAckData(1) with d_param=0, d_sink=0.
+//   - TL-UL device responses use only AccessAck(0)/AccessAckData(1) with d_param=0, d_sink=0;
+//     in caliptra_prim_secded_inv_64_57_enc.sv:22, data_o[63] (rsp_intg[6]) XORs 64'h01FBDDA769A46910
+//     masked onto 6-bit d2h_rsp_intg payload (bit [4] = d_opcode[1] == 0) with 0 inversion -> constant 1'b0.
 INSTANCE: tb.dut.u_caliptra_ss_spi_host
-ANNOTATION: "[TARGET-CFG] Production sub2tlul / TL-UL protocol constants for spi_host_axi (AxiIw=1)"
+ANNOTATION: "[TARGET-CFG] Production axi_sub / sub2tlul / TL-UL SECDED constants for spi_host_axi (AxiIw=1)"
 Toggle tl_i.a_user.instr_type "logic tl_i.a_user.instr_type[3:0]"
 Toggle tl_i.a_user.rsvd "logic tl_i.a_user.rsvd[2:0]"
 Toggle tl_i.a_source [7:1] "logic tl_i.a_source[7:0]"
@@ -63,8 +73,9 @@ Toggle tl_o.d_opcode [2:1] "logic tl_o.d_opcode[2:0]"
 //==================================================
 // [DESIGN-UNR] u_fsm gates rd_en_o with sr_rd_ready_i and wr_en_o with sr_wr_ready_i,
 // so (rd_en_i=1, rd_ready_o=0) and (wr_en_i=1, wr_ready_o=0) are structurally unreachable.
-// Note: speed_i == RsvdSpd (2'b11) waivers are intentionally NOT claimed unconditionally here
-// pending designer confirmation on W1C-only recovery (Comments #2, #3, #7).
+// Note: speed_i == RsvdSpd (2'b11) defensive arms are [SW-CONTRACT-UNR] under the confirmed
+// Option A firmware contract (CONTROL.SW_RST before W1C on CMDINVAL) and are intentionally
+// kept UNWAIVED here per Comment #7.
 CHECKSUM: "3611448077 2976194449"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_spi_core.u_shift_reg
 ANNOTATION: "[DESIGN-UNR] u_fsm gates rd_en/wr_en with sr_rd_ready_i/sr_wr_ready_i"
@@ -100,20 +111,25 @@ Branch 28 "337219961" "sw_rst_i" (17) "sw_rst_i 0,1,default,-,-,-,-,-,-,-,-"
 //==================================================
 // 4. PACKER FIFOs (u_merge.u_packer & u_select.u_packer)
 //==================================================
-// [DESIGN-UNR] ClearOnRead defaults to 1'b1 in caliptra_prim_packer_fifo.sv:47 (neither SPI packer
-// overrides it), and clear_status = clr_q | (ClearOnRead & clear_data) = clr_q | clear_data.
-// Therefore when clr_q == 1'b1, clear_status is unconditionally 1'b1, making
-// ((ClearOnRead && clear_status)=0, clr_q=1) structurally impossible (Comment #7).
-// In u_select.u_packer, Condition 7 is inside (depth_q == FullDepth) where
-// rvalid_o = (depth_q != 0) is always 1'b1.
+// [DESIGN-UNR] In caliptra_prim_packer_fifo.sv:47,102-103,137-138, ClearOnRead defaults to 1'b1
+// (neither SPI packer overrides it), clear_status includes `|| clr_q` in both gen_pack_mode
+// (u_merge.u_packer: `(rready_i && rvalid_o) || clr_q`) and gen_unpack_mode (u_select.u_packer:
+// `(rready_i && (depth_q == lsb_is_one)) || clr_q`), and `clear_data = (ClearOnRead && clear_status) || clr_q`.
+// Therefore clr_q == 1'b1 structurally forces clear_status == 1'b1 and (ClearOnRead && clear_status) == 1'b1,
+// making row "01" (((ClearOnRead && clear_status)=0, clr_q=1)) impossible (Comment #7).
+// In u_select.u_packer (gen_unpack_mode, InW=36 > OutW=9), Condition 7 is `pull_data = rvalid_o && rready_i`
+// (line 140), where rvalid_o connects to byte_valid and rready_i connects to `byte_ready = byte_ready_i | do_drain`
+// in spi_host_byte_select.sv:29-31. When byte_valid == 1'b0: do_drain == 1'b0 and byte_valid_o == 1'b0,
+// which forces u_shift_reg.wr_ready_o == 1'b0 and u_fsm.wr_en_o (byte_ready_i) == 1'b0, making
+// row "01" (rvalid_o=0, rready_i=1) structurally unreachable.
 CHECKSUM: "618627179 2680453721"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_spi_core.u_merge.u_packer
-ANNOTATION: "[DESIGN-UNR] ClearOnRead=1 and clear_status=(clr_q | clear_data), so clr_q=1 implies (ClearOnRead && clear_status)=1"
+ANNOTATION: "[DESIGN-UNR] ClearOnRead=1 and clear_status=((rready_i && rvalid_o) || clr_q), so clr_q=1 implies (ClearOnRead && clear_status)=1"
 Condition 3 "1116830244" "((ClearOnRead && clear_status) || clr_q) 1 -1" (2 "01")
 
 CHECKSUM: "618627179 3549702725"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_spi_core.u_select.u_packer
-ANNOTATION: "[DESIGN-UNR] clr_q=1 implies (ClearOnRead && clear_status)=1; rvalid_o=1 invariant when depth_q==FullDepth"
+ANNOTATION: "[DESIGN-UNR] clr_q=1 implies (ClearOnRead && clear_status)=1; byte_valid=0 gates both do_drain and u_shift_reg/u_fsm byte_ready_i to 0"
 Condition 4 "1116830244" "((ClearOnRead && clear_status) || clr_q) 1 -1" (2 "01")
 Condition 7 "3660748963" "(rvalid_o && rready_i) 1 -1" (1 "01")
 

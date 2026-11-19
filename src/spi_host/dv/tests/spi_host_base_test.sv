@@ -29,13 +29,12 @@ class spi_host_scoped_ral_catcher extends uvm_report_catcher;
         uvm_is_match("*Individual field access not available for field 'spi_host_reg_block.*", msg)) begin
       caught_regmodel_cnt++;
       if (caught_regmodel_cnt <= MAX_REGMODEL_FIELD_ADVISORIES) begin
-        set_severity(UVM_INFO);
         return CAUGHT;
       end
-    end else if (allow_same_csr_bsy && get_severity() == UVM_WARNING && id == "UVM/FLD/SET/BSY") begin
+    end else if (allow_same_csr_bsy && get_severity() == UVM_WARNING && id == "UVM/FLD/SET/BSY" &&
+                 uvm_is_match("*spi_host_reg_block.*", msg)) begin
       caught_fld_bsy_cnt++;
       if (caught_fld_bsy_cnt <= MAX_SAME_CSR_BSY_WARNINGS) begin
-        set_severity(UVM_INFO);
         return CAUGHT;
       end
     end
@@ -56,7 +55,7 @@ class spi_host_base_test extends dv_base_test #(
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     m_scoped_ral_catcher = spi_host_scoped_ral_catcher::type_id::create("m_scoped_ral_catcher");
-    m_scoped_ral_catcher.allow_same_csr_bsy = 1'b1;
+    m_scoped_ral_catcher.allow_same_csr_bsy = $test$plusargs("run_same_csr_outstanding");
     uvm_report_cb::add(null, m_scoped_ral_catcher);
   endfunction : build_phase
 

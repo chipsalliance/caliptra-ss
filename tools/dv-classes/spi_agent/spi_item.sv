@@ -36,6 +36,8 @@ class spi_item extends uvm_sequence_item;
   rand logic [3:0]         plain_data_q[$];
   // Full-cycle trailing-edge sample queue (captured at DrivingEdge when CPHA == 0)
   logic [3:0]              plain_fullcyc_data_q[$];
+  // Per-sample full CSB vector queue so scoreboard detects csb==2'b00 or mid-frame CS glitches
+  logic [CSB_WIDTH-1:0]    plain_csb_q[$];
 
   // transaction status. only use in monitor on flash mode
   // allow scb to process payload when one byte data is received, instead
@@ -89,6 +91,7 @@ class spi_item extends uvm_sequence_item;
     `uvm_field_int(terminated_before_read_pipeline, UVM_DEFAULT | UVM_NOCOMPARE)
     `uvm_field_queue_int(plain_data_q,           UVM_DEFAULT)
     `uvm_field_queue_int(plain_fullcyc_data_q,   UVM_DEFAULT)
+    `uvm_field_queue_int(plain_csb_q,            UVM_DEFAULT)
   `uvm_object_utils_end
 
   `uvm_object_new

@@ -39,8 +39,8 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
     check_error(ral.error_status.underflow, 1);
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b1,
                  "intr_error_o must assert on one-hot enabled UNDERFLOW")
-    csr_wr(.ptr(ral.error_status.underflow), .value(1'b1));
-    csr_wr(.ptr(ral.intr_state),             .value(32'h3));
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0004));
+    csr_wr(.ptr(ral.intr_state),   .value(32'h3));
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b0,
                  "intr_error_o must deassert after W1C clear of UNDERFLOW")
 
@@ -51,7 +51,7 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b0,
                  "intr_error_o must remain 0 when ERROR_ENABLE.UNDERFLOW==0")
     csr_rd_check(.ptr(ral.intr_state.error), .compare_value(1'b0));
-    csr_wr(.ptr(ral.error_status.underflow), .value(1'b1));
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0004));
 
     // 2a. One-hot OVERFLOW enabled (ERROR_ENABLE = 32'h02) at packer-inclusive depth 73 -> 74th write
     csr_wr(.ptr(ral.error_enable), .value(32'h0000_0002));
@@ -67,8 +67,8 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
     check_error(ral.error_status.overflow, 1);
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b1,
                  "intr_error_o must assert on one-hot enabled OVERFLOW")
-    csr_wr(.ptr(ral.error_status.overflow), .value(1'b1));
-    csr_wr(.ptr(ral.intr_state),            .value(32'h3));
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0002));
+    csr_wr(.ptr(ral.intr_state),   .value(32'h3));
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b0)
 
     // 2b. Selectively masked OVERFLOW (ERROR_ENABLE = 32'h1D: all other errors enabled, overflow[1]=0)
@@ -78,7 +78,7 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
     `DV_CHECK_EQ(cfg.intr_vif.sample_pin(SpiHostError), 1'b0,
                  "intr_error_o must remain 0 when ERROR_ENABLE.OVERFLOW==0")
     csr_rd_check(.ptr(ral.intr_state.error), .compare_value(1'b0));
-    csr_wr(.ptr(ral.error_status.overflow), .value(1'b1));
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0002));
     spi_host_init();
   endtask
 
@@ -118,7 +118,7 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
 
     access_data_fifo(read_q, RxFifo, 1'b0); // attempting empty read error underflow
     check_error(ral.error_status.underflow, 1);
-    csr_wr(.ptr(ral.error_status.underflow), .value(1'b1)); // W1C clear underflow
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0004)); // One-hot W1C clear underflow
     csr_wr(.ptr(ral.intr_state), .value(32'h3));
 
     csr_wr(.ptr(ral.configopts.clkdiv), .value(16'h28)); // clk div set to 40
@@ -128,7 +128,7 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
       gen_trans();
     end
     check_error(ral.error_status.overflow, 1);
-    csr_wr(.ptr(ral.error_status.overflow), .value(1'b1)); // W1C clear overflow
+    csr_wr(.ptr(ral.error_status), .value(32'h0000_0002)); // One-hot W1C clear overflow
 
     // Drain overflowed TX FIFO via SW reset, clear any latched error/interrupt status,
     // and verify end-to-end recovery via a scoreboard-checked Bidir transfer.

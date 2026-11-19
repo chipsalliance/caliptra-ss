@@ -7,9 +7,15 @@ description: "Caliptra-SS SPI Host Subsystem RTL (from spi_host.vf)"
 filesets:
   files_rtl:
     files:
-      - ../../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
+      - ../../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert_standard_macros.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert_dummy_macros.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert_yosys_macros.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert_sec_cm.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert.sv: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_macros.sv: {is_include_file: true}
       - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_util_pkg.sv
-      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert.sv
       - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_pkg.sv
       - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_mubi_pkg.sv
       - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_pkg.sv
@@ -70,7 +76,6 @@ filesets:
       - ../../src/spi_host/rtl/spi_host_window.sv
       - ../../src/spi_host/rtl/spi_host.sv
       - ../../src/spi_host/rtl/spi_host_axi.sv
-      - ../../src/spi_host/rtl/spi_host_axi_synth.sv
     file_type: systemVerilogSource
 
 targets:

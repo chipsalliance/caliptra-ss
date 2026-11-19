@@ -14,6 +14,7 @@ class spi_device_cmd_rsp_seq extends spi_device_seq;
 
   // read queue
   spi_item rsp_q[$];
+  spi_item last_rsp_item;
   spi_fsm_e spi_state = SpiIdle;
 
   // state-variables
@@ -111,8 +112,12 @@ class spi_device_cmd_rsp_seq extends spi_device_seq;
       (cmd == ReadStd)  -> data.size() ==  256;
       (cmd == ReadDual) -> data.size() ==  512;
       (cmd == ReadQuad) -> data.size() == 1024;
+      foreach (data[i]) {
+        !(data[i] inside {8'h00, 8'hFF});
+      }
       num_lanes == cfg.get_sio_size();)
     `downcast(rsp_clone, rsp.clone())
+    last_rsp_item = rsp_clone;
     rsp_q.push_back(rsp_clone);
   endfunction : handle_reads
 

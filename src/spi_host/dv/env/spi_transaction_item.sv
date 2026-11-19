@@ -40,7 +40,7 @@ class spi_transaction_item extends uvm_sequence_item;
   // num_addr_bytes
   int num_cmd_bytes                   = 4;
   // max num devices
-  int max_spi_devices                 = 1;
+  int max_spi_devices                 = SPI_HOST_NUM_CS;
   rand int csid;
   // num segments
   rand int num_segments               = 2;

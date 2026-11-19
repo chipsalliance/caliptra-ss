@@ -92,8 +92,14 @@ class spi_host_env_cov extends dv_base_env_cov #(.CFG_T(spi_host_env_cfg));
       bins above_depth = {[SPI_HOST_RX_DEPTH + 1 : 8'h7e], [8'h80 : 8'hfe]};
       bins max_val     = {8'hff};
     }
-    spien_cp : coverpoint spi_ctrl_reg.spien { bins spien = {1}; }
-    output_en_cp : coverpoint spi_ctrl_reg.output_en { bins output_en = {1}; }
+    spien_cp : coverpoint spi_ctrl_reg.spien {
+      bins disabled = {0};
+      bins spien    = {1};
+    }
+    output_en_cp : coverpoint spi_ctrl_reg.output_en {
+      bins disabled  = {0};
+      bins output_en = {1};
+    }
     sw_rst_cp : coverpoint spi_ctrl_reg.sw_rst { bins sw_rst = {1}; }
     sw_rst_active_cross : cross sw_rst_cp, active;
   endgroup

@@ -101,8 +101,10 @@ class spi_host_performance_vseq extends spi_host_smoke_vseq;
       begin : enable_quad_stream
         spi_host_status_t st;
         csr_wr(.ptr(ral.control), .value(32'hA000_007F)); // spien=1 releases 4-segment Quad stream
-        csr_rd(.ptr(ral.status), .value(st));
-        saw_stall |= (st.txstall || st.rxstall);
+        do begin
+          csr_rd(.ptr(ral.status), .value(st));
+          saw_stall |= (st.txstall || st.rxstall);
+        end while (st.active);
         csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(20));
       end
     join
@@ -207,7 +209,7 @@ class spi_host_performance_vseq extends spi_host_smoke_vseq;
     transaction_init();
     `DV_CHECK_RANDOMIZE_WITH_FATAL(transaction,
       num_segments inside {[1 : 3]};
-      cmd inside {WriteQuad, ReadQuad, WriteDual, ReadStd, WriteStd};
+      cmd inside {WriteQuad, ReadQuad, WriteDual, ReadDual, ReadStd, WriteStd};
     )
   endtask
 

@@ -522,7 +522,7 @@
         { bits: "4",
           name: "CSIDINVAL",
           desc: '''Invalid CSID: If this bit is set, the block sends an error interrupt whenever
-                   a command is submitted, but CSID exceeds NumCS.''',
+                   a command is submitted with CSID greater than or equal to NumCS.''',
           resval: "0x1"
         }
         { bits: "3",
@@ -555,10 +555,12 @@
       ]
     },
     { name: "ERROR_STATUS",
-      desc: '''Indicates that any errors that have occurred.
-               When an error
-               occurs, the corresponding bit must be cleared here before
-               issuing any further commands.'''
+      desc: '''Indicates errors that have occurred.
+               When an error occurs, the corresponding bit must be cleared here before
+               issuing any further commands. For command-queue errors (!!ERROR_STATUS.CSIDINVAL
+               and !!ERROR_STATUS.CMDINVAL), firmware must first issue !!CONTROL.SW_RST to
+               flush the retained descriptor from the command FIFO before clearing
+               !!ERROR_STATUS via W1C.'''
       swaccess: "rw1c",
       hwaccess: "hrw",
       fields: [
@@ -584,8 +586,10 @@
           name: "CMDINVAL",
           desc: '''Indicates an invalid command segment, meaning either an invalid value of
                    !!COMMAND.SPEED or a request for bidirectional data transfer at dual or quad
-                   speed. Firmware must issue !!CONTROL.SW_RST to flush the offending
-                   descriptor from the command queue before clearing !!ERROR_STATUS.''',
+                   speed. Because the offending descriptor is still enqueued in the command
+                   FIFO, firmware must issue !!CONTROL.SW_RST to flush the queue before clearing
+                   !!ERROR_STATUS; clearing CMDINVAL via W1C without !!CONTROL.SW_RST unhalts
+                   the core onto the retained invalid descriptor.''',
              resval: "0x0"
         },
         { bits: "2",

@@ -207,6 +207,11 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
   virtual task run_csaat_cs_switch_stimulus();
     uvm_status_e status;
     spi_host_command_t cmd;
+    int unsigned switch_base_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+    bit saw_all_csb_hi_between_5a   = 1'b0;
+    bit saw_cs1_active_5a           = 1'b0;
+    bit saw_both_csb_low_5a         = 1'b0;
+    bit stop_5a_obs                 = 1'b0;
 
     `uvm_info(`gfn, "Running CSAAT=1 CSID switch stimulus (IdleCSBActive -> WaitTrail -> CSBSwitch)", UVM_LOW)
 
@@ -225,17 +230,36 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
     end else begin
       cfg.clk_rst_vif.wait_clks(250);
     end
+    `DV_CHECK_EQ(cfg.m_spi_agent_cfg.vif.csb, 2'b10,
+                 "5a: Expected CS0 held low (2'b10) while parked in IdleCSBActive")
 
-    // Issue next segment on CS1 while CS0 is held active in IdleCSBActive
-    csr_wr(.ptr(ral.csid), .value(32'h0000_0001));
-    ral.txdata.write(status, 0, 32'h5A5A_1110);
-    wait_ready_for_command();
-    cmd.direction = TxOnly;
-    cmd.mode      = Standard;
-    cmd.csaat     = 1'b0;
-    cmd.len       = 9'd3;
-    program_command_reg(cmd);
-    csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(100));
+    fork
+      begin
+        while (!stop_5a_obs) begin
+          @(posedge cfg.clk_rst_vif.clk);
+          if (cfg.m_spi_agent_cfg.vif.csb === 2'b00) saw_both_csb_low_5a = 1'b1;
+          if (!saw_cs1_active_5a && cfg.m_spi_agent_cfg.vif.csb === 2'b11) saw_all_csb_hi_between_5a = 1'b1;
+          if (cfg.m_spi_agent_cfg.vif.csb === 2'b01) saw_cs1_active_5a = 1'b1;
+        end
+      end
+      begin
+        // Issue next segment on CS1 while CS0 is held active in IdleCSBActive
+        csr_wr(.ptr(ral.csid), .value(32'h0000_0001));
+        ral.txdata.write(status, 0, 32'h5A5A_1110);
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd3;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(100));
+        stop_5a_obs = 1'b1;
+      end
+    join
+    `DV_CHECK_EQ(saw_both_csb_low_5a, 1'b0, "5a: CS0 and CS1 must never assert simultaneously")
+    `DV_CHECK_EQ(saw_all_csb_hi_between_5a, 1'b1,
+                 "5a: CS0 must deassert to 2'b11 (WaitIdle/CSBSwitch) before CS1 asserts")
+    `DV_CHECK_EQ(saw_cs1_active_5a, 1'b1, "5a: Expected CS1 (2'b01) to assert on switched segment")
 
     // 5b. Reverse parked IdleCSBActive switch: CS1 (csaat=1) -> wait IdleCSBActive -> CS0 (csaat=0)
     csr_wr(.ptr(ral.csid), .value(32'h0000_0001));
@@ -384,8 +408,15 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
     cmd.len       = 9'd7; // 8 bytes -> stalls after first 4 bytes while CS1 is active
     program_command_reg(cmd);
     csr_spinwait(.ptr(ral.status.txstall), .exp_data(1'b1), .backdoor(1'b0), .spinwait_delay_ns(50));
+    `DV_CHECK_EQ(cfg.m_spi_agent_cfg.vif.csb, 2'b01,
+                 "5d: CS1 must remain active low (2'b01) throughout mid-segment TXSTALL")
     ral.txdata.write(status, 0, 32'hDEAD_C0DE); // Supply 2nd word to clear stall
     csr_spinwait(.ptr(ral.status.active),  .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(100));
+    cfg.clk_rst_vif.wait_clks(10);
+    if (cfg.en_scb) begin
+      `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, switch_base_tx_cnt + 19,
+                   "5a-5d: Expected scoreboard to verify all 19 CSAAT=1 switch & stall segments")
+    end
 
     // 5e. Queued CS1 commands with CONFIGOPTS_1 modified while the first CS1 command is in flight:
     // Verifies that per-CS mode and timing prediction snapshots CONFIGOPTS_1 per queued command.
@@ -497,6 +528,7 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
 
         csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
         cfg.clk_rst_vif.wait_clks(40);
+        csr_wr(.ptr(ral.configopts_1), .value(32'h0222_0003));
 
         uvm_report_cb::delete(null, lead_catcher);
         uvm_report_cb::delete(null, trail_catcher);

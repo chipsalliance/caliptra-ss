@@ -4,31 +4,34 @@
 {
   name: "spi_host"
   import_testplans: ["../../../third_party/caliptra-rtl/tools/dvsim/testplans/csr_testplan.hjson",
-                     "../../../third_party/caliptra-rtl/tools/dvsim/testplans/intr_test_testplan.hjson"],
+                     "../../../third_party/caliptra-rtl/tools/dvsim/testplans/intr_test_testplan.hjson",
+                     "spi_host_sec_cm_testplan.hjson"],
   testpoints: [
     {
       name: smoke
       desc: '''
             Concise SPI_HOST smoke test + dedicated directed closure test verifying core host transfers,
             maximum-length 512-byte (LEN = 511) streaming, AXI/TL-UL register & FIFO-window error paths,
-            and scoreboard negative self-checks.
+            reactive peripheral responder operation across CS0/CS1 and Standard/Dual/Quad, and scoreboard
+            negative self-checks.
 
             Stimulus:
               - Enable spi_host_axi and execute dual-CS multi-segment Page Program (0x02) and Quad Output
                 Fast Read (0x6B) transfers across CS0 and CS1 in concise spi_host_smoke
               - In dedicated spi_host_closure, exercise 512-byte (LEN = 511) TxOnly, RxOnly, and Bidir
                 transfers with live TX refill (>73 words) and RX drain (>64 words), all 8 valid TXDATA
-                byte-enable masks (incl. 4'b0110), partial-word (1, 2, 3, 5, 9B) transfers, AXI4 narrow
-                and burst gasket transfers, sub-word CSR wr_err, unmapped addrmiss (with backpressure),
-                wrong-direction RXDATA write / TXDATA read SLVERR + FIFO preservation, and TL-UL cmd_intg
-                ECC fault injection (note: reg_we_err is a structurally unreachable one-hot decode fault
-                and is UNR-waived rather than dynamically claimed here)
+                byte-enable masks (incl. 4'b0110), partial-word (1, 2, 3, 5, 9B) transfers, AXI4 narrow,
+                upper-address (AxADDR[31:7]), and maximum 256-beat (AxLEN = 8'hFF) gasket bursts,
+                sub-word CSR wr_err, unmapped addrmiss (with backpressure), wrong-direction RXDATA write /
+                TXDATA read SLVERR + FIFO preservation, and TL-UL cmd_intg + data_intg SECDED fault
+                injection (note: reg_we_err is a structurally unreachable one-hot decode fault and is
+                UNR-waived rather than dynamically claimed here)
 
             Checking:
               - Ensure transactions are transmitted/received accurately with scoreboard TX/RX and 4-state
                 active-lane floating-Z checks (plus TX/RX/Z/zero-RX/AXI-ID negative controls)
-              - Ensure AXI SLVERR responses, intg_error_o latching, and preserved FIFO words/depths
-                behave per specification
+              - Ensure AXI OKAY/SLVERR responses, intg_error_o latching on both cmd_intg and data_intg
+                faults, and preserved FIFO words/depths behave per specification
             '''
       stage: V1
       tests: ["spi_host_smoke", "spi_host_closure"]
@@ -44,17 +47,19 @@
               - Perform Page Program (0x02) and Quad Output Fast Read (0x6B) via CSID = 0 and CSID = 1
                 at the same page address with distinct payloads, then re-read CS0 without reprogramming
               - Switch active CSID (CS0 <-> CS1) while CSAAT = 1 (from parked IdleCSBActive and pipelined
-                in-flight across CPOL/CPHA/CSNLEAD/CSNTRAIL variations; same-CS CSAAT=1 + CONFIGOPTS
-                change is pending designer confirmation per Comment #1)
+                in-flight across CPOL/CPHA/CSNLEAD/CSNTRAIL variations; per confirmed firmware contract,
+                same-CS CONFIGOPTS[cs] updates require closing the open transaction with CSAAT = 0 first)
               - Apply single-bit mid-command CPOL-only and CPHA-only CONFIGOPTS_1 updates while an older
                 CS1 command is shifting to verify accepted-command SVA timing and scoreboard snapshotting
               - Inject deliberate CS1 mode/lead/trail/idle faults and physical wrong-CS routing fault
-              - Trigger out-of-range CSID = 2 to verify csidinval error detection and SW_RST recovery
-                (W1C-only invalid-CSID retention/discard is pending designer confirmation per Comment #2)
+              - Trigger out-of-range CSID = 2 to verify both (Step 6a) canonical SW_RST + W1C queue-flush
+                recovery and (Step 6b) W1C-only unhalted execution of the retained clamped-CS0 descriptor
 
             Checking:
-              - Ensure CS0 and CS1 transactions route independently to their selected chip select
-              - Ensure IdleCSBActive/InternalClk -> WaitTrail -> CSBSwitch FSM transitions occur on CSID switch
+              - Ensure CS0 and CS1 transactions route independently to their selected chip select (and
+                simultaneous csb == 2'b00 is rejected)
+              - Ensure IdleCSBActive/InternalClk -> WaitTrail -> CSBSwitch FSM and physical CSB transitions
+                occur on CSID switch
               - Ensure wrong-CS routing, mode, and timing fault controls are caught by the scoreboard
             '''
       stage: V2
@@ -93,9 +98,9 @@
               - Trigger csidinval (CSID >= NumCS), cmdinval (Dual/Quad + Bidir and reserved SPEED = 2'b11
                 RsvdSpd across all 4 directions), cmdbusy (exceeding CmdDepth = 8), accessinval (all 8
                 invalid byte masks), TX overflow (at 74th word past 73-word packer+FIFO depth), and RX
-                underflow across isolated enabled and masked ERROR_ENABLE settings (masked-halt vs
-                proceed policy is pending designer confirmation per Comment #3; RXWM equality boundary
-                >= vs "exceeds" is pending designer confirmation per Comment #25)
+                underflow across isolated enabled and masked ERROR_ENABLE settings, verifying both
+                interrupt-only masking (intr_error_o == 0 while SPIEN=1 core halts on ERROR_STATUS != 0)
+                and RXWM greater-than-or-equal (>=) watermark boundary behavior (below, equal, above)
 
             Checking:
               - Ensure rejected commands keep CSB/SCK/SD_EN quiescent and report the expected sticky
@@ -221,9 +226,9 @@
       desc: '''
             Stimulus:
               - Drive a controlled delayed-MISO transition after the nominal half-cycle SCK edge and
-                before the full-cycle trailing SCK edge under both FULLCYC = 0 and FULLCYC = 1 across
-                CS0 and CS1, plus DUT-poked and scoreboard negative controls (CPHA=1 + FULLCYC=1 RX
-                support is pending designer confirmation per Comment #4)
+                before the full-cycle trailing SCK edge under both FULLCYC = 0 and FULLCYC = 1 (with
+                CPHA = 0 across CPOL = 0 and CPOL = 1) on CS0 and CS1, plus DUT-poked and scoreboard
+                negative controls (FULLCYC = 1 is supported when CPHA = 0 per specification)
 
             Checking:
               - Verify FULLCYC = 0 captures the nominal half-cycle byte while FULLCYC = 1 captures the
@@ -430,6 +435,14 @@
       desc: '''
             Completed legal-transfer coverage across Direction, Mode (Standard/Dual/Quad), CSAAT,
             9-bit LEN (0..511), and legal Direction x Mode and CSAAT x Mode crosses.
+            '''
+    }
+    {
+      name: command_segment_cg
+      desc: '''
+            Completed legal-segment transition and cross coverage across CSAAT, Speed (Standard/Dual/Quad)
+            and Speed-to-Speed transitions, Direction and Direction-to-Direction transitions, LEN
+            boundary bins (0, 1, 2..510, 511), and legal Speed x Direction x CSAAT triples.
             '''
     }
     {

@@ -457,13 +457,20 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       csr_wr(.ptr(ral.intr_test), .value(2'b00)); // Clear Status-type test_q
       csr_wr(.ptr(ral.intr_state), .value(2'b11)); // Clear (W1C)
 
-      // 3. state=1, test=0 with en=0 and en=1
-      csr_wr(.ptr(ral.intr_enable), .value(2'b00));
-      csr_wr(.ptr(ral.intr_test), .value(2'b11)); // sets state to 2'b11
-      csr_wr(.ptr(ral.intr_test), .value(2'b00)); // idx 0: test=0,en=0,exp=1 | idx 1: test=0,en=0,exp=1
-      csr_wr(.ptr(ral.intr_enable), .value(2'b11));
-      csr_wr(.ptr(ral.intr_test), .value(2'b00)); // idx 0: test=0,en=1,exp=1 | idx 1: test=0,en=1,exp=1
-      csr_wr(.ptr(ral.intr_state), .value(2'b11)); // Clear (W1C)
+      // 3. state=1, test=0 with en=0 and en=1:
+      //    Enable live IDLE status event (EVENT_ENABLE.IDLE=1 while quiescent) so Status-type
+      //    INTR_STATE[1] (spi_event) genuinely remains 1 in RTL when INTR_TEST=2'b00 clears test_q.
+      csr_wr(.ptr(ral.event_enable), .value(32'h20));
+      csr_wr(.ptr(ral.intr_enable),  .value(2'b00));
+      csr_wr(.ptr(ral.intr_test),    .value(2'b11)); // sets both Event[0] and Status[1] to 2'b11
+      csr_wr(.ptr(ral.intr_test),    .value(2'b00)); // idx 0: test=0,en=0,exp=1 | idx 1: test=0,en=0,exp=1
+      csr_rd_check(.ptr(ral.intr_state), .compare_value(2'b11));
+      csr_wr(.ptr(ral.intr_enable),  .value(2'b11));
+      csr_wr(.ptr(ral.intr_test),    .value(2'b00)); // idx 0: test=0,en=1,exp=1 | idx 1: test=0,en=1,exp=1
+      csr_rd_check(.ptr(ral.intr_state), .compare_value(2'b11));
+      csr_wr(.ptr(ral.event_enable), .value(32'h0));
+      csr_wr(.ptr(ral.intr_state),   .value(2'b11)); // Clear Event[0] via W1C
+      csr_rd_check(.ptr(ral.intr_state), .compare_value(2'b00));
     end
 
     // 7. Exercise tx_watermark[7:6], rx_watermark[7], and error_status.underflow W1C (1->0) toggles
@@ -891,14 +898,14 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       // 12c. Bus-level TL-UL command integrity fault injection on CSR and window accesses
       `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
                    "Expected intg_error_o to be 0 before fault injection")
-      cfg.intg_error_vif.set_pullup_en_pin(0, 1'b1);
+      cfg.spi_passthrough_vif.inject_cmd_intg_err = 1'b1;
       write_csr_with_be(ral.csid, 32'h0, 4'hf, status);
       `DV_CHECK_EQ(status, UVM_NOT_OK, "Expected SLVERR on corrupted TL-UL CSR write")
       `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
                    "Expected intg_error_o to assert on TL-UL cmd_intg fault")
       write_txdata(32'h1234_5678, 4'hf, status);
       `DV_CHECK_EQ(status, UVM_NOT_OK, "Expected SLVERR on corrupted TL-UL TXDATA write")
-      cfg.intg_error_vif.set_pullup_en_pin(0, 1'b0);
+      cfg.spi_passthrough_vif.inject_cmd_intg_err = 1'b0;
       cfg.clk_rst_vif.wait_clks(2);
       `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
                    "Expected intg_error_o (err_q) to remain latched until hardware reset")
@@ -1029,18 +1036,18 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
                      "Expected Standard TxOnly transfer with 1'bz on unused lanes sio[3:2] to pass scoreboard")
       end
 
-      // 13d. Unexpected zero-valued RXDATA word negative control when expected RX queue is exhausted (Comment #12)
+      // 13d. Unexpected zero-valued RXDATA word negative control when expected RX queue is exhausted:
+      //      Read empty RXDATA (0x00000000) and clear ERROR_STATUS without verifying UNDERFLOW ->
+      //      check_unverified_underflows() flags the unverified empty RXDATA read (Comment #12).
       begin
         spi_host_scb_neg_catcher catcher_unexp_rx = spi_host_scb_neg_catcher::type_id::create("scb_unexp_zero_rx_catcher");
         catcher_unexp_rx.match_pattern = "*Unexpected RXDATA word 0x00000000 read after expected RX queue was exhausted*";
         uvm_report_cb::add(null, catcher_unexp_rx);
-        spi_host_scoreboard::s_force_unexpected_zero_rx_err = 1'b1;
         ral.rxdata.read(status, 0, dummy_rdata);
-        spi_host_scoreboard::s_force_unexpected_zero_rx_err = 1'b0;
+        csr_wr(.ptr(ral.error_status), .value(32'h3f));
         uvm_report_cb::delete(null, catcher_unexp_rx);
         `DV_CHECK_EQ(catcher_unexp_rx.caught_err_cnt, 1,
                      "Expected scoreboard to flag unexpected zero-valued RXDATA word on exhausted RX queue")
-        csr_wr(.ptr(ral.error_status), .value(32'h3f));
         csr_wr(.ptr(ral.intr_state),   .value(2'b11));
       end
       program_spi_host_regs();
@@ -1062,7 +1069,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       int unsigned sizes[2] = '{0, 1};
       bit [3:0]    masks[2] = '{4'b0001, 4'b0011};
       bit [31:0]   waddrs[2] = '{32'h28, 32'h28}; // TXDATA window
-      bit [31:0]   raddrs[2] = '{32'h14, 32'h24}; // STATUS CSR & RXDATA window
+      bit [31:0]   raddrs[2] = '{32'h10, 32'h24}; // STATUS CSR (0x10) & RXDATA window (0x24)
       foreach (sizes[i]) begin
         axi_mgr_write_burst_vseq wr_vseq = axi_mgr_write_burst_vseq::type_id::create("narrow_wr");
         axi_mgr_read_burst_vseq  rd_vseq = axi_mgr_read_burst_vseq::type_id::create("narrow_rd");
@@ -1083,6 +1090,9 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         wr_vseq.m_req.m_user   = (128'(masks[i]) << 18);
         wr_vseq.m_fixed_strb   = 128'(masks[i]);
         wr_vseq.start(null);
+        `DV_CHECK_NE(wr_vseq.rsp.m_write_response, null)
+        `DV_CHECK_EQ(wr_vseq.rsp.m_write_response.m_resp, axi_write_response_item::BRespOkay,
+                     "Expected BRespOkay on narrow TXDATA write")
 
         rd_vseq.set_sequencers(agt.get_read_request_sequencer(),
                                agt.get_read_data_sequencer());
@@ -1100,6 +1110,8 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         rd_vseq.m_req.m_user   = (128'(masks[i]) << 18);
         rd_vseq.start(null);
         `DV_CHECK_EQ(rd_vseq.m_read_data_items.size(), 1, "Expected 1 read beat on narrow AXI read")
+        `DV_CHECK_EQ(rd_vseq.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay,
+                     "Expected RRespOkay on narrow STATUS/RXDATA read")
       end
     end
 
@@ -1112,6 +1124,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       foreach (bursts[i]) begin
         axi_mgr_write_burst_vseq wr_vseq = axi_mgr_write_burst_vseq::type_id::create($sformatf("brst_wr_%0d", i));
         axi_mgr_read_burst_vseq  rd_vseq = axi_mgr_read_burst_vseq::type_id::create($sformatf("brst_rd_%0d", i));
+        bit [3:0] wr_strb = (i == 3) ? 4'h0 : 4'hf;
         wr_vseq.set_sequencers(agt.get_write_request_sequencer(),
                                agt.get_write_data_sequencer(),
                                agt.get_write_response_sequencer());
@@ -1126,9 +1139,14 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         wr_vseq.m_req.m_cache  = 0;
         wr_vseq.m_req.m_prot   = 0;
         wr_vseq.m_req.m_qos    = 0;
-        wr_vseq.m_req.m_user   = (128'hf << 18);
-        wr_vseq.m_fixed_strb   = 128'hf;
+        wr_vseq.m_req.m_user   = (128'(wr_strb) << 18);
+        wr_vseq.m_fixed_strb   = 128'(wr_strb);
         wr_vseq.start(null);
+        `DV_CHECK_NE(wr_vseq.rsp.m_write_response, null)
+        `DV_CHECK_EQ(wr_vseq.rsp.m_write_response.m_resp,
+                     (i == 0) ? axi_write_response_item::BRespOkay :
+                                axi_write_response_item::BRespSlverr,
+                     $sformatf("Unexpected BRESP on AXI write burst %0d", i))
 
         rd_vseq.set_sequencers(agt.get_read_request_sequencer(),
                                agt.get_read_data_sequencer());
@@ -1147,6 +1165,13 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         rd_vseq.start(null);
         `DV_CHECK_EQ(rd_vseq.m_read_data_items.size(), lens[i] + 1,
                      "AXI read burst beat count mismatch")
+        if (i == 0) begin
+          `DV_CHECK_EQ(rd_vseq.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay)
+        end else if (i == 3) begin
+          `DV_CHECK_EQ(rd_vseq.m_read_data_items[14].m_resp, axi_read_data_item::RRespSlverr)
+        end else begin
+          `DV_CHECK_EQ(rd_vseq.m_read_data_items[2].m_resp, axi_read_data_item::RRespSlverr)
+        end
       end
     end
 
@@ -1175,7 +1200,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
                              agt.get_read_data_sequencer());
       rd_conc.set_read_response_router(agt.get_read_response_router());
       rd_conc.m_req.m_id     = 0;
-      rd_conc.m_req.m_addr   = 32'h14;
+      rd_conc.m_req.m_addr   = 32'h10;
       rd_conc.m_req.m_region = 0;
       rd_conc.m_req.m_len    = 8'd7;
       rd_conc.m_req.m_size   = 3'd2;
@@ -1284,7 +1309,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
           foreach (ar_pipe_lens[k]) begin
             axi_mgr_txn_request_seq ar_s = axi_mgr_txn_request_seq::type_id::create($sformatf("ar_p_%0d", k));
             ar_s.m_use_fixed_id     = 1'b1; ar_s.m_fixed_id     = 0;
-            ar_s.m_use_fixed_addr   = 1'b1; ar_s.m_fixed_addr   = 32'h14;
+            ar_s.m_use_fixed_addr   = 1'b1; ar_s.m_fixed_addr   = 32'h10;
             ar_s.m_use_fixed_region = 1'b1; ar_s.m_fixed_region = 0;
             ar_s.m_use_fixed_len    = 1'b1; ar_s.m_fixed_len    = ar_pipe_lens[k][7:0];
             ar_s.m_use_fixed_size   = 1'b1; ar_s.m_fixed_size   = 3'd2;
@@ -1312,6 +1337,8 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
     run_axi_agent_api_and_id_controls(agt);
 
     spi_host_init();
+    csr_wr(.ptr(ral.event_enable), .value(32'h0));
+    csr_wr(.ptr(ral.error_enable), .value(32'h0));
     csr_wr(.ptr(ral.error_status), .value(32'h3f));
     csr_wr(.ptr(ral.intr_state),   .value(2'b11));
     cfg.en_scb = orig_en_scb;

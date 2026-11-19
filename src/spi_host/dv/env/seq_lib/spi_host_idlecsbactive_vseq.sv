@@ -54,6 +54,7 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
           send_trans_w_csaat(transaction, 1, 0);
           cfg.clk_rst_vif.wait_clks(100);
           csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
+          read_rx_fifo();
 
           // Exercise IdleCSBActive -> WaitTrail -> WaitIdle -> CSBSwitch when switching CSID
           if (SPI_HOST_NUM_CS > 1) begin

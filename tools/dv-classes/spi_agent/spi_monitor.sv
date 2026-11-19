@@ -96,6 +96,10 @@ class spi_monitor extends dv_reactive_monitor #(
           begin : main_mon_thread
             case (cfg.spi_func_mode)
               SpiModeGeneric: begin
+                if (cfg.decode_commands) begin
+                  generic_mode_host_byte_q.delete();
+                  generic_mode_device_byte_q.delete();
+                end
                 // indicate that this the first byte in a spi transaction
                 host_item.first_byte = 1;
                 cmd = CmdOnly;
@@ -152,6 +156,7 @@ class spi_monitor extends dv_reactive_monitor #(
       cfg.wait_sck_edge(SamplingEdge, active_csb);
       if (cfg.enable_plain_sampling) begin
         plain_item.plain_data_q.push_back(cfg.vif.sio[3:0]);
+        plain_item.plain_csb_q.push_back(cfg.vif.csb);
         if (!cfg.sck_phase[active_csb]) begin
           // CPHA == 0: capture full-cycle peripheral MISO at the trailing SCK edge
           cfg.wait_sck_edge(DrivingEdge, active_csb);

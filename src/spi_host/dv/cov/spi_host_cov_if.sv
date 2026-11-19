@@ -32,7 +32,7 @@ interface spi_host_cov_if #(
   bit en_full_cov = 1'b1;
 
   // 1. SCK Clock Pin Coverage
-  covergroup sck_pin_cg @(posedge clk_i);
+  covergroup sck_pin_cg @(posedge clk_i iff (rst_ni && en_full_cov));
     option.per_instance = 1;
     sck_val_cp : coverpoint cio_sck_o;
     sck_en_cp  : coverpoint cio_sck_en_o;
@@ -40,7 +40,7 @@ interface spi_host_cov_if #(
   endgroup
 
   // 2.Serial Data (SD) Output Enable Width Coverage
-  covergroup sd_en_width_cg @(posedge clk_i);
+  covergroup sd_en_width_cg @(posedge clk_i iff (rst_ni && en_full_cov));
     option.per_instance = 1;
     sd_en_cp : coverpoint cio_sd_en_o {
       bins disabled  = {4'b0000};
@@ -51,7 +51,7 @@ interface spi_host_cov_if #(
   endgroup
 
   // 3. Hardware Interrupt Lines Coverage
-  covergroup intr_pins_cg @(posedge clk_i);
+  covergroup intr_pins_cg @(posedge clk_i iff (rst_ni && en_full_cov));
     option.per_instance = 1;
     intr_err_cp : coverpoint intr_error_o;
     intr_evt_cp : coverpoint intr_spi_event_o;
@@ -65,7 +65,7 @@ interface spi_host_cov_if #(
 
   // 4. Per-Chip-Select Pin Coverage across all NumCS lines (CS0 .. CS[NumCS-1])
   for (genvar cs = 0; cs < NumCS; cs++) begin : gen_csb_cov
-    covergroup csb_pin_cg @(posedge clk_i);
+    covergroup csb_pin_cg @(posedge clk_i iff (rst_ni && en_full_cov));
       option.per_instance = 1;
       csb_val_cp : coverpoint cio_csb_o[cs];
       csb_en_cp  : coverpoint cio_csb_en_o[cs];

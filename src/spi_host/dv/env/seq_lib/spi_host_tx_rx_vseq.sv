@@ -94,9 +94,10 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
     // Wait for all accesses to complete
     wait_no_outstanding_access();
 
-    // Read out status/intr_state CSRs (ignore the data)
-    // This lets the scoreboard check the values.
-    check_status_and_clear_intrs();
+    // Read out status/intr_state CSRs (ignore the data) unless stopped for mid-transfer reset
+    if (!stop_rx_fifo_read) begin
+      check_status_and_clear_intrs();
+    end
 
   endtask
 
@@ -166,16 +167,13 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
       bit'(`gmv(ral.status.rxfull))
     };
     event_en = `gmv(ral.event_enable);
-    if ((enable_fld != null) && `gmv(enable_fld)) begin
-      bit enable = `gmv(enable_fld);
-      if (intr_value && enable && |(event_vec & event_en)) begin
-        check_interrupts(1 << SpiHostEvent, 1'b1, '0);
-      end else if ((event_vec & event_en) == 0) begin
-        check_interrupts(1 << SpiHostEvent, 1'b0, '0);
-      end
-    end else if ((event_vec & event_en) == 0) begin
-      check_interrupts(1 << SpiHostEvent, 1'b0, '0);
+    if (enable_fld != null) begin
+      bit exp_src_event = (fld == ral.status.active) ? ~state_value : state_value;
+      `DV_CHECK_EQ(intr_value, exp_src_event,
+                   $sformatf("check_event(%s): intr_value (%0b) inconsistent with state_value (%0b)",
+                             fld.get_name(), intr_value, state_value))
     end
+    check_interrupts(1 << SpiHostEvent, |(event_vec & event_en), '0);
   endtask
 
   task check_error(uvm_reg_field fld, bit value);

@@ -113,7 +113,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
       [cfg.seq_cfg.host_spi_middle_clkdiv+1 : cfg.seq_cfg.host_spi_upper_middle_clkdiv]: begin
         cfg.csr_spinwait_timeout_ns *= 3;
       end
-      [cfg.seq_cfg.host_spi_middle_clkdiv+1 : 16'hFFF] : begin
+      [cfg.seq_cfg.host_spi_upper_middle_clkdiv+1 : 16'hFFF] : begin
         cfg.csr_spinwait_timeout_ns *= 5;
       end
       [16'hFFF+1 : cfg.seq_cfg.host_spi_max_clkdiv] : begin
@@ -592,9 +592,9 @@ class spi_host_base_vseq extends dv_base_vseq #(
         `uvm_fatal(`gfn, {$sformatf("%m - ACCESSINVAL_ERROR not set despite of sending a"),
                           $sformatf("mask = %0d",mask)})
       end else begin
-        // Clear the error bit to allow the RTL to move forward.
-        csr_wr(.ptr(ral.error_status.accessinval), .value(1));
-        `uvm_info(`gfn, {"Sent ral.error_status.accessinval = 0x1 to clear the error and let",
+        // Clear the error bit via one-hot full-register W1C write to allow the RTL to move forward.
+        csr_wr(.ptr(ral.error_status), .value(32'h0000_0020));
+        `uvm_info(`gfn, {"Sent ral.error_status = 0x20 (accessinval) to clear the error and let",
                          " the simulation proceed"}, UVM_DEBUG)
       end
     end

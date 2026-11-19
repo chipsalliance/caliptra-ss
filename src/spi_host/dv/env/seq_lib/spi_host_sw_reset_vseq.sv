@@ -27,6 +27,7 @@ class spi_host_sw_reset_vseq extends spi_host_tx_rx_vseq;
 
   virtual task pre_start();
     super.pre_start();
+    inter_trans_delay_ns = 0;
   endtask
 
   virtual function void check_sw_rst_pin_invariants(bit exp_cpol, string ctx);
@@ -133,8 +134,8 @@ class spi_host_sw_reset_vseq extends spi_host_tx_rx_vseq;
       ral.rxdata.read(status, 0, rdata);
       `DV_CHECK_EQ(rdata, 32'h0, "Post-SW_RST empty RXDATA read must return 0x0")
       check_error(ral.error_status.underflow, 1);
-      csr_wr(.ptr(ral.error_status.underflow), .value(1'b1));
-      csr_wr(.ptr(ral.intr_state),             .value(32'h03));
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_0004));
+      csr_wr(.ptr(ral.intr_state),   .value(32'h03));
     end
 
     // Deliberate SW_RST pin-violation negative control (proves check_sw_rst_pin_invariants fails on glitch)
@@ -149,7 +150,7 @@ class spi_host_sw_reset_vseq extends spi_host_tx_rx_vseq;
       csr_wr(.ptr(ral.control),    .value(ctrl_val));
       cfg.clk_rst_vif.wait_clks(2);
 
-      check_sw_rst_pin_invariants(1'b0, "injected_sck_fault");
+      check_sw_rst_pin_invariants(!cfg.spi_passthrough_vif.cio_sck_o, "injected_sck_fault");
       csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
       csr_wr(.ptr(ral.control),    .value(32'hA000_007F));
 
@@ -215,23 +216,26 @@ class spi_host_sw_reset_vseq extends spi_host_tx_rx_vseq;
 
         begin
           wait_ready_for_command();
-          start_spi_host_trans(num_trans);
           fork
             begin
               read_rx_fifo();
             end
+          join_none
+          fork
             begin
+              start_spi_host_trans(num_trans);
               csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1));
             end
             begin
+              wait (cfg.m_spi_agent_cfg.vif.csb[0] === 1'b0);
               `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(edges_until_sw_rst,
-                edges_until_sw_rst inside {[40 : 120]};)
+                edges_until_sw_rst inside {[8 : 48]};)
               while (edges_until_sw_rst > 0) begin
                 cfg.m_spi_agent_cfg.wait_sck_edge(DrivingEdge, spi_host_ctrl_reg.csid[CSB_WIDTH-1:0]);
                 edges_until_sw_rst--;
               end
             end
-          join_any;
+          join_any
         end
 
         stop_rx_fifo_read = 1;

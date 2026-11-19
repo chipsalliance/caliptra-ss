@@ -38,6 +38,8 @@
     "-ld /usr/bin/g++",
     "-LDFLAGS -B/usr/bin",
     "-CFLAGS -B/usr/bin",
+    "+define+CLP_ASSERT_ON",
+    "+define+INC_ASSERT",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/caliptra_prim/rtl",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/integration/rtl",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/libs/rtl",
@@ -57,8 +59,7 @@
 
   run_opts: ["+ral_verbosity=UVM_HIGH",
              // Enable cdc instrumentation.
-             "+cdc_instrumentation_enabled=1",
-             "+disable_assert_final_checks=1"]
+             "+cdc_instrumentation_enabled=1"]
 
   // List of test specifications.
   tests: [

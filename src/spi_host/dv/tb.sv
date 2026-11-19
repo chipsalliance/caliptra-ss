@@ -25,9 +25,6 @@ module tb;
 
   wire clk, rst_n;
   wire [NUM_MAX_INTERRUPTS-1:0] interrupts;
-  wire [3:0]                    si_pulldown;
-  wire [3:0]                    so_pulldown;
-  wire [3:0]                    sio;
 
   logic                         cio_sck_o;
   logic                         cio_sck_en_o;
@@ -159,9 +156,9 @@ module tb;
     .intr_spi_event_o (intr_event)
   );
 
-  // Inject single-bit TL-UL cmd_intg ECC fault on the internal TL-UL link when enabled by test
-  always @(intg_error_if.pins_pu[0] or dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg) begin
-    if (intg_error_if.pins_pu[0] === 1'b1) begin
+  // Contention-free single-bit TL-UL cmd_intg SECDED fault injection on internal link
+  always @(spi_passthrough_if.inject_cmd_intg_err or dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg) begin
+    if (spi_passthrough_if.inject_cmd_intg_err) begin
       force dut.tl_h2d.a_user.cmd_intg = dut.u_axi2tlul_spi_host.i_sub2tlul.cmd_intg ^ 7'h01;
     end else begin
       release dut.tl_h2d.a_user.cmd_intg;
@@ -179,8 +176,8 @@ module tb;
   assign spi_passthrough_if.os           = passthrough_o.s;
   assign spi_passthrough_if.cio_sck_o    = cio_sck_o;
   assign spi_passthrough_if.cio_sck_en_o = cio_sck_en_o;
-  assign spi_passthrough_if.cio_csb_o    = cio_csb_o[0];
-  assign spi_passthrough_if.cio_csb_en_o = cio_csb_en_o[0];
+  assign spi_passthrough_if.cio_csb_o    = 2'(cio_csb_o);
+  assign spi_passthrough_if.cio_csb_en_o = 2'(cio_csb_en_o);
   assign spi_passthrough_if.cio_sd_en_o  = cio_sd_en_o;
   assign spi_passthrough_if.cio_sd_o     = cio_sd_o;
 
@@ -249,6 +246,7 @@ module tb;
     w_if.set_data_width(AXI_DW);
 
     b_if.set_id_w_width(AXI_IW);
+    b_if.set_bresp_width(2);
     b_if.set_user_resp_width(16);
 
     ar_if.set_id_r_width(AXI_IW);
@@ -258,6 +256,7 @@ module tb;
     r_if.set_id_r_width(AXI_IW);
     r_if.set_user_data_width(0);
     r_if.set_data_width(AXI_DW);
+    r_if.set_rresp_width(2);
     r_if.set_user_resp_width(16);
 
     // drive clk and rst_n from clk_if
@@ -288,14 +287,16 @@ module tb;
   end
 `endif
 
-  `ASSERT(Sck_A,   passthrough_i.passthrough_en -> passthrough_i.sck == cio_sck_o, clk, !rst_n)
-  `ASSERT(Sck_En_A,passthrough_i.passthrough_en -> passthrough_i.sck_en == cio_sck_en_o,
-          clk, !rst_n)
-  `ASSERT(Csb_A,   passthrough_i.passthrough_en -> passthrough_i.csb == cio_csb_o[0], clk, !rst_n)
-  `ASSERT(Csb_En_A,passthrough_i.passthrough_en -> passthrough_i.csb_en == cio_csb_en_o[0],
-          clk, !rst_n)
-  `ASSERT(S_En_A,  passthrough_i.passthrough_en -> passthrough_i.s_en == cio_sd_en_o, clk, !rst_n)
-  `ASSERT(Sd_O_A,  passthrough_i.passthrough_en -> passthrough_i.s == cio_sd_o, clk, !rst_n)
-  `ASSERT(Sd_I_A,  passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
+  if (SPI_HOST_NUM_CS == 1) begin : gen_single_cs_pt_sva
+    `ASSERT(Sck_A,    passthrough_i.passthrough_en -> passthrough_i.sck == cio_sck_o, clk, !rst_n)
+    `ASSERT(Sck_En_A, passthrough_i.passthrough_en -> passthrough_i.sck_en == cio_sck_en_o,
+            clk, !rst_n)
+    `ASSERT(Csb_A,    passthrough_i.passthrough_en -> passthrough_i.csb == cio_csb_o[0], clk, !rst_n)
+    `ASSERT(Csb_En_A, passthrough_i.passthrough_en -> passthrough_i.csb_en == cio_csb_en_o[0],
+            clk, !rst_n)
+    `ASSERT(S_En_A,   passthrough_i.passthrough_en -> passthrough_i.s_en == cio_sd_en_o, clk, !rst_n)
+    `ASSERT(Sd_O_A,   passthrough_i.passthrough_en -> passthrough_i.s == cio_sd_o, clk, !rst_n)
+  end
+  `ASSERT(Sd_I_A, passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
 
 endmodule

@@ -17,13 +17,16 @@ interface spi_passthrough_if
   logic [3:0] s_en           = 4'h0;
   logic [3:0] cio_sd_i       = 4'h0;
 
-  // Sampled 4-state DUT outputs
+  // Sampled 4-state DUT outputs (cio_csb_* widened across both target chip selects)
   logic [3:0] os;
   logic       cio_sck_o;
   logic       cio_sck_en_o;
-  logic       cio_csb_o;
-  logic       cio_csb_en_o;
+  logic [1:0] cio_csb_o;
+  logic [1:0] cio_csb_en_o;
   logic [3:0] cio_sd_o;
   logic [3:0] cio_sd_en_o;
+
+  // Contention-free internal TL-UL SECDED fault injection control (wired in tb.sv)
+  bit         inject_cmd_intg_err  = 1'b0;
 
 endinterface : spi_passthrough_if

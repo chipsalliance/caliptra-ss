@@ -281,7 +281,7 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     spi_host_init();
 
     // 2c. RX_WATERMARK boundaries (0, 1, 63, 64, 65, 0x7F, 255) & RXFULL=1 at RXQD=64
-    //     NOTE (Pending Designer Confirmation - Comment #25): RTL implements rx_wm = (rx_qd >= rx_watermark).
+    //     Confirmed Option A contract (Comment #25): rx_wm = (rx_qd >= rx_watermark).
     csr_wr(.ptr(ral.csid),       .value(32'h0));
     csr_wr(.ptr(ral.configopts), .value(32'h0000_0000));
     csr_wr(.ptr(ral.control),    .value(32'hA000_0000)); // rx_wm = 0
@@ -469,17 +469,27 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     spi_host_command_t cmd;
     uvm_status_e       status;
     bit [31:0]         rdata;
+    bit [31:0]         exp_rdata;
     int unsigned       prev_tx_cnt, prev_rx_cnt;
+    int                orig_num_bytes  = cfg.m_spi_agent_cfg.num_bytes_per_trans_in_mon;
+    int                orig_cmd_width  = cfg.m_spi_agent_cfg.spi_cmd_width;
+    bit                orig_dec_cmds   = cfg.m_spi_agent_cfg.decode_commands;
+    bit                orig_csb_in_cfg = cfg.m_spi_agent_cfg.csb_sel_in_cfg;
 
     `uvm_info(`gfn, "Validating reactive SPI device responder across CS0/CS1 and Standard/Dual/Quad", UVM_LOW)
     spi_host_init();
     program_spi_host_regs();
     cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b0);
-    cfg.en_reactive_device_rsp = 1'b1;
+    cfg.m_spi_agent_cfg.num_bytes_per_trans_in_mon = 1;
+    cfg.m_spi_agent_cfg.spi_cmd_width              = 1;
+    cfg.m_spi_agent_cfg.decode_commands            = 1'b1;
+    cfg.m_spi_agent_cfg.csb_sel_in_cfg             = 1'b0;
+    cfg.en_reactive_device_rsp                     = 1'b1;
 
     fork
       start_agent_reactive_seqs();
     join_none
+    cfg.clk_rst_vif.wait_clks(2);
 
     for (int cs = 0; cs < SPI_HOST_NUM_CS; cs++) begin
       csr_wr(.ptr(ral.csid), .value(cs));
@@ -489,8 +499,11 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
       foreach (rd_opcs[m_i]) begin
         prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
         prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+        if (m_spi_device_seq[0] != null) begin
+          m_spi_device_seq[0].last_rsp_item = null;
+        end
 
-        // Segment 1: 1-byte reactive command opcode (ReadStd=0xCC, ReadDual=0x3B, ReadQuad=0x0F)
+        // Segment 1: 1-byte reactive command opcode (ReadStd=0xCC, ReadDual=0x33, ReadQuad=0x0F)
         write_txdata({24'h0, rd_opcs[m_i]}, 4'b0001, status);
         wait_ready_for_command();
         cmd.direction = TxOnly;
@@ -499,12 +512,14 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
         cmd.len       = 9'd0;
         program_command_reg(cmd);
 
-        // Wait until first segment parks in IdleCSBActive so spi_device_cmd_rsp_seq queues response
+        // Wait until first segment parks in IdleCSBActive and reactive responder queues its item
         if (cfg.force_spi_fsm_vif != null) begin
           wait (cfg.force_spi_fsm_vif.fsm_state == 3'd7);
         end else begin
           cfg.clk_rst_vif.wait_clks(200);
         end
+        wait (m_spi_device_seq[0] != null && m_spi_device_seq[0].last_rsp_item != null);
+        cfg.clk_rst_vif.wait_clks(4);
 
         // Segment 2: 4-byte RxOnly in target lane mode (Standard, Dual, or Quad)
         cmd.direction = RxOnly;
@@ -516,6 +531,19 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
         csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
         ral.rxdata.read(status, 0, rdata);
         `DV_CHECK_EQ(status, UVM_IS_OK)
+        `DV_CHECK_NE(rdata, 32'hFFFF_FFFF,
+                     $sformatf("Reactive responder failed to drive active lanes (pullup 0xFFFFFFFF seen on CS%0d, %s)",
+                               cs, rd_modes[m_i].name()))
+        `DV_CHECK_NE(rdata, 32'h0000_0000,
+                     $sformatf("Reactive responder returned all-zero payload (CS%0d, %s)",
+                               cs, rd_modes[m_i].name()))
+        exp_rdata = {m_spi_device_seq[0].last_rsp_item.data[3],
+                     m_spi_device_seq[0].last_rsp_item.data[2],
+                     m_spi_device_seq[0].last_rsp_item.data[1],
+                     m_spi_device_seq[0].last_rsp_item.data[0]};
+        `DV_CHECK_EQ(rdata, exp_rdata,
+                     $sformatf("Reactive responder RXDATA mismatch against driven payload (CS%0d, %s)",
+                               cs, rd_modes[m_i].name()))
         cfg.clk_rst_vif.wait_clks(10);
         `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 2,
                      $sformatf("Reactive responder TX/segment check failed (CS%0d, %s)", cs, rd_modes[m_i].name()))
@@ -525,8 +553,12 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     end
 
     cleanup_reactive_seq();
-    cfg.en_reactive_device_rsp = 1'b0;
-    cfg.m_spi_agent_cfg.spi_mode = Standard;
+    cfg.en_reactive_device_rsp                     = 1'b0;
+    cfg.m_spi_agent_cfg.num_bytes_per_trans_in_mon = orig_num_bytes;
+    cfg.m_spi_agent_cfg.spi_cmd_width              = orig_cmd_width;
+    cfg.m_spi_agent_cfg.decode_commands            = orig_dec_cmds;
+    cfg.m_spi_agent_cfg.csb_sel_in_cfg             = orig_csb_in_cfg;
+    cfg.m_spi_agent_cfg.spi_mode                   = Standard;
     cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
     cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b1);
     csr_wr(.ptr(ral.csid),         .value(32'h0));

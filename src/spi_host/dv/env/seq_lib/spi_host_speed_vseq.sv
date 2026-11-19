@@ -267,30 +267,52 @@ class spi_host_speed_vseq extends spi_host_smoke_vseq;
     uvm_status_e       status;
     uvm_reg_data_t     rdata;
 
-    // 1. Positive single-field CSNIDLE-only transition and CPOL+CSNIDLE two-sided transition
+    // 1. Positive pipelined single-field CSNIDLE-only transition and CPOL+CSNIDLE two-sided
+    //    transition queued back-to-back in u_cmd_queue with zero software Idle slack.
     begin
+      int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
       bit [31:0] switch_cfgs[3] = '{
-        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd2, 16'd2}, // Frame 0: CPOL=0, CSNIDLE=2, CLKDIV=2
-        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd5, 16'd2}, // Frame 1: CSNIDLE-only change (2 -> 5)
-        {1'b1, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd4, 16'd3}  // Frame 2: CPOL (0 -> 1) + CSNIDLE + CLKDIV switch
+        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd2, 16'd2}, // Frame 0 (CS0): CPOL=0, CSNIDLE=2, CLKDIV=2
+        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd5, 16'd2}, // Frame 1 (CS1): CSNIDLE-only change (2 -> 5)
+        {1'b1, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd4, 16'd3}  // Frame 2 (CS0): CPOL (0 -> 1) + CSNIDLE + CLKDIV switch
       };
-      csr_wr(.ptr(ral.csid), .value(32'h0));
+      int unsigned switch_cs[3] = '{0, (SPI_HOST_NUM_CS > 1) ? 1 : 0, 0};
+
+      // Stage all 3 descriptors while SPIEN == 0 so u_spi_core executes WaitIdle -> CSBSwitch
+      // back-to-back with zero software CSR latency inflating idle gaps.
+      csr_wr(.ptr(ral.control), .value(32'h2000_007F));
       foreach (switch_cfgs[k]) begin
-        csr_wr(.ptr(ral.configopts), .value(switch_cfgs[k]));
+        csr_wr(.ptr(ral.csid), .value(switch_cs[k]));
+        if (switch_cs[k] == 1) csr_wr(.ptr(ral.configopts_1), .value(switch_cfgs[k]));
+        else                   csr_wr(.ptr(ral.configopts),   .value(switch_cfgs[k]));
         write_txdata(32'h0000_005A ^ k, 4'b0001, status);
-        wait_ready_for_command();
         cmd.direction = Bidir;
         cmd.mode      = Standard;
         cmd.csaat     = 1'b0;
         cmd.len       = 9'd0;
         program_command_reg(cmd);
-        csr_spinwait(.ptr(ral.status.active),  .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      end
+      program_control_reg(); // Release all 3 pipelined frames with SPIEN=1
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      for (int r = 0; r < 3; r++) begin
         csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
         ral.rxdata.read(status, 0, rdata);
       end
+      cfg.clk_rst_vif.wait_clks(10);
+      csr_wr(.ptr(ral.csid), .value(32'h0));
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 3,
+                     "Expected scoreboard to verify all 3 pipelined ConfigSwitch frames")
+        `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 3,
+                     "Expected scoreboard RX checks on all 3 pipelined ConfigSwitch frames")
+      end
+      program_spi_host_sw_reset();
     end
 
-    // 2. Negative controls: (a) early pre/post ConfigSwitch transition, (b) missing idle CPOL switch
+    // 2. Negative controls: (a) physical early pre/post ConfigSwitch transition via backdoor-poked
+    //    CSNIDLE=0 against frontdoor CSNIDLE=5 across pipelined CS0 -> CS1 frames, and
+    //    (b) missing idle CPOL switch (frontdoor CPOL=0 vs backdoor-poked CPOL=1).
     if (cfg.en_scb) begin
       spi_host_scb_neg_catcher total_catcher = spi_host_scb_neg_catcher::type_id::create("cfgsw_total_catcher");
       spi_host_scb_neg_catcher pre_catcher   = spi_host_scb_neg_catcher::type_id::create("cfgsw_pre_catcher");
@@ -305,25 +327,29 @@ class spi_host_speed_vseq extends spi_host_smoke_vseq;
       uvm_report_cb::add(null, post_catcher);
       uvm_report_cb::add(null, cpol_catcher);
 
-      // (a) Early pre/post ConfigSwitch negative control
+      // (a) Physical early pre/post ConfigSwitch negative control (pipelined CS0 -> CS1)
+      csr_wr(.ptr(ral.control), .value(32'h2000_007F)); // Stage back-to-back while SPIEN=0
       csr_wr(.ptr(ral.csid),       .value(32'h0));
-      csr_wr(.ptr(ral.configopts), .value(32'h0115_0003)); // Frame A: CPOL=0, CSNIDLE=5, CLKDIV=3
+      csr_wr(.ptr(ral.configopts), .value(32'h0115_0003)); // Scoreboard expects CPOL=0, CSNIDLE=5
+      csr_poke(.ptr(ral.configopts), .value(32'h0110_0003), .predict(1'b0)); // DUT drives WaitIdle CSNIDLE=0
       write_txdata(32'h0000_00A5, 4'b0001, status);
-      wait_ready_for_command();
       cmd.direction = TxOnly;
       cmd.mode      = Standard;
       cmd.csaat     = 1'b0;
       cmd.len       = 9'd0;
       program_command_reg(cmd);
-      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
 
-      csr_wr(.ptr(ral.configopts), .value(32'h8115_0003)); // Frame B: CPOL=1, CSNIDLE=5
-      spi_host_scoreboard::s_force_early_csnidle_fault = 1'b1;
+      csr_wr(.ptr(ral.csid),         .value(32'h1));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h8115_0003)); // Scoreboard expects CPOL=1, CSNIDLE=5
+      csr_poke(.ptr(ral.configopts_1), .value(32'h8110_0003), .predict(1'b0)); // DUT drives CSBSwitch CSNIDLE=0
       write_txdata(32'h0000_005A, 4'b0001, status);
-      wait_ready_for_command();
       program_command_reg(cmd);
+
+      program_control_reg(); // Execute CS0 -> CS1 with physical shortened WaitIdle + CSBSwitch
       csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
-      spi_host_scoreboard::s_force_early_csnidle_fault = 1'b0;
+      cfg.clk_rst_vif.wait_clks(45); // Allow CS1 post-frame idle window to elapse cleanly before Part 2b
+      csr_wr(.ptr(ral.csid),         .value(32'h0));
+      csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0002));
 
       // (b) Missing idle CPOL transition negative control (frontdoor CPOL=0, backdoor poked CPOL=1)
       csr_wr(.ptr(ral.configopts), .value(32'h0112_0003)); // Scoreboard expects CPOL 1 -> 0

@@ -79,11 +79,11 @@ addrmap spi_host {
         } OUTPUT_EN[29:29] = 1'b0;
 
         field {
-            desc = "Clears the entire IP to the reset state when set to 1, including
-            the FIFOs, the CDC's, the core state machine and the shift register.
-            In the current implementation the CDC FIFOs are drained not reset.
-            Software must confirm that both FIFOs are empty before releasing the IP
-            from reset.";
+            desc = "Clears the internal state (not configuration registers) to the reset
+            state when set to 1, including the FIFOs, the CDCs, the core state machine,
+            and the shift register. In the current implementation the CDC FIFOs are
+            drained not reset. Software must confirm that both FIFOs are empty before
+            releasing the IP from reset.";
             sw = rw; hw = r;
         } SW_RST[30:30] = 1'b0;
 
@@ -120,8 +120,8 @@ addrmap spi_host {
         } CMDQD[19:16] = 4'h0;
 
         field {
-            desc = "If high, the number of 32-bit words in the RX FIFO now exceeds
-            the CONTROL.RX_WATERMARK entries (32b each).";
+            desc = "If high, the number of 32-bit words in the RX FIFO is greater than
+            or equal to (>=) CONTROL.RX_WATERMARK entries (32b each).";
             sw = r; hw = w;
         } RXWM[20:20] = 1'b0;
 
@@ -189,7 +189,10 @@ addrmap spi_host {
 
     reg {
         name = "Configuration Options";
-        desc = "Configuration options register. One register per cs_n line (NumCS = 2).";
+        desc = "Configuration options register. One register per cs_n line (NumCS = 2).
+        Software must not modify CONFIGOPTS[cs] between chained COMMAND.CSAAT = 1
+        segments targeting the same chip select; close the active transaction with
+        COMMAND.CSAAT = 0 so cs_n deasserts before updating CONFIGOPTS[cs].";
 
         field {
             desc = "Core clock divider. Slows down subsequent SPI transactions by a
@@ -226,7 +229,8 @@ addrmap spi_host {
             desc = "Full cycle. Modifies the CPHA sampling behavior to allow for
             longer device logic setup times. Rather than sampling the SD bus a half
             cycle after shifting out data, the data is sampled a full cycle after
-            shifting data out.";
+            shifting data out. Full-cycle receive sampling (FULLCYC = 1) is only
+            supported when CPHA = 0; FULLCYC = 1 with CPHA = 1 is not supported.";
             sw = rw; hw = r;
         } FULLCYC[29:29] = 1'b0;
 
@@ -277,7 +281,8 @@ addrmap spi_host {
             desc = "Chip Select Active After Transaction. If CSAAT = 0 the chip
             select line is raised immediately at the end of the command segment.
             If CSAAT = 1 the chip select line is left low, allowing multi-segment
-            SPI transactions.";
+            SPI transactions. Software must close an open transaction with
+            COMMAND.CSAAT = 0 before modifying CONFIGOPTS for the same chip select.";
             sw = w; hw = r; swwe;
         } CSAAT[9:9] = 1'b0;
 
@@ -325,7 +330,10 @@ addrmap spi_host {
 
     reg {
         name = "Error Enable";
-        desc = "Controls which classes of errors raise an interrupt.";
+        desc = "Controls which classes of errors raise an intr_error_o interrupt.
+        Clearing a bit in ERROR_ENABLE suppresses the error interrupt only; any
+        asserted bit in ERROR_STATUS still unconditionally halts core command
+        execution until cleared.";
 
         field {
             desc = "Command Error: if set, the block sends an error interrupt
@@ -354,7 +362,7 @@ addrmap spi_host {
 
         field {
             desc = "Invalid CSID: if set, the block sends an error interrupt
-            whenever a command is submitted but CSID exceeds NumCS.";
+            whenever a command is submitted with CSID greater than or equal to NumCS.";
             sw = rw; hw = r;
         } CSIDINVAL[4:4] = 1'b1;
 
@@ -363,7 +371,9 @@ addrmap spi_host {
     reg {
         name = "Error Status";
         desc = "Indicates errors that have occurred. The corresponding bit must be
-        cleared here before issuing any further commands.";
+        cleared here before issuing any further commands. For command-queue errors
+        (CSIDINVAL and CMDINVAL), firmware must first issue CONTROL.SW_RST to flush
+        the retained descriptor from the command FIFO before clearing ERROR_STATUS.";
 
         field {
             desc = "Indicates a write to COMMAND when STATUS.READY = 0.";
@@ -384,12 +394,18 @@ addrmap spi_host {
         field {
             desc = "Indicates an invalid command segment: either an invalid value of
             COMMAND.SPEED or a request for bidirectional data transfer at dual or
-            quad speed.";
+            quad speed. Because the offending descriptor is still enqueued in the
+            command FIFO, firmware must issue CONTROL.SW_RST to flush the queue
+            before clearing ERROR_STATUS via W1C.";
             sw = rw; hw = rw; we; onwrite = woclr;
         } CMDINVAL[3:3] = 1'b0;
 
         field {
-            desc = "Indicates a command was attempted with an invalid value for CSID.";
+            desc = "Indicates a command was attempted with an invalid value for CSID.
+            Because the offending descriptor is still enqueued in the command FIFO
+            (with CSID clamped to 0), firmware must issue CONTROL.SW_RST to flush the
+            queue before clearing ERROR_STATUS; clearing CSIDINVAL via W1C without
+            CONTROL.SW_RST allows the retained descriptor to execute on CS0.";
             sw = rw; hw = rw; we; onwrite = woclr;
         } CSIDINVAL[4:4] = 1'b0;
 
@@ -419,9 +435,9 @@ addrmap spi_host {
 
         field {
             desc = "Assert to send a spi_event interrupt whenever the number of
-            32-bit words in the RX FIFO is greater than CONTROL.RX_WATERMARK.
-            To prevent reassertion, read more data from the RX FIFO or increase
-            CONTROL.RX_WATERMARK.";
+            32-bit words in the RX FIFO is greater than or equal to (>=)
+            CONTROL.RX_WATERMARK. To prevent reassertion, read more data from the
+            RX FIFO or increase CONTROL.RX_WATERMARK.";
             sw = rw; hw = r;
         } RXWM[2:2] = 1'b0;
 
