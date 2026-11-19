@@ -217,7 +217,6 @@ package usb_tb_pkg;
   `include "env/usb_endpoint_cfg.svh"
   `include "env/usb_env_cfg.svh"
   `include "env/usb_vip_cfg_builder.svh"
-  `include "env/usb_l1_remote_wake_vip_cfg_builder.svh"
   `include "env/usb_virtual_sequencer.svh"
   `include "env/usb_env.svh"
   `include "sequences/usb_base_seq.svh"

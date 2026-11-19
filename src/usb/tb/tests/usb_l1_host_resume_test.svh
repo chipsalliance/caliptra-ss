@@ -21,8 +21,10 @@ class usb_l1_host_resume_test extends usb_base_test;
     test_timeout = 3ms;
   endfunction
 
+  // Select legacy HIRD=1 timing before the environment builds either VIP peer.
   virtual function void configure_env_cfg(usb_env_cfg cfg);
-    usb_vip_cfg_builder::type_id::set_type_override(usb_l1_remote_wake_vip_cfg_builder::get_type());
+    super.configure_env_cfg(cfg);
+    cfg.lpm_timing_policy = usb_env_cfg::USB_LPM_TIMING_LEGACY_HIRD1;
   endfunction
 
   task run_phase(uvm_phase phase);

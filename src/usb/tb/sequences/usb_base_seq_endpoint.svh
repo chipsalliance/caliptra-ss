@@ -169,10 +169,11 @@
   // Bounded CSR polling
   // ---------------------------------------------------------------------------
 
-  // Poll one DEV0 CSR (or a supplied endpoint entry) until masked bits reach want_set, reporting progress
-  // so a stalled wait is visible in the log long before it times out. A timeout
-  // is fatal and reports the last value read, so the failure identifies the
-  // condition that was never met rather than a downstream symptom.
+  // Poll one DEV0 CSR (or a supplied endpoint entry) until masked bits reach
+  // want_set, reporting progress so a stalled wait is visible in the log long
+  // before it times out. A timeout is fatal and reports the last value read,
+  // so the failure identifies the condition that was never met rather than a
+  // downstream symptom.
   task poll_csr_bits(
     string label,
     uvm_reg register_handle,
