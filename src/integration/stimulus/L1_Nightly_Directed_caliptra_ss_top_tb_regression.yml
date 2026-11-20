@@ -39,6 +39,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_bulk_out/caliptra_ss_usb_hs_dev_bulk_out: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_unsupported_ep/caliptra_ss_usb_hs_dev_unsupported_ep: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_disabled_ep/caliptra_ss_usb_hs_dev_disabled_ep: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_epinfo_rate_feedback/caliptra_ss_usb_hs_dev_epinfo_rate_feedback: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_hub_bypass_enum/caliptra_ss_usb_hs_dev_hub_bypass_enum: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_vbus_absent_boot/caliptra_ss_usb_hs_dev_vbus_absent_boot: { weight: 100 }
@@ -114,8 +115,10 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port/caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_int_ep_status_change/caliptra_ss_usb_hs_hub_int_ep_status_change: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_class_req_stall/caliptra_ss_usb_hs_hub_class_req_stall: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_class_req_invalid/caliptra_ss_usb_hs_hub_class_req_invalid: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_lock_sticky/smoke_test_fc_pk_lock_sticky: { weight: 100 }

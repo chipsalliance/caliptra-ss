@@ -77,8 +77,9 @@
 //    to read back. The DEVICE PHYDEBUG word (0x3C) is NO LONGER a functional
 //    register on this compound (see the register-split note above): it is
 //    checked as a reserved read-as-0 word, and the real UTMI+/ULPI debug
-//    register is exercised on the HUB bank instead. Whole registers excluded:
-//    INTSTAT/INTSETSTAT (W1C/W1S).
+//    register is exercised on the HUB bank instead. INTSTAT (W1C) and
+//    INTSETSTAT (W1S) are not part of the access-class walk; they are
+//    covered by the dedicated Phase 3 described below.
 //
 //  HUB-BANK RESERVED-BIT RULE (important, differs from the device banks).
 //  The hub register words are NOT a decoded register file; they are entries of
@@ -97,6 +98,10 @@
 //              true reset state.
 //    Phase 2 - RW/RO access-class walk: exercise every field per its access
 //              class as described above.
+//    Phase 3 - INTSETSTAT / INTSTAT walk (DEV0 and DEV1 only): force INTEN
+//              and INTROUTE to 0, then for each of the 32 bits set it via
+//              INTSETSTAT 0x28, read it back via 0x28 and INTSTAT 0x20,
+//              and clear it via the INTSTAT W1C write.
 //
 //  Address-aliasing RTL hazard honored by construction (see
 //  claude_md/09_usb_hub_composite_migration.md and docs/usb_register_structure.md):
@@ -484,8 +489,8 @@ static const usb_field_t phydebug_fields[] = {
 // USB traffic required, so they have no stable storage to read back (see the
 // EPSKIP field table comment). The device PHYDEBUG word 0x3C is checked as a
 // reserved read-as-0 location because the UTMI+/ULPI debug register MOVED to
-// the hub bank. Registers deliberately excluded:
-// INTSTAT 0x20 / INTSETSTAT 0x28 (W1C / W1S).
+// the hub bank. INTSTAT 0x20 / INTSETSTAT 0x28 (W1C / W1S) are not in this
+// table; they are exercised by check_intsetstat() in Phase 3.
 //
 // Reset-value expectation (rst_val / rst_mask) per docs/usb_register_structure.md
 // section 1.1:
@@ -858,6 +863,93 @@ static int check_reg_bank(uint32_t base, const char *bank,
     return errors;
 }
 
+// ---------------------------------------------------------------------------
+// Phase 3: INTSETSTAT / INTSTAT
+//
+// RTL usb_reg_if decodes register select "1010" (offset 0x28) as INTSETSTAT:
+//   read  : returns {dev_int_status, frame_int_status, ep_int_status[29:0]}
+//   write : every bit written as 1 sets the matching status bit (W1S),
+//           looping over EP bits 0..C_NBPHYSEP+1 plus FRAME (30) and DEV (31).
+// INTSTAT (offset 0x20) reads the same status and is write-1-to-clear.
+// INTEN and INTROUTE are forced to 0 so no interrupt is raised while the
+// status bits are artificially set.
+// ---------------------------------------------------------------------------
+#define USB_REG_INTSTAT     0x20u
+#define USB_REG_INTEN       0x24u
+#define USB_REG_INTSETSTAT  0x28u
+#define USB_REG_INTROUTE    0x2Cu
+
+static void print_int_bit_name(uint32_t b) {
+    if (b == 30) {
+        VPRINTF(LOW, "FRAME [bit 30]");
+    } else if (b == 31) {
+        VPRINTF(LOW, "DEV [bit 31]");
+    } else {
+        VPRINTF(LOW, "EP%d [bit %d]", b, b);
+    }
+}
+
+static int check_intsetstat(uint32_t base, const char *bank) {
+    int      errs = 0;
+    uint32_t b;
+    uint32_t bit;
+    uint32_t rd_set;
+    uint32_t rd_stat;
+
+    VPRINTF(LOW, "MCU: %s INTSETSTAT/INTSTAT walk\n", bank);
+
+    // Mask and unroute all interrupt sources.
+    lsu_write_32(base + USB_REG_INTEN,    0x00000000u);
+    lsu_write_32(base + USB_REG_INTROUTE, 0x00000000u);
+
+    // Start from a clean status.
+    lsu_write_32(base + USB_REG_INTSTAT, 0xFFFFFFFFu);
+    rd_stat = lsu_read_32(base + USB_REG_INTSTAT);
+    if (rd_stat != 0u) {
+        VPRINTF(LOW, "ERROR: %s INTSTAT not clear at start: 0x%x\n", bank, rd_stat);
+        errs++;
+    }
+
+    for (b = 0; b < 32; b++) {
+        bit = 1u << b;
+
+        // Set via INTSETSTAT (W1S).
+        lsu_write_32(base + USB_REG_INTSETSTAT, bit);
+
+        rd_set = lsu_read_32(base + USB_REG_INTSETSTAT);
+        if (rd_set != bit) {
+            VPRINTF(LOW, "ERROR: %s INTSETSTAT set failed ", bank);
+            print_int_bit_name(b);
+            VPRINTF(LOW, ": exp 0x%x got 0x%x\n", bit, rd_set);
+            errs++;
+        }
+
+        rd_stat = lsu_read_32(base + USB_REG_INTSTAT);
+        if (rd_stat != bit) {
+            VPRINTF(LOW, "ERROR: %s INTSTAT not reflected ", bank);
+            print_int_bit_name(b);
+            VPRINTF(LOW, ": exp 0x%x got 0x%x\n", bit, rd_stat);
+            errs++;
+        }
+
+        // Clear via INTSTAT (W1C).
+        lsu_write_32(base + USB_REG_INTSTAT, bit);
+        rd_stat = lsu_read_32(base + USB_REG_INTSTAT);
+        if (rd_stat != 0u) {
+            VPRINTF(LOW, "ERROR: %s INTSTAT W1C failed ", bank);
+            print_int_bit_name(b);
+            VPRINTF(LOW, ": got 0x%x\n", rd_stat);
+            errs++;
+        }
+    }
+
+    if (errs == 0) {
+        VPRINTF(LOW, "MCU: %s INTSETSTAT/INTSTAT (0x%x/0x%x) ok\n",
+                bank, USB_REG_INTSETSTAT, USB_REG_INTSTAT);
+    }
+    return errs;
+}
+
 void main(void) {
 
     int error_count = 0;
@@ -901,6 +993,11 @@ void main(void) {
     error_count += check_reg_bank(SOC_USB_COMBO_HUB_BASE_ADDR, "HUB",
                                   usb_hub_reg_table, USB_HUB_REG_TABLE_LEN);
 
+
+    // Phase 3: INTSETSTAT set / INTSTAT clear on the two device banks. The hub
+    // bank has no interrupt status registers and is not touched here.
+    error_count += check_intsetstat(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0");
+    error_count += check_intsetstat(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1");
 
     VPRINTF(LOW, "\nMCU: USB register RW test complete, error_count = %d\n",
             error_count);
