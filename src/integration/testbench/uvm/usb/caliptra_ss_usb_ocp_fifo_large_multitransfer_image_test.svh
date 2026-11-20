@@ -15,8 +15,8 @@
 `ifndef CALIPTRA_SS_USB_OCP_FIFO_LARGE_MULTITRANSFER_IMAGE_TEST_SV
 `define CALIPTRA_SS_USB_OCP_FIFO_LARGE_MULTITRANSFER_IMAGE_TEST_SV
 
-// OCP_FIFO_006: fit within the default 4-KiB execution region while exercising
-// repeated FIFO service and a one-DWORD terminal transfer after full chunks.
+// OCP_FIFO_006: randomize DWORD-aligned images above 513 bytes while fitting
+// within the default 4-KiB execution region.
 class caliptra_ss_usb_ocp_fifo_large_multitransfer_image_test
     extends caliptra_ss_usb_ocp_flow_random_image_test;
 
@@ -30,7 +30,7 @@ class caliptra_ss_usb_ocp_fifo_large_multitransfer_image_test
 
     virtual function void build_phase(uvm_phase phase);
         uvm_config_db#(int unsigned)::set(
-            this, "*", "image_dwords", 1009);
+            this, "*", "image_dwords", $urandom_range(1009, 129));
         uvm_config_db#(bit)::set(
             this, "*", "randomize_chunks", 1'b0);
         // This scenario requires complete delivery, not a slow consumer.
