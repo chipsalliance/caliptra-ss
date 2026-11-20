@@ -169,10 +169,11 @@
   // Bounded CSR polling
   // ---------------------------------------------------------------------------
 
-  // Poll one DEV0 CSR until the masked bits reach want_set, reporting progress
-  // so a stalled wait is visible in the log long before it times out. A timeout
-  // is fatal and reports the last value read, so the failure identifies the
-  // condition that was never met rather than a downstream symptom.
+  // Poll one DEV0 CSR (or a supplied endpoint entry) until masked bits reach
+  // want_set, reporting progress so a stalled wait is visible in the log long
+  // before it times out. A timeout is fatal and reports the last value read,
+  // so the failure identifies the condition that was never met rather than a
+  // downstream symptom.
   task poll_csr_bits(
     string label,
     uvm_reg register_handle,
@@ -181,7 +182,9 @@
     time timeout,
     output logic [31:0] final_value,
     input time poll_interval = EP_POLL_INTERVAL,
-    input time progress_interval = EP_PROGRESS_REPORT_INTERVAL
+    input time progress_interval = EP_PROGRESS_REPORT_INTERVAL,
+    input usb_endpoint_cfg endpoint = null,
+    input int unsigned buffer_select = 0
   );
     realtime poll_deadline;
     realtime next_progress_report;
@@ -200,7 +203,11 @@
         fork
           begin
             while (!satisfied && (usb_time_ps($realtime) < usb_time_ps(poll_deadline))) begin
-              ral_read32(label, register_handle, final_value);
+              if (endpoint == null) begin
+                ral_read32(label, register_handle, final_value);
+              end else begin
+                read32(USB_DEV0_SRAM, endpoint_entry_address(endpoint, buffer_select), final_value);
+              end
               if (usb_time_ps($realtime) >= usb_time_ps(poll_deadline)) break;
               if ((|(final_value & mask)) === want_set) begin
                 satisfied = 1'b1;
@@ -247,6 +254,80 @@
       poll_interval,
       progress_interval
     );
+  endtask
+
+  // Guide 4.2.2.6/.7: skip the endpoint's selected buffer without advancing selection.
+  // Return the observed selection and its owned word; no unselected target is requested.
+  // Caller excludes traffic that can advance selection, rearms, reset and competing
+  // selector/skip writers across this call. timeout bounds each completion poll;
+  // interrupt status remains caller-owned. This is not a live-traffic target lock.
+  task skip_selected_endpoint_buffer(
+    usb_endpoint_cfg endpoint,
+    time timeout,
+    output usb_ep_entry_t retired_entry,
+    output logic buffer_select
+  );
+    usb_ep_entry_t active_mask;
+    logic [31:0] buffer_in_use;
+    logic [31:0] skip_status;
+    logic [31:0] retired_word;
+
+    retired_entry = 'x;
+    buffer_select = 1'bx;
+    if (endpoint == null) begin
+      `uvm_fatal("USB_EP_SKIP", "Selected-buffer skip requires an endpoint")
+      return;
+    end
+    if (endpoint.ep_number > (USB_DEV0_NBPHYSEP + 1) / 2 || endpoint.physical_index() >= USB_DEV0_NBPHYSEP + 2) begin
+      `uvm_fatal("USB_EP_SKIP", $sformatf("%s is outside the supported DEV0 endpoint bank", endpoint.short_name()))
+      return;
+    end
+    `uvm_info("USB_EP_SKIP", $sformatf("Checking selected-buffer skip preconditions for %s", endpoint.short_name()), UVM_LOW)
+    ral_read32("EPSKIP", p_sequencer.reg_model.combo.dev0_csr.EPSKIP, skip_status);
+    if ((skip_status & ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.EPSKIP.SKIP)) !== 32'b0) begin
+      `uvm_fatal("USB_EP_SKIP", $sformatf("Selected-buffer skip requires no pending skip requests; EPSKIP=%08h", skip_status))
+      return;
+    end
+    ral_read32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, buffer_in_use);
+    buffer_select = buffer_in_use[endpoint.physical_index()];
+    if (buffer_select !== 1'b0 && buffer_select !== 1'b1) begin
+      `uvm_fatal("USB_EP_SKIP", $sformatf("Cannot resolve %s selected buffer; EPINUSE=%08h", endpoint.short_name(), buffer_in_use))
+      return;
+    end
+    read_endpoint_entry(endpoint, retired_entry, buffer_select);
+    if (retired_entry.active === 1'b0) begin
+      `uvm_info("USB_EP_SKIP", $sformatf("%s selected buffer %0d is already software-owned; no skip issued",
+        endpoint.short_name(), buffer_select), UVM_LOW)
+      return;
+    end
+    if (retired_entry.active !== 1'b1) begin
+      `uvm_fatal("USB_EP_SKIP", $sformatf("Cannot skip %s with unknown ownership: %s", endpoint.short_name(), describe_entry(retired_entry)))
+      return;
+    end
+    active_mask = '0;
+    active_mask.active = 1'b1;
+    `uvm_info("USB_EP_SKIP", $sformatf("Requesting endpoint skip for %s selected buffer %0d", endpoint.short_name(), buffer_select), UVM_LOW)
+    request_endpoint_skip(endpoint);
+    wait_for_endpoint_skip_clear(endpoint, timeout);
+    // Request completion alone does not permit rewriting the command/status word.
+    poll_csr_bits(
+      .label($sformatf("Software ownership of %s selected buffer %0d", endpoint.short_name(), buffer_select)),
+      .register_handle(null),
+      .mask(active_mask),
+      .want_set(1'b0),
+      .timeout(timeout),
+      .final_value(retired_word),
+      .endpoint(endpoint),
+      .buffer_select(buffer_select)
+    );
+    retired_entry = retired_word;
+    if (retired_entry.active !== 1'b0) begin
+      `uvm_fatal("USB_EP_SKIP", $sformatf("Endpoint skip did not return %s selected buffer %0d to software: %s",
+        endpoint.short_name(), buffer_select, describe_entry(retired_entry)))
+      return;
+    end
+    `uvm_info("USB_EP_SKIP", $sformatf("Endpoint skip and software ownership verified for %s selected buffer %0d: %s",
+      endpoint.short_name(), buffer_select, describe_entry(retired_entry)), UVM_LOW)
   endtask
 
   // Wait for an endpoint to report activity, then clear its status so a later

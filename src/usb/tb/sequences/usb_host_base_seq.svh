@@ -73,6 +73,20 @@ class usb_host_base_seq extends uvm_sequence;
   protected time watch_timeout;
   protected realtime watch_deadline;
 
+  // Opt-in L1 boundary observation; native VIP owns the protocol state machine.
+  localparam time L1_MIN_RESIDENCY = 50us;
+  localparam time L1_HOST_RESIDENCY_HOLD = 75us;
+  protected process l1_state_observer;
+  protected process l1_origin_observer;
+  protected process l1_watchdog;
+  protected bit l1_watch_active;
+  protected bit l1_admitted;
+  protected bit l1_resume_requested;
+  protected bit l1_resume_started;
+  protected bit l1_host_origin;
+  protected realtime l1_admitted_at;
+  protected realtime l1_hold_started_at;
+
   function new(string name = "usb_host_base_seq");
     super.new(name);
   endfunction
@@ -102,6 +116,103 @@ class usb_host_base_seq extends uvm_sequence;
         `uvm_fatal(report_id(), "SVT shared status is unavailable")
       end
     end
+  endtask
+
+  // Prearm native admission and the FIRST exit transition before submitting LPM.
+  // SVT status/link/type references define these public boundaries; ENABLED is too late.
+  task begin_l1_host_residency_watch(time timeout);
+    if (l1_watch_active || timeout == 0 || host_agent == null || shared_status == null || usb_cfg == null) begin
+      `uvm_fatal(report_id(), "L1 residency watch requires resolved native context, a positive timeout and no active watch")
+    end
+    if (host_agent.link == null || host_agent.link.NOTIFY_BUS_IS_L1SUSPENDED == null ||
+        host_agent.link.NOTIFY_L1_EXIT_VIA_HOST_INITIATED_RESUME == null) begin
+      `uvm_fatal(report_id(), "Native L1 admission and host-origin notifications are required")
+    end
+    if (!((usb_cfg.tl1residency_min == usb_vip_cfg_builder::vip_ps(L1_MIN_RESIDENCY)) === 1'b1)) begin
+      `uvm_fatal(report_id(), "Effective native L1 minimum residency must retain the ECN 50 us limit")
+    end
+    l1_watch_active = 1'b1;
+    l1_admitted = 1'b0;
+    l1_resume_requested = 1'b0;
+    l1_resume_started = 1'b0;
+    l1_host_origin = 1'b0;
+    l1_admitted_at = 0;
+    l1_hold_started_at = 0;
+    l1_state_observer = null;
+    l1_origin_observer = null;
+    l1_watchdog = null;
+    `uvm_info(report_id(), $sformatf("Prearming native L1 residency watch: minimum=%0t conservative_hold=%0t cycle_timeout=%0t",
+      L1_MIN_RESIDENCY, L1_HOST_RESIDENCY_HOLD, timeout), UVM_LOW)
+    fork
+      begin
+        l1_state_observer = process::self();
+        host_agent.link.NOTIFY_BUS_IS_L1SUSPENDED.wait_trigger();
+        wait (shared_status.link_usb_20_state === svt_usb_types::L1SUSPENDED);
+        l1_admitted_at = $realtime;
+        l1_admitted = 1'b1;
+        `uvm_info(report_id(), $sformatf("Native L1 admission confirmed at %0t; waiting for public DUT readiness", l1_admitted_at), UVM_LOW)
+        wait (shared_status.link_usb_20_state !== svt_usb_types::L1SUSPENDED);
+        if (!(shared_status.link_usb_20_state === svt_usb_types::L1RESUMING) || !l1_resume_requested) begin
+          `uvm_fatal(report_id(), $sformatf("Unexpected L1 exit before requested resume: requested=%b state=%s elapsed_from_admission=%0t",
+            l1_resume_requested, shared_status.link_usb_20_state.name(), $realtime - l1_admitted_at))
+        end
+        // ECN4.1.1/Figure4-2/Table4-6: measure at resume INITIATION, not after K.
+        if (!(($realtime - l1_admitted_at >= L1_MIN_RESIDENCY) === 1'b1) ||
+            !(($realtime - l1_hold_started_at >= L1_MIN_RESIDENCY) === 1'b1)) begin
+          `uvm_fatal(report_id(), $sformatf("Premature native L1 resume initiation: admission=%0t ready_anchor=%0t now=%0t minimum=%0t",
+            l1_admitted_at, l1_hold_started_at, $realtime, L1_MIN_RESIDENCY))
+        end
+        l1_resume_started = 1'b1;
+        `uvm_info(report_id(), $sformatf("Native L1RESUMING initiation checked at %0t: elapsed_from_admission=%0t elapsed_from_ready=%0t minimum=%0t",
+          $realtime, $realtime - l1_admitted_at, $realtime - l1_hold_started_at, L1_MIN_RESIDENCY), UVM_LOW)
+      end
+      begin
+        l1_origin_observer = process::self();
+        host_agent.link.NOTIFY_L1_EXIT_VIA_HOST_INITIATED_RESUME.wait_trigger();
+        if (!l1_admitted || !l1_resume_requested) `uvm_fatal(report_id(), "Native host-origin L1 exit preceded admission or the guarded request")
+        l1_host_origin = 1'b1;
+        `uvm_info(report_id(), "Native host-origin L1 exit confirmed; initiation timing is checked separately", UVM_LOW)
+      end
+      begin
+        l1_watchdog = process::self();
+        #(timeout);
+        `uvm_fatal(report_id(), $sformatf("L1 residency cycle timed out: admitted=%b requested=%b initiated=%b host_origin=%b state=%s",
+          l1_admitted, l1_resume_requested, l1_resume_started, l1_host_origin, shared_status.link_usb_20_state.name()))
+      end
+    join_none
+    wait (l1_state_observer != null && l1_origin_observer != null && l1_watchdog != null);
+  endtask
+
+  // Hold conservatively after BOTH actual native admission and public DUT readiness.
+  task wait_for_l1_host_residency(uvm_event dut_ready);
+    if (!l1_watch_active || dut_ready == null) `uvm_fatal(report_id(), "L1 residency requires an active watch and public DUT readiness event")
+    `uvm_info(report_id(), "Waiting for native L1 admission and public DUT readiness before starting residency hold", UVM_LOW)
+    wait (l1_admitted);
+    dut_ready.wait_on();
+    if (!(shared_status.link_usb_20_state === svt_usb_types::L1SUSPENDED)) begin
+      `uvm_fatal(report_id(), "Native link left L1 before the residency hold could begin")
+    end
+    l1_hold_started_at = $realtime;
+    `uvm_info(report_id(), $sformatf("Native admission and DUT readiness confirmed; holding L1 for %0t from %0t",
+      L1_HOST_RESIDENCY_HOLD, l1_hold_started_at), UVM_LOW)
+    #(L1_HOST_RESIDENCY_HOLD);
+    if (!(shared_status.link_usb_20_state === svt_usb_types::L1SUSPENDED) ||
+        !(($realtime - l1_hold_started_at >= L1_MIN_RESIDENCY) === 1'b1)) begin
+      `uvm_fatal(report_id(), "L1 residency hold did not complete in the suspended state")
+    end
+    l1_resume_requested = 1'b1;
+    `uvm_info(report_id(), $sformatf("Conservative L1 hold complete at %0t; admitting clear-L1 and awaiting actual resume initiation", $realtime), UVM_LOW)
+  endtask
+
+  // Require the observed initiation/origin and retire only this watch's processes.
+  task end_l1_host_residency_watch();
+    if (!l1_watch_active) `uvm_fatal(report_id(), "No L1 residency watch is active")
+    wait (l1_resume_started && l1_host_origin);
+    if (l1_state_observer.status() != process::FINISHED) l1_state_observer.kill();
+    if (l1_origin_observer.status() != process::FINISHED) l1_origin_observer.kill();
+    l1_watchdog.kill();
+    l1_watch_active = 1'b0;
+    `uvm_info(report_id(), "L1 residency watch complete: actual resume initiation and host origin verified", UVM_LOW)
   endtask
 
   // Block until the USB 2.0 link is ENABLED, which must happen before SOF
@@ -165,8 +276,18 @@ class usb_host_base_seq extends uvm_sequence;
         `uvm_fatal(report_id(), $sformatf("%s submission/completion did not finish before %0t", watch_label, watch_timeout))
       end
     join_none
-    // Let the observer reach its blocking wait before the caller submits.
-    #0;
+    // This helper returns immediately; yield until both child processes start.
+    wait (observer_process != null && watchdog_process != null);
+  endtask
+
+  // Drain the submitting sequence's routed response under its active watch.
+  // IEEE 1800.2 14.3.3.3 requires response ownership, independent of VIP events.
+  task drain_transfer_response(uvm_sequence_item request_item);
+    uvm_sequence_item response;
+    get_response(response, request_item.get_transaction_id());
+    if (response == null || !(response.get_sequence_id() === request_item.get_sequence_id())) begin
+      `uvm_fatal(report_id(), "Transfer received an invalid routed response")
+    end
   endtask
 
   // Complete the watch after submission returns. Retire only our processes,
