@@ -93,7 +93,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
         end
       end
       if (c.write_data.size() != c.beats) begin
-        `uvm_fatal("USB_DEV0_RAM_DATA", $sformatf("%s: write payload has %0d words for %0d beats", c.label, c.write_data.size(), c.beats))
+        `uvm_fatal({tag_prefix, "_DATA"}, $sformatf("%s: write payload has %0d words for %0d beats", c.label, c.write_data.size(), c.beats))
       end
       set_write_words(request, c.write_data);
     end
@@ -104,7 +104,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
   // mark those words unknown.
   protected function bit check_write(aaxi_master_tr request, ram_case_t c);
     if (request.resp !== AAXI_RESP_OKAY) begin
-      `uvm_error("USB_DEV0_RAM_RESPONSE", $sformatf("%s %s write AXI=0x%016h USER=0x%0h SIZE=%0d beats=%0d expected_resp=%0h actual_resp=%0h", c.label, c.burst.name(), request.addr, request.awuser, request.size, c.beats, AAXI_RESP_OKAY, request.resp))
+      `uvm_error({tag_prefix, "_RESPONSE"}, $sformatf("%s %s write AXI=0x%016h USER=0x%0h SIZE=%0d beats=%0d expected_resp=%0h actual_resp=%0h", c.label, c.burst.name(), request.addr, request.awuser, request.size, c.beats, AAXI_RESP_OKAY, request.resp))
       // An error response does not guarantee that no write beats took effect.
       for (int unsigned beat = 0; beat < c.beats; beat++) begin
         expected_words[int'(beat_offset(c, beat))] = 'x;
@@ -127,13 +127,13 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     bit passed = 1'b1;
 
     if (request.rresp_Q.size() != c.beats || request.data.size() != c.beats * 4) begin
-      `uvm_fatal("USB_DEV0_RAM_RESPONSE", $sformatf("%s %s read AXI=0x%016h USER=0x%0h SIZE=%0d returned %0d responses/%0d bytes for %0d beats", c.label, c.burst.name(), request.addr, request.aruser, request.size, request.rresp_Q.size(), request.data.size(), c.beats))
+      `uvm_fatal({tag_prefix, "_RESPONSE"}, $sformatf("%s %s read AXI=0x%016h USER=0x%0h SIZE=%0d returned %0d responses/%0d bytes for %0d beats", c.label, c.burst.name(), request.addr, request.aruser, request.size, request.rresp_Q.size(), request.data.size(), c.beats))
     end
 
     for (int unsigned beat = 0; beat < c.beats; beat++) begin
       if (request.rresp_Q[beat] !== AAXI_RESP_OKAY) begin
         word = int'(beat_offset(c, beat));
-        `uvm_error("USB_DEV0_RAM_RESPONSE", $sformatf("%s %s read beat=%0d/%0d offset=0x%08h AXI=0x%016h USER=0x%0h SIZE=%0d expected_resp=%0h actual_resp=%0h", c.label, c.burst.name(), beat, c.beats, word, base_address + word, request.aruser, request.size, AAXI_RESP_OKAY, request.rresp_Q[beat]))
+        `uvm_error({tag_prefix, "_RESPONSE"}, $sformatf("%s %s read beat=%0d/%0d offset=0x%08h AXI=0x%016h USER=0x%0h SIZE=%0d expected_resp=%0h actual_resp=%0h", c.label, c.burst.name(), beat, c.beats, word, base_address + word, request.aruser, request.size, AAXI_RESP_OKAY, request.rresp_Q[beat]))
         return 1'b0;
       end
     end
@@ -141,7 +141,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     for (int unsigned beat = 0; beat < c.beats; beat++) begin
       word = int'(beat_offset(c, beat));
       if (!expected_words.exists(word)) begin
-        `uvm_fatal("USB_DEV0_RAM_DATA", $sformatf("%s: no initialized expected value at offset=0x%08h", c.label, word))
+        `uvm_fatal({tag_prefix, "_DATA"}, $sformatf("%s: no initialized expected value at offset=0x%08h", c.label, word))
       end
       expected = expected_words[word];
       if ($isunknown(expected)) begin
@@ -152,7 +152,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
         actual[lane * 8 +: 8] = request.data[beat * 4 + lane];
       end
       if (actual !== expected) begin
-        `uvm_fatal("USB_DEV0_RAM_DATA", $sformatf("%s %s read beat=%0d/%0d offset=0x%08h AXI=0x%016h USER=0x%0h SIZE=%0d expected=0x%08h actual=0x%08h", c.label, c.burst.name(), beat, c.beats, word, base_address + word, request.aruser, request.size, expected, actual))
+        `uvm_fatal({tag_prefix, "_DATA"}, $sformatf("%s %s read beat=%0d/%0d offset=0x%08h AXI=0x%016h USER=0x%0h SIZE=%0d expected=0x%08h actual=0x%08h", c.label, c.burst.name(), beat, c.beats, word, base_address + word, request.aruser, request.size, expected, actual))
       end
       checked_beats++;
       target_stats[ram_target].comparisons++;
@@ -187,7 +187,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     send_ram_request(c, 1'b0, request);
     if (!check_read(request, c)) return;
     positive_cases++;
-    `uvm_info("USB_DEV0_RAM_CASE", $sformatf("PASS %s %s %s offset=0x%08h beats=%0d USER=0x%0h", usb_target_name(ram_target), c.label, c.burst.name(), c.offset, c.beats, authorized_user.value), UVM_LOW)
+    `uvm_info({tag_prefix, "_CASE"}, $sformatf("PASS %s %s %s offset=0x%08h beats=%0d USER=0x%0h", usb_target_name(ram_target), c.label, c.burst.name(), c.offset, c.beats, authorized_user.value), UVM_LOW)
   endtask
 
   // Enable both AXI filters with every allowlist entry set to the test USER.
@@ -271,7 +271,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     if (!std::randomize(request_count) with {
       request_count inside {[1:16]};
     }) begin
-      `uvm_fatal("USB_DEV0_RAM_RANDOM", "Request-count randomization failed")
+      `uvm_fatal({tag_prefix, "_RANDOM"}, "Request-count randomization failed")
     end
     cases = new[request_count];
     requests = new[request_count];
@@ -285,14 +285,14 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
         if (burst == RAM_WRAP)  beats inside {2, 4, 8, 16};
         if (index == 1) write_choice != is_write[0];
       }) begin
-        `uvm_fatal("USB_DEV0_RAM_RANDOM", $sformatf("Request %0d randomization failed", index))
+        `uvm_fatal({tag_prefix, "_RANDOM"}, $sformatf("Request %0d randomization failed", index))
       end
       // Disjoint 1-KiB slots fit even INCR-256 without crossing a 4-KiB boundary.
       offset = uvm_reg_addr_t'(index) * 1024;
       if (burst == RAM_WRAP) offset += 4 * (beats - 1);
       cases[index] = make_case($sformatf("overlap-%0d", index), burst, offset, beats);
       is_write[index] = write_choice;
-      `uvm_info("USB_DEV0_RAM_OVERLAP", $sformatf("%s write=%0b %s offset=0x%08h beats=%0d", cases[index].label, is_write[index], burst.name(), offset, beats), UVM_LOW)
+      `uvm_info({tag_prefix, "_OVERLAP"}, $sformatf("%s write=%0b %s offset=0x%08h beats=%0d", cases[index].label, is_write[index], burst.name(), offset, beats), UVM_LOW)
       if (!is_write[index]) begin
         span = footprint(cases[index]);
         send_ram_request(span, 1'b1, requests[index]);
@@ -301,7 +301,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     end
     manager_sequencer = sequencer_for(ram_target);
     manager = manager_sequencer.cfg.agent;
-    if (manager == null) `uvm_fatal("USB_DEV0_RAM_OVERLAP", $sformatf("%s Avery manager is missing", usb_target_name(ram_target)))
+    if (manager == null) `uvm_fatal({tag_prefix, "_OVERLAP"}, $sformatf("%s Avery manager is missing", usb_target_name(ram_target)))
     tracker = usb_axi_inflight_callbacks::type_id::create("ram_overlap_tracker");
     p_sequencer.cfg.wait_bus_negedge();
     clock_sample = $realtime;
@@ -310,7 +310,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     request_timeout = transfer_timeout() + time'(request_count * response_stall * ($realtime - clock_sample));
     manager.add_callback(tracker);
     tracking = 1'b1;
-    `uvm_info("USB_DEV0_RAM_BACKPRESSURE", $sformatf("Launching %0d requests: BREADY delay after BVALID=%0d cycles, initial RREADY delay after AR=%0d cycles, timeout=%0t", request_count, response_stall, response_stall, request_timeout), UVM_LOW)
+    `uvm_info({tag_prefix, "_BACKPRESSURE"}, $sformatf("Launching %0d requests: BREADY delay after BVALID=%0d cycles, initial RREADY delay after AR=%0d cycles, timeout=%0t", request_count, response_stall, response_stall, request_timeout), UVM_LOW)
     fork
       begin
         while (tracking) begin
@@ -336,7 +336,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     manager.delete_callback(tracker);
     if ((request_count > 1 && !read_write_overlap) || tracker.accepted != request_count ||
         tracker.reads != 0 || tracker.writes != 0) begin
-      `uvm_fatal("USB_DEV0_RAM_OVERLAP", $sformatf("Overlap=%0b accepted=%0d/%0d pending reads=%0d writes=%0d max_reads=%0d max_writes=%0d", read_write_overlap, tracker.accepted, request_count, tracker.reads, tracker.writes, max_reads, max_writes))
+      `uvm_fatal({tag_prefix, "_OVERLAP"}, $sformatf("Overlap=%0b accepted=%0d/%0d pending reads=%0d writes=%0d max_reads=%0d max_writes=%0d", read_write_overlap, tracker.accepted, request_count, tracker.reads, tracker.writes, max_reads, max_writes))
     end
     foreach (requests[index]) begin
       if (!is_write[index]) passed &= check_read(requests[index], cases[index]);
@@ -347,7 +347,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
       end else passed = 1'b0;
     end
     if (passed) positive_cases++;
-    `uvm_info("USB_DEV0_RAM_OVERLAP", $sformatf("%s %s requests=%0d response_stall=%0d cycles overlap=%0s max_reads=%0d max_writes=%0d; all requests completed", passed ? "PASS" : "FAIL", usb_target_name(ram_target), request_count, response_stall, read_write_overlap ? "verified" : "N/A (single request)", max_reads, max_writes), UVM_LOW)
+    `uvm_info({tag_prefix, "_OVERLAP"}, $sformatf("%s %s requests=%0d response_stall=%0d cycles overlap=%0s max_reads=%0d max_writes=%0d; all requests completed", passed ? "PASS" : "FAIL", usb_target_name(ram_target), request_count, response_stall, read_write_overlap ? "verified" : "N/A (single request)", max_reads, max_writes), UVM_LOW)
   endtask
 
   // Write and read back the first and last words of the RAM.
@@ -381,7 +381,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     foreach (cases[index]) begin
       cases[index] = make_case($sformatf("fifo-%0d", index), RAM_INCR, 'h6000 + 64 * index, 16);
       cases[index].id = ids[index % 6];
-      `uvm_info("USB_DEV0_RAM_SATURATION", $sformatf("%s write=%0b RAM_INCR offset=0x%08h beats=16 ID=%0d", cases[index].label, index < 6, cases[index].offset, cases[index].id), UVM_LOW)
+      `uvm_info({tag_prefix, "_SATURATION"}, $sformatf("%s write=%0b RAM_INCR offset=0x%08h beats=16 ID=%0d", cases[index].label, index < 6, cases[index].offset, cases[index].id), UVM_LOW)
       if (index >= 6) begin
         send_ram_request(cases[index], 1'b1, requests[index]);
         void'(check_write(requests[index], cases[index]));
@@ -394,7 +394,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     manager_sequencer = sequencer_for(ram_target);
     tracker = usb_axi_inflight_callbacks::type_id::create("ram_id_tracker");
     manager_sequencer.cfg.agent.add_callback(tracker);
-    `uvm_info("USB_DEV0_RAM_SATURATION", $sformatf("Launching 4 reads and 6 writes, INCR-16, unchanged VIP total/per-ID outstanding budgets=%0d/%0d, BREADY delay=%0d cycles (first write %0d), initial/inter-beat RREADY delays=%0d cycles, timeout=%0t", manager_sequencer.cfg.get_config_int("total_outstanding_depth"), manager_sequencer.cfg.get_config_int("id_outstanding_depth"), write_stall, first_write_stall, read_stall, request_timeout), UVM_LOW)
+    `uvm_info({tag_prefix, "_SATURATION"}, $sformatf("Launching 4 reads and 6 writes, INCR-16, unchanged VIP total/per-ID outstanding budgets=%0d/%0d, BREADY delay=%0d cycles (first write %0d), initial/inter-beat RREADY delays=%0d cycles, timeout=%0t", manager_sequencer.cfg.get_config_int("total_outstanding_depth"), manager_sequencer.cfg.get_config_int("id_outstanding_depth"), write_stall, first_write_stall, read_stall, request_timeout), UVM_LOW)
     foreach (cases[index]) begin
       automatic int slot = index;
       // Let write responses accumulate before adding read backpressure.
@@ -409,15 +409,15 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     if (tracker.accepted != 10 || tracker.reads != 0 || tracker.writes != 0 ||
         tracker.read_ids.size() != 4 || tracker.write_ids.size() != 6 ||
         !tracker.separated_read_id || !tracker.separated_write_id) begin
-      `uvm_fatal("USB_DEV0_RAM_ORDER", "Did not complete all requests with separated same-ID reads and writes outstanding together")
+      `uvm_fatal({tag_prefix, "_ORDER"}, "Did not complete all requests with separated same-ID reads and writes outstanding together")
     end
     foreach (ids[index]) begin
       if (tracker.write_ids[index] != ids[index] ||
           (index < 4 && tracker.read_ids[index] != ids[index])) begin
-        `uvm_fatal("USB_DEV0_RAM_ORDER", $sformatf("Unexpected accepted ID sequence: AR=%p AW=%p", tracker.read_ids, tracker.write_ids))
+        `uvm_fatal({tag_prefix, "_ORDER"}, $sformatf("Unexpected accepted ID sequence: AR=%p AW=%p", tracker.read_ids, tracker.write_ids))
       end
     end
-    `uvm_info("USB_DEV0_RAM_ORDER", $sformatf("PASS %s same-ID completion order; separated repeats outstanding; accepted ARIDs=%p AWIDs=%p", usb_target_name(ram_target), tracker.read_ids, tracker.write_ids), UVM_LOW)
+    `uvm_info({tag_prefix, "_ORDER"}, $sformatf("PASS %s same-ID completion order; separated repeats outstanding; accepted ARIDs=%p AWIDs=%p", usb_target_name(ram_target), tracker.read_ids, tracker.write_ids), UVM_LOW)
     foreach (requests[index]) begin
       if (index >= 6) passed &= check_read(requests[index], cases[index]);
       else if (check_write(requests[index], cases[index])) begin
@@ -426,7 +426,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
       end else passed = 1'b0;
     end
     if (passed) positive_cases++;
-    `uvm_info("USB_DEV0_RAM_SATURATION", $sformatf("%s: %s", usb_target_name(ram_target), passed ? "PASS all 10 requests completed OKAY; all read data and write readbacks matched" : "FAIL response/data checks in 10-request batch"), UVM_LOW)
+    `uvm_info({tag_prefix, "_SATURATION"}, $sformatf("%s: %s", usb_target_name(ram_target), passed ? "PASS all 10 requests completed OKAY; all read data and write readbacks matched" : "FAIL response/data checks in 10-request batch"), UVM_LOW)
   endtask
 
   // Deny only the RAM under test: Combo guards DEV0 memory and DEV1 guards DEV1 memory.
@@ -461,10 +461,10 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     logic [31:0] actual;
     aaxi_master_tr request;
 
-    `uvm_info("USB_DEV0_RAM_SIZE_PROBE", $sformatf("OBSERVATION ONLY: AxSIZE=1 write/read at AXI=0x%016h, seed DWORD=0x%08h, halfword=0x%04h; no unsupported-access response/data expectation", base_address + offset, seed_data, halfword), UVM_LOW)
+    `uvm_info({tag_prefix, "_SIZE_PROBE"}, $sformatf("OBSERVATION ONLY: AxSIZE=1 write/read at AXI=0x%016h, seed DWORD=0x%08h, halfword=0x%04h; no unsupported-access response/data expectation", base_address + offset, seed_data, halfword), UVM_LOW)
     write32(ram_target, offset, seed_data, authorized_user);
     read32(ram_target, offset, actual, authorized_user);
-    if (actual !== seed_data) `uvm_fatal("USB_DEV0_RAM_SIZE_PROBE", $sformatf("DWORD setup failed: expected=0x%08h actual=0x%08h", seed_data, actual))
+    if (actual !== seed_data) `uvm_fatal({tag_prefix, "_SIZE_PROBE"}, $sformatf("DWORD setup failed: expected=0x%08h actual=0x%08h", seed_data, actual))
 
     request = create_transaction(ram_target, offset, 1'b1, {16'b0, halfword}, authorized_user);
     request.size = 1;
@@ -475,15 +475,15 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
       request.strobes.push_back(1'b1);
     end
     execute_transaction(ram_target, 32'(request.addr), 1'b1, request);
-    `uvm_info("USB_DEV0_RAM_SIZE_PROBE", $sformatf("Halfword write: AWSIZE=%0d bytes=%p strobes=%p BRESP=%0h", request.size, request.data, request.strobes, request.resp), UVM_LOW)
+    `uvm_info({tag_prefix, "_SIZE_PROBE"}, $sformatf("Halfword write: AWSIZE=%0d bytes=%p strobes=%p BRESP=%0h", request.size, request.data, request.strobes, request.resp), UVM_LOW)
 
     request = create_transaction(ram_target, offset, 1'b0, '0, authorized_user);
     request.size = 1;
     execute_transaction(ram_target, 32'(request.addr), 1'b0, request);
-    `uvm_info("USB_DEV0_RAM_SIZE_PROBE", $sformatf("Halfword read: ARSIZE=%0d bytes=%p RRESP=%p", request.size, request.data, request.rresp_Q), UVM_LOW)
+    `uvm_info({tag_prefix, "_SIZE_PROBE"}, $sformatf("Halfword read: ARSIZE=%0d bytes=%p RRESP=%p", request.size, request.data, request.rresp_Q), UVM_LOW)
 
     read32(ram_target, offset, actual, authorized_user);
-    `uvm_info("USB_DEV0_RAM_SIZE_PROBE", $sformatf("Observed DWORD after halfword write/read: before=0x%08h after=0x%08h; observation is not a supported-access guarantee", seed_data, actual), UVM_LOW)
+    `uvm_info({tag_prefix, "_SIZE_PROBE"}, $sformatf("Observed DWORD after halfword write/read: before=0x%08h after=0x%08h; observation is not a supported-access guarantee", seed_data, actual), UVM_LOW)
   endtask
 
   // Run every RAM test on one target (DEV0 or DEV1 RAM) and print a summary.
@@ -495,7 +495,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     ram_target = target;
     bridge_target = target;
     bridge_name = usb_target_name(target);
-    tag_prefix = "USB_DEV_RAM";
+    tag_prefix = ram_target == USB_DEV0_SRAM ? "USB_DEV0_RAM" : "USB_DEV1_RAM";
     expected_words.delete();
     launched = 0;
     finished = 0;
@@ -512,7 +512,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     base_address = target_map.get_base_addr(UVM_NO_HIER);
     ram_bytes = sram_implemented_bytes(ram_target);
     if (!std::randomize(axi_user)) begin
-      `uvm_fatal("USB_DEV0_RAM_RANDOM", $sformatf("%s USER randomization failed", usb_target_name(ram_target)))
+      `uvm_fatal({tag_prefix, "_RANDOM"}, $sformatf("%s USER randomization failed", usb_target_name(ram_target)))
     end
     authorized_user = usb_axi_user_override::with_value(axi_user);
     randomize_manager_ids();
@@ -549,9 +549,9 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     // Last in the pass: pulse the AXI reset with a read and a write outstanding.
     run_reset_with_outstanding('h7600, 'h7700, 'h7800);
 
-    if (launched != finished + reset_abandoned) `uvm_fatal("USB_DEV0_RAM_ACCOUNTING", "Requests remain outstanding")
+    if (launched != finished + reset_abandoned) `uvm_fatal({tag_prefix, "_ACCOUNTING"}, "Requests remain outstanding")
     reports = uvm_report_server::get_server();
-    `uvm_info("USB_DEV0_RAM_SUMMARY", $sformatf("%s %s positive_cases=%0d hazard_cases=%0d/6 policy_cases=%0d/4 mixed_user=%0s (%0d/%0d) reset=%0s checked_beats=%0d matrix_requests=%0d/%0d (items unreturned after reset=%0d) overlap=%0s max_reads=%0d max_writes=%0d; positive matrix accesses are in range with USER=0x%0h, ARSIZE/AWSIZE=2 only", reports.get_severity_count(UVM_ERROR) == 0 ? "PASS" : "FAIL", usb_target_name(ram_target), positive_cases, hazard_cases, policy_cases, mixed_passed ? "PASS" : "FAIL", mixed_requests, MIXED_SLOTS, reset_passed ? "PASS" : "FAIL", checked_beats, finished, launched, reset_abandoned, read_write_overlap ? "verified" : "N/A (single request)", max_reads, max_writes, authorized_user.value), UVM_LOW)
+    `uvm_info({tag_prefix, "_SUMMARY"}, $sformatf("%s %s positive_cases=%0d hazard_cases=%0d/6 policy_cases=%0d/4 mixed_user=%0s (%0d/%0d) reset=%0s checked_beats=%0d matrix_requests=%0d/%0d (items unreturned after reset=%0d) overlap=%0s max_reads=%0d max_writes=%0d; positive matrix accesses are in range with USER=0x%0h, ARSIZE/AWSIZE=2 only", reports.get_severity_count(UVM_ERROR) == 0 ? "PASS" : "FAIL", usb_target_name(ram_target), positive_cases, hazard_cases, policy_cases, mixed_passed ? "PASS" : "FAIL", mixed_requests, MIXED_SLOTS, reset_passed ? "PASS" : "FAIL", checked_beats, finished, launched, reset_abandoned, read_write_overlap ? "verified" : "N/A (single request)", max_reads, max_writes, authorized_user.value), UVM_LOW)
   endtask
 
   task body();

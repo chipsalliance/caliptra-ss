@@ -78,6 +78,38 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
     return "INCR";
   endfunction
 
+  // AXI BRESP/RRESP encoding.
+  protected function string resp_name(logic [1:0] resp);
+    case (resp)
+      2'b00:   return "OKAY";
+      2'b01:   return "EXOKAY";
+      2'b10:   return "SLVERR";
+      2'b11:   return "DECERR";
+      default: return $sformatf("%b", resp);
+    endcase
+  endfunction
+
+  // BRESP for a write, or every RRESP beat for a read.
+  protected function string response_text(aaxi_master_tr request, bit is_write);
+    string text;
+
+    if (is_write) return {"BRESP=", resp_name(request.resp)};
+    text = "RRESP={";
+    foreach (request.rresp_Q[beat]) begin
+      if (beat > 0) text = {text, ","};
+      text = {text, resp_name(request.rresp_Q[beat])};
+    end
+    return {text, "}"};
+  endfunction
+
+  protected function string kind_name(region_kind_e kind);
+    case (kind)
+      REGION_MAPPED: return "mapped";
+      REGION_PAD:    return "Hub padding";
+      default:       return "unmapped hole";
+    endcase
+  endfunction
+
   // Authorize one random USER on both the Combo and DEV1 policies.
   protected task configure_policies();
     usb_combo_allowlist_t combo_users;
@@ -97,7 +129,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
     read_data = '0;
     if (is_write) begin
       if (request.resp !== AAXI_RESP_OKAY) begin
-        `uvm_fatal("USB_UNSUPPORTED_LEGAL", $sformatf("%s legal DWORD write AXI=0x%016h BRESP=%0h, expected OKAY", usb_target_name(target), request.addr, request.resp))
+        `uvm_fatal("USB_UNSUPPORTED_LEGAL", $sformatf("%s legal DWORD write AXI=0x%016h BRESP=%s, expected OKAY", usb_target_name(target), request.addr, resp_name(request.resp)))
       end
     end else begin
       read_data = unpack_read_data(target, 32'(request.addr), request);
@@ -178,7 +210,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
 
     if (is_write) begin
       if (request.resp !== AAXI_RESP_SLVERR) begin
-        `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: BRESP=%0h, expected SLVERR", label, request.addr, request.resp))
+        `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: BRESP=%s, expected SLVERR", label, request.addr, resp_name(request.resp)))
         ok = 1'b0;
       end
     end else begin
@@ -188,7 +220,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       end
       foreach (request.rresp_Q[beat]) begin
         if (request.rresp_Q[beat] !== AAXI_RESP_SLVERR) begin
-          `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: beat%0d RRESP=%0h, expected SLVERR", label, request.addr, beat, request.rresp_Q[beat]))
+          `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: beat%0d RRESP=%s, expected SLVERR", label, request.addr, beat, resp_name(request.rresp_Q[beat])))
           ok = 1'b0;
           break;
         end
@@ -202,7 +234,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       end
     end
     if (ok) rejected++;
-    `uvm_info("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h ID=0x%0h USER=0x%0h resp=%0h rresp=%p bytes=%p", label, request.addr, request.id, authorized_user.value, request.resp, request.rresp_Q, request.data), UVM_LOW)
+    `uvm_info("USB_UNSUPPORTED_RESPONSE", $sformatf("%s %s AXI=0x%016h ID=0x%0h USER=0x%0h %s %s=%p", ok ? "PASS" : "FAIL", label, request.addr, request.id, authorized_user.value, response_text(request, is_write), is_write ? "wdata" : "rdata", request.data), UVM_LOW)
   endtask
 
   // Legal DWORD writes with zero and random partial WSTRB must return OKAY and write every byte.
@@ -223,7 +255,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       foreach (request.strobes[lane]) request.strobes[lane] = strobe_patterns[pattern][lane];
       execute_transaction(region.target, 32'(request.addr), 1'b1, request);
       if (request.resp !== AAXI_RESP_OKAY) begin
-        `uvm_error("USB_UNSUPPORTED_WSTRB", $sformatf("%s AXI=0x%016h: BRESP=%0h, expected OKAY", label, request.addr, request.resp))
+        `uvm_error("USB_UNSUPPORTED_WSTRB", $sformatf("%s AXI=0x%016h: BRESP=%s, expected OKAY", label, request.addr, resp_name(request.resp)))
       end
       legal_dword(region.target, region.offset, 1'b0, '0, actual);
       if ((actual & region.mask) !== data) begin
@@ -231,19 +263,29 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       end else begin
         wstrb_checks++;
       end
-      `uvm_info("USB_UNSUPPORTED_WSTRB", $sformatf("%s AXI=0x%016h BRESP=%0h readback=0x%08h", label, request.addr, request.resp, actual), UVM_LOW)
+      `uvm_info("USB_UNSUPPORTED_WSTRB", $sformatf("%s AXI=0x%016h BRESP=%s readback=0x%08h", label, request.addr, resp_name(request.resp), actual), UVM_LOW)
       expected_words[0] = actual & region.mask;
     end
   endtask
 
   // Seed a mapped region, then run every shape as a write and a read, once single-beat and once as a
   // 2..MAX_BEATS burst; each probe is followed by a legal access. Single-DWORD regions use FIXED bursts.
-  protected task run_region(region_t region);
+  protected task run_region(int unsigned index, region_t region);
     logic [31:0] unused;
     int unsigned beats;
     bit is_fixed;
-    string label;
+    string label, follow_up;
+    uvm_report_server reports = uvm_report_server::get_server();
+    int unsigned start_errors = reports.get_severity_count(UVM_ERROR);
+    int unsigned start_probes = probes;
+    int unsigned start_rejected = rejected;
+    int unsigned start_preserved = preservation_checks;
+    int unsigned start_wstrb = wstrb_checks;
 
+    if (region.kind == REGION_MAPPED) follow_up = "seeded; each probe followed by a state check; then WSTRB-ignored writes";
+    else follow_up = "each probe followed by a legal Combo read";
+    `uvm_info("USB_UNSUPPORTED_REGION", $sformatf("Region %0d/%0d %s (%s): %s offset=0x%08h, %0d DWORD(s); %0d probes (%0d shapes x write/read x single-beat/burst), %s",
+              index + 1, regions.size(), region.name, kind_name(region.kind), usb_target_name(region.target), region.offset, region.words, 4 * SHAPES, SHAPES, follow_up), UVM_LOW)
     if (region.kind == REGION_MAPPED) seed_region(region);
     for (int unsigned shape = 0; shape < SHAPES; shape++) begin
       for (int unsigned direction = 0; direction < 2; direction++) begin
@@ -262,6 +304,9 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       end
     end
     if (region.kind == REGION_MAPPED) check_wstrb_ignored(region);
+    `uvm_info("USB_UNSUPPORTED_REGION", $sformatf("%s Region %0d/%0d %s: rejected=%0d/%0d preservation checks=%0d WSTRB-ignored checks=%0d",
+              reports.get_severity_count(UVM_ERROR) == start_errors ? "PASS" : "FAIL", index + 1, regions.size(), region.name,
+              rejected - start_rejected, probes - start_probes, preservation_checks - start_preserved, wstrb_checks - start_wstrb), UVM_LOW)
   endtask
 
   task body();
@@ -305,7 +350,7 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
     add_region("DEV1-CSR", USB_DEV1_CSR, csr_offset(USB_DEV1_CSR, "INTROUTE"), USB_DEV1_ROUTE_MASK, REGION_MAPPED, 1);
     `uvm_info("USB_UNSUPPORTED_SETUP", $sformatf("USER=0x%0h regions=%0d shapes=%0d Hub aperture end=0x%08h Combo bytes=0x%08h", axi_user, regions.size(), SHAPES, hub_end, combo_bytes), UVM_LOW)
 
-    foreach (regions[index]) run_region(regions[index]);
+    foreach (regions[index]) run_region(index, regions[index]);
 
     // Leave interrupt routing cleared on both CSR blocks.
     legal_dword(USB_DEV0_CSR, combo_csr_offset, 1'b1, '0, unused);
