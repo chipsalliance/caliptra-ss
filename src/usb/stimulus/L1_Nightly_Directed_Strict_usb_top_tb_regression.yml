@@ -20,6 +20,10 @@ contents:
         - ../tests/usb_high_bandwidth_interrupt.yml
         - ../tests/usb_high_bandwidth_iso.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_ocp_ep0_retry.yml
+        - ../tests/usb_ocp_ep0_retry_control.yml
+        - ../tests/usb_ocp_ep0_retry_read.yml
+        - ../tests/usb_ocp_ep0_retry_write.yml
         - ../tests/usb_test_j.yml
         - ../tests/usb_test_k.yml
         - ../tests/usb_test_packet.yml
