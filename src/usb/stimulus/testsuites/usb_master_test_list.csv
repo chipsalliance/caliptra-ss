@@ -16,6 +16,10 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_interrupt                    
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_iso                              , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_init                                            , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_bringup                                     , Random         , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry                                   , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_control                           , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_read                              , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_write                             , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev0_ep0_interleave                         , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev0_epn_overlap                            , Random         , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_ep0_overlap                            , Random         , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100

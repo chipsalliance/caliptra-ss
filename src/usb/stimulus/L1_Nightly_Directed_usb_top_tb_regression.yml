@@ -27,6 +27,10 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_interrupt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_iso: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_init: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_control: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_read: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_ep0_retry_write: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_j: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_k: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_packet: { weight: 100 }

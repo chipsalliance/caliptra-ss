@@ -583,6 +583,8 @@ class usb_ocp_scoreboard extends uvm_component;
     allowed_results = 0;
     // SVT results bit 5 also describes the IN status ZLP after control-OUT data.
     if (!c.setup[0][7]) allowed_results[5] = 1;
+    if (item.expected_device_timeout)
+      allowed_results[usb_ocp_event::DEVICE_TIMEOUT_RESULT_BIT] = 1;
     if (!item.transfer_ok || (item.results & ~allowed_results) !== 0)
       `uvm_fatal("OCP_CROSSCHECK", "VIP control transfer failed")
     ocp_check_bytes(item.bytes,c.data,"packet/transfer cross-check");
