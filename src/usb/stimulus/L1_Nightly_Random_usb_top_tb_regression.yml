@@ -24,6 +24,12 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_ep0: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_ep0_capacity_plus_one: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_ep0_exact: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev0_interrupt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev0_iso: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_bulk: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_interrupt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_iso: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit: { weight: 100 }

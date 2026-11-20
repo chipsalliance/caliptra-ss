@@ -22,8 +22,11 @@ class usb_ocp_base_test extends usb_base_test;
 
   function void build_phase(uvm_phase phase);
     // Reject private FIFO selectors on other OCP tests before any actors.
-    void'(usb_ocp_fifo_backpressure_ep0_checker::ocp_check_control_args(
-      get_type_name() == "usb_ocp_fifo_backpressure_ep0_test"));
+    void'(usb_ocp_fifo_backpressure_epn_checker::ocp_check_control_args(
+      get_type_name() == "usb_ocp_fifo_backpressure_epn_test"));
+    if (get_type_name() != "usb_ocp_fifo_backpressure_epn_test")
+      void'(usb_ocp_fifo_backpressure_ep0_checker::ocp_check_control_args(
+        get_type_name() == "usb_ocp_fifo_backpressure_ep0_test"));
     // These instance overrides exist only when this OCP base test is selected.
     usb_env::type_id::set_inst_override(usb_ocp_base_env::get_type(),{get_full_name(),".env"});
     usb_env_cfg::type_id::set_inst_override(usb_ocp_base_env_cfg::get_type(),"env_cfg");
