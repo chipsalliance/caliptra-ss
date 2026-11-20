@@ -117,10 +117,10 @@
 
   // Fill a packet-memory buffer with a repeating sentinel so a later comparison
   // can prove every byte was overwritten by real traffic. Bytes past
-  // byte_count in a partial final word keep their contents.
+  // byte_count in a partial final word are written as zero.
   task fill_endpoint_buffer(logic [31:0] buffer_offset, int unsigned byte_count, logic [31:0] fill_word);
     for (int unsigned offset = 0; offset < byte_count; offset += 4) begin
-      write_sram_bytes(USB_DEV0_SRAM, buffer_offset + offset, fill_word, byte_count - offset);
+      write32(USB_DEV0_SRAM, buffer_offset + offset, fill_word & byte_lane_mask(byte_count - offset));
     end
     `uvm_info("USB_EP", $sformatf("Filled %0d bytes at buffer 0x%03h with 0x%08h", byte_count, buffer_offset, fill_word), UVM_HIGH)
   endtask

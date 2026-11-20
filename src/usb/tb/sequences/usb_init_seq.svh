@@ -197,7 +197,7 @@ class usb_init_seq extends usb_base_seq;
 
     word_count = (byte_count + 3) / 4;
     for (int unsigned word_index = 0; word_index < word_count; word_index++) begin
-      write_sram_bytes(USB_DEV0_SRAM, ep0_in_buffer_offset + word_index * 4, data_words[word_index], byte_count - word_index * 4);
+      write32(USB_DEV0_SRAM, ep0_in_buffer_offset + word_index * 4, data_words[word_index] & byte_lane_mask(byte_count - word_index * 4));
     end
     write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b1, 1'b0, byte_count, ep0_in_buffer_offset));
   endtask
