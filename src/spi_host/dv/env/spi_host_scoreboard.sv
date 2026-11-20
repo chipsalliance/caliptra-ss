@@ -47,8 +47,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   `uvm_component_utils(spi_host_scoreboard)
   `uvm_component_new
 
-  virtual spi_if  spi_vif;
-
   // TLM fifos hold the transactions sent from monitor
   uvm_tlm_analysis_fifo #(spi_item) plain_data_fifo;
 
@@ -62,6 +60,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   typedef struct {
     bit [7:0] bytes[$];
   } tx_word_t;
+  typedef longint unsigned u64_t;
 
   local spi_segment_item            staged_cmd_q[$];
   local spi_segment_item            write_segment_q[$];
@@ -69,18 +68,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   local tx_word_t                   tx_word_q[$];
   local logic [7:0]                 rx_data_q[$];
   local bit                         csaat = 0;
-  local int                         spi_clk_half_period;
-  local int                         cur_tx_fifo_bytes = 0;
   local bit [5:0]                   sw_error_bits = 6'b0;
-  // Fixed settling window (in core clocks) before checking expected ERROR_STATUS[2:0] bits
-  // during an active (!quiescent) transfer; unexpected DUT error bits in [2:0] fail immediately.
-  localparam int unsigned           ERROR_SETTLE_CLKS = 16;
-  local realtime                    sw_err_set_time[3] = '{default: 0};
-
-  // interrupt bit vector
-  local bit [NumSpiHostIntr-1:0]    intr_state = 2'b00;
-  local bit [NumSpiHostIntr-1:0]    intr_enable = 2'b00;
-  local bit [NumSpiHostIntr-1:0]    intr_test = 2'b00;
 
   // Capture DUT register contents during accesses
   local spi_host_command_t          spi_cmd_reg;
@@ -89,7 +77,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   local spi_host_error_enable_t     spi_error_enable_reg;
   local spi_host_error_status_t     spi_error_status_reg;
   local spi_host_event_enable_t     spi_event_enable_reg;
-  local spi_host_intr_state_t       spi_intr_state_reg;
   local spi_host_intr_enable_t      spi_intr_enable_reg;
   local spi_host_intr_test_t        spi_intr_test_reg;
   spi_host_configopts_t             spi_configopts;
@@ -107,7 +94,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
 
   // Independent architectural state tracking (zero DUT HDL-read dependency in oracle)
   local spi_invalid_cmd_item_t      pending_invalid_cmd_q[$];
-  local int unsigned                exp_halted_cmd_qd              = 0;
   local int unsigned                unverified_underflow_cnt       = 0;
   local int unsigned                exp_rx_pending_seg_cnt         = 0;
   local spi_segment_item            cur_active_rx_seg              = null;
@@ -117,19 +103,22 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   local bit                         sr_tx_byte_in_flight           = 1'b0;
   local bit                         any_subword_tx_in_q            = 1'b0;
   local realtime                    last_rst_exit_time             = 0;
+  local realtime                    last_wm_wr_time                = 0;
   local bit                         has_prev_frame_cfg             = 1'b0;
   local spi_host_configopts_t       prev_frame_cfg;
-  local realtime                    prev_frame_csb_rise_time    = 0;
-  local realtime                    wait_idle_ref_time          = 0;
-  local realtime                    last_sck_idle_switch_time   = 0;
-  local bit                         saw_sck_idle_switch         = 1'b0;
+  local realtime                    prev_frame_csb_rise_time       = 0;
+  local realtime                    wait_idle_ref_time             = 0;
+  local realtime                    last_csaat_seg_done_time       = 0;
+  local realtime                    internal_exec_ref_time         = 0;
+  local longint unsigned            internal_exec_bound_ps         = 0;
+  local realtime                    last_sck_idle_switch_time      = 0;
+  local bit                         saw_sck_idle_switch            = 1'b0;
 
   // Tally-Counters
   int                               in_tx_seg_cnt      = 0;
   int                               checked_tx_seg_cnt = 0;
   int                               in_rx_seq_cnt      = 0;
   int                               checked_rx_seq_cnt = 0;
-  local bit commit_exp_txn_at_txfifo_write = 0;
   local spi_mode_e                  prev_mode = Standard;
   int unsigned                      cur_trans_segments = 0;
   event event_sw_rst;
@@ -144,8 +133,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     host_wr_segment = spi_segment_item::type_id::create("host_wr_segment");
     host_rd_segment = spi_segment_item::type_id::create("host_rd_segment");
 
-    spi_ctrl_reg = '{default: '0};
+    spi_ctrl_reg              = '{default: '0};
     spi_ctrl_reg.rx_watermark = 8'h7f;
+    // RTL resets all 5 ERROR_ENABLE fields to 1'b1 (5'h1F)
+    spi_error_enable_reg      = '{default: 1'b1};
     foreach (initialise_configopts[i]) initialise_configopts[i] = 1'b1;
 
     // Instantiate and register callbacks
@@ -242,9 +233,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
   endfunction
 
   virtual task check_csn_idle_per_cs(int cs_idx);
-    int unsigned num_quarter_cycles;
-    int unsigned quarter_period;
-    int unsigned half_period;
+    int unsigned     num_quarter_cycles;
+    longint unsigned quarter_period;
+    longint unsigned half_period;
     spi_host_configopts_t cur_cfg;
     forever begin
       wait_sw_rst_inactive();
@@ -255,9 +246,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         continue;
       end
       cur_cfg = active_cs_configopts[cs_idx];
-      half_period = (cur_cfg.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
+      half_period = (u64_t'(cur_cfg.clkdiv) + 64'd1) *
+                    u64_t'(cfg.clk_rst_vif.clk_period_ps);
       num_quarter_cycles = (cur_cfg.csnidle + 1) * 2;
-      quarter_period = half_period / 2;
+      quarter_period = half_period / 64'd2;
       for (int i = 0; i < num_quarter_cycles; i++) begin
         #(quarter_period * 1ps);
         if (!cfg.en_scb || is_sw_rst_active() || !cfg.clk_rst_vif.rst_n ||
@@ -427,14 +419,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     wait fork;
   endtask
 
-  task wait_start_sck_edge(int cs_idx = 0);
-    int idx = (cs_idx >= 0 && cs_idx < SPI_HOST_NUM_CS) ? cs_idx : 0;
-    if (active_cs_configopts[idx].cpol == active_cs_configopts[idx].cpha)
-      @(negedge cfg.m_spi_agent_cfg.vif.sck);
-    else
-      @(posedge cfg.m_spi_agent_cfg.vif.sck);
-  endtask
-
   virtual task get_next_plain_nibble(output logic [3:0] half_nibble,
                                      output logic [3:0] full_nibble,
                                      output bit has_fullcyc,
@@ -577,6 +561,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       // Handle internal execution when CONTROL.OUTPUT_EN == 0 (pads tri-stated to pullups = 0xFF)
       if (exp_segment.internal_exec) begin
         int n_bytes = exp_segment.command_reg.len + 1;
+        longint unsigned clk_ps  = u64_t'(cfg.clk_rst_vif.clk_period_ps);
+        longint unsigned half_ps = (u64_t'(exp_segment.configopts.clkdiv) + 64'd1) * clk_ps;
         if (exp_segment.command_reg.direction inside {TxOnly, Bidir}) begin
           for (int b = 0; b < n_bytes; b++) begin
             if (tx_word_q.size() > 0) begin
@@ -599,6 +585,14 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           end
           if (exp_rx_pending_seg_cnt > 0) exp_rx_pending_seg_cnt--;
         end
+        internal_exec_ref_time   = $realtime();
+        internal_exec_bound_ps   =
+          (u64_t'(n_bytes * 8) * 64'd2 +
+           u64_t'(exp_segment.configopts.csnlead + 2) +
+           u64_t'(exp_segment.configopts.csntrail + 2) +
+           u64_t'(exp_segment.configopts.csnidle + 3) + 64'd8) * half_ps +
+          (64'd24 * clk_ps);
+        last_csaat_seg_done_time = 0;
         checked_tx_seg_cnt += 1;
         cfg.scb_checked_tx_seg_cnt = checked_tx_seg_cnt;
         continue;
@@ -673,6 +667,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       end
 
       csaat = exp_segment.command_reg.csaat;
+      last_csaat_seg_done_time = exp_segment.command_reg.csaat ? $realtime() : 0;
+      internal_exec_ref_time   = 0;
+      internal_exec_bound_ps   = 0;
 
       if (cfg.en_cov) begin
         bit extra_data = (tx_word_q.size() > 0);
@@ -816,7 +813,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       end
       initialise_configopts[cs_idx] = 1'b0;
       curr_spi_configopts = next_spi_configopts;
-      spi_clk_half_period = (curr_spi_configopts.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
     end
   endtask
 
@@ -840,7 +836,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       return;
     end
     if (spi_ctrl_reg.spien && (sw_error_bits == 6'b0)) begin
-      exp_halted_cmd_qd = 0;
       while (staged_cmd_q.size() > 0) begin
         spi_segment_item seg = staged_cmd_q.pop_front();
         if (seg.is_cmd_inval) begin
@@ -882,9 +877,27 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
 
   // Independent architectural status helpers (zero DUT HDL-read dependency in oracle)
   virtual function bit is_exp_active();
-    return spi_ctrl_reg.spien && (sw_error_bits == 6'b0) &&
-           ((write_segment_q.size() > 0) || (in_tx_seg_cnt > checked_tx_seg_cnt) ||
-            (&cfg.m_spi_agent_cfg.vif.csb === 1'b0));
+    // Matches RTL spi_host_fsm.sv (active_o = ~(Idle || IdleCSBActive)):
+    // - Active while any segment is shifting (stays 1 if paused mid-transfer by SPIEN=0 or
+    //   enb_error), OR while enabled with queued executable work, OR while CSB is finishing a
+    //   non-CSAAT frame (excludes parked IdleCSBActive where prev_cmd_csaat==1 and idle).
+    return (in_tx_seg_cnt > checked_tx_seg_cnt) ||
+           (spi_ctrl_reg.spien && (sw_error_bits == 6'b0) && (write_segment_q.size() > 0)) ||
+           (!prev_cmd_csaat && (&cfg.m_spi_agent_cfg.vif.csb === 1'b0));
+  endfunction
+
+  // Predict Event-type INTR_STATE.ERROR=1 strictly on the triggering error-event pulse (never on
+  // subsequent ERROR_STATUS readback), matching spi_host.sv:494-508 (intr_hw_error).
+  virtual function void predict_error_intr(bit [5:0] err_pulse);
+    bit [5:0] err_mask = {1'b1,
+                          spi_error_enable_reg.csidinval,
+                          spi_error_enable_reg.cmdinval,
+                          spi_error_enable_reg.underflow,
+                          spi_error_enable_reg.overflow,
+                          spi_error_enable_reg.cmdbusy};
+    if (|(err_pulse & err_mask) && !ral.intr_state.is_busy()) begin
+      void'(ral.intr_state.error.predict(.value(1'b1), .kind(UVM_PREDICT_DIRECT)));
+    end
   endfunction
 
   virtual function bit is_exp_cmd_busy();
@@ -966,8 +979,14 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         if (name == "sw_rst") begin
           spi_ctrl_reg.sw_rst = bit'(value);
         end else begin
-          spi_ctrl_reg.rx_watermark = get_field_val(ral.control.rx_watermark, value);
-          spi_ctrl_reg.tx_watermark = get_field_val(ral.control.tx_watermark, value);
+          bit [7:0] new_rx_wm = get_field_val(ral.control.rx_watermark, value);
+          bit [7:0] new_tx_wm = get_field_val(ral.control.tx_watermark, value);
+          if ((new_rx_wm != spi_ctrl_reg.rx_watermark) ||
+              (new_tx_wm != spi_ctrl_reg.tx_watermark)) begin
+            last_wm_wr_time = $realtime();
+          end
+          spi_ctrl_reg.rx_watermark = new_rx_wm;
+          spi_ctrl_reg.tx_watermark = new_tx_wm;
           spi_ctrl_reg.output_en    = get_field_val(ral.control.output_en, value);
           spi_ctrl_reg.spien        = get_field_val(ral.control.spien, value);
           spi_ctrl_reg.sw_rst       = get_field_val(ral.control.sw_rst, value);
@@ -975,6 +994,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         end
 
         if (cfg.en_cov) begin
+          // When SW_RST=1 is written mid-transfer, RTL resets u_fsm.state_q to Idle (3'h0) on the
+          // bus beat before AXI BVALID invokes post_write; combine pre-write was_exp_active (which
+          // excludes parked IdleCSBActive) with passive fsm_state != {Idle, IdleCSBActive}.
           bit active = was_exp_active ||
                        ((cfg.force_spi_fsm_vif != null) &&
                         (cfg.force_spi_fsm_vif.fsm_state != 3'h0 &&
@@ -988,8 +1010,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           reset("SOFT");
         end else begin
           if (was_sw_rst) last_rst_exit_time = $realtime();
-          if (!was_spien && spi_ctrl_reg.spien && (wait_idle_ref_time > 0)) begin
-            wait_idle_ref_time = $realtime();
+          if (!was_spien && spi_ctrl_reg.spien) begin
+            if (wait_idle_ref_time > 0)       wait_idle_ref_time       = $realtime();
+            if (last_csaat_seg_done_time > 0) last_csaat_seg_done_time = $realtime();
+            if (internal_exec_ref_time > 0)   internal_exec_ref_time   = $realtime();
           end
           promote_staged_commands();
         end
@@ -1043,16 +1067,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         cmd_inval  = !cmd_busy && (!(spi_cmd_reg.mode inside {Standard, Dual, Quad}) ||
                                    (spi_cmd_reg.mode != Standard && spi_cmd_reg.direction == Bidir));
 
-        if (cmd_busy) begin
-          if (!sw_error_bits[0]) sw_err_set_time[0] = $realtime();
-          sw_error_bits[0] = 1'b1;
-        end
+        if (cmd_busy)   sw_error_bits[0] = 1'b1;
         if (cmd_inval)  sw_error_bits[3] = 1'b1;
         if (csid_inval) sw_error_bits[4] = 1'b1;
-
-        if (!cmd_busy && (!spi_ctrl_reg.spien || (sw_error_bits != 6'b0))) begin
-          if (exp_halted_cmd_qd < SPI_HOST_CMD_DEPTH) exp_halted_cmd_qd++;
-        end
+        predict_error_intr({1'b0, csid_inval, cmd_inval, 2'b00, cmd_busy});
 
         // Confirmed Design Contract (Harry Callahan, Option A, Nov 12, 2026 - Comment #2):
         // RTL spi_host.sv:189-263 wires command_valid unconditionally into u_cmd_queue (clamping
@@ -1162,12 +1180,11 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           end
           pending_invalid_cmd_q = kept_q;
         end
-        for (int b = 0; b < 3; b++) begin
-          if (value[b]) sw_err_set_time[b] = 0;
-        end
         sw_error_bits &= ~value[5:0];
-        if (had_sw_err && (sw_error_bits == 6'b0) && (wait_idle_ref_time > 0)) begin
-          wait_idle_ref_time = $realtime();
+        if (had_sw_err && (sw_error_bits == 6'b0)) begin
+          if (wait_idle_ref_time > 0)       wait_idle_ref_time       = $realtime();
+          if (last_csaat_seg_done_time > 0) last_csaat_seg_done_time = $realtime();
+          if (internal_exec_ref_time > 0)   internal_exec_ref_time   = $realtime();
         end
         void'(ral.error_status.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         promote_staged_commands();
@@ -1194,8 +1211,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     `uvm_info(`gfn, $sformatf("Reg Read callback: %s = 0x%0h", name, value), UVM_HIGH)
     case (name)
       "intr_state": begin
-         spi_intr_state_reg.spi_event  = bit'(get_field_val(ral.intr_state.spi_event, value));
-         spi_intr_state_reg.error      = bit'(get_field_val(ral.intr_state.error, value));
          void'(ral.intr_state.predict(.value(value), .kind(UVM_PREDICT_READ)));
          if (cfg.en_cov) begin
            bit [31:0]               intr_en  = `gmv(ral.intr_enable);
@@ -1209,13 +1224,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       "error_status": begin
         if (cfg.en_scb) begin
           bit quiescent = (write_segment_q.size() == 0) && (in_tx_seg_cnt == checked_tx_seg_cnt);
-          longint settle_bound_ps = longint'(ERROR_SETTLE_CLKS) *
-                                    longint'(cfg.clk_rst_vif.clk_period_ps);
-          // Expected error state (sw_error_bits) is kept strictly separate from DUT readback:
-          // - Check full 6-bit ERROR_STATUS vector whenever quiescent.
-          // - During an active transfer (!quiescent): always check deterministic CSR errors [5:3],
-          //   immediately reject any unexpectedly asserted DUT error bit in [2:0], and check
-          //   expected bits in [2:0] once the fixed settling period (ERROR_SETTLE_CLKS) has elapsed.
+          // Expected error state (sw_error_bits) is kept strictly separate from DUT readback.
+          // RTL latches all 6 ERROR_STATUS bits synchronously on the triggering bus cycle, so
+          // check full 6-bit equality on every read (both quiescent and during active transfers)
+          // with zero settling-window blind spot.
           if (quiescent && (value[5:0] !== sw_error_bits)) begin
             `uvm_error(`gfn, $sformatf(
               "ERROR_STATUS mismatch on read: actual=0x%02h != predicted=0x%02h",
@@ -1231,13 +1243,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
                 "Unexpected ERROR_STATUS[2:0] bit asserted during active transfer: actual=0x%0h predicted=0x%0h",
                 value[2:0], sw_error_bits[2:0]))
             end
-            for (int b = 0; b < 3; b++) begin
-              if (sw_error_bits[b] && !value[b] &&
-                  ((($realtime() - sw_err_set_time[b]) / 1ps) >= settle_bound_ps)) begin
-                `uvm_error(`gfn, $sformatf(
-                  "Expected ERROR_STATUS[%0d] failed to appear past fixed settling window (%0d clks): actual=0x%02h predicted=0x%02h",
-                  b, ERROR_SETTLE_CLKS, value[5:0], sw_error_bits))
-              end
+            if ((~value[2:0] & sw_error_bits[2:0]) != 3'b0) begin
+              `uvm_error(`gfn, $sformatf(
+                "Missing expected ERROR_STATUS[2:0] bit during active transfer: actual=0x%02h predicted=0x%02h",
+                value[5:0], sw_error_bits))
             end
           end
         end
@@ -1251,9 +1260,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_error_status_reg.overflow    = bit'(get_field_val(ral.error_status.overflow, value));
         spi_error_status_reg.cmdbusy     = bit'(get_field_val(ral.error_status.cmdbusy, value));
         void'(ral.error_status.predict(.value(value), .kind(UVM_PREDICT_READ)));
-        if (|(value & (ral.error_enable.get_mirrored_value() | 32'h20)) && !ral.intr_state.is_busy()) begin
-          void'(ral.intr_state.error.predict(.value(1'b1), .kind(UVM_PREDICT_DIRECT)));
-        end
         if (cfg.en_cov) begin
           bit pins_quiescent = (&cfg.m_spi_agent_cfg.vif.csb === 1'b1);
           cov.error_status_cg.sample(spi_error_status_reg, spi_error_enable_reg);
@@ -1287,17 +1293,16 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_status_reg.rx_qd       = get_field_val(ral.status.rxqd, value);
         spi_status_reg.tx_qd       = get_field_val(ral.status.txqd, value);
         if (cfg.en_scb && !is_sw_rst_active() && (cfg.clk_rst_vif.rst_n === 1'b1)) begin
+          longint unsigned clk_ps = u64_t'(cfg.clk_rst_vif.clk_period_ps);
           bit single_access      = (csr_utils_pkg::outstanding_accesses <= 1);
-          bit in_rst_exit_window = (($realtime() - last_rst_exit_time) <=
-                                    (6 * cfg.clk_rst_vif.clk_period_ps));
-          bit scb_quiescent      = single_access && (staged_cmd_q.size() == 0) &&
+          bit in_rst_exit_window = ((($realtime() - last_rst_exit_time) / 1ps) <=
+                                    (64'd6 * clk_ps));
+          bit no_inflight_seg    = single_access &&
                                    (write_segment_q.size() == 0) &&
                                    (in_tx_seg_cnt == checked_tx_seg_cnt) &&
                                    (exp_rx_pending_seg_cnt == 0);
-          bit quiescent          = single_access && !spi_status_reg.active &&
-                                   (write_segment_q.size() == 0) &&
-                                   (in_tx_seg_cnt == checked_tx_seg_cnt) &&
-                                   (exp_rx_pending_seg_cnt == 0);
+          bit scb_quiescent      = no_inflight_seg && (staged_cmd_q.size() == 0);
+          bit quiescent          = no_inflight_seg && !spi_status_reg.active;
           // 1. Atomic flag-vs-depth and parameter invariants across every STATUS read (Comments #9, #12)
           if (spi_status_reg.byteorder !== SPI_HOST_BYTEORDER) begin
             `uvm_error(`gfn, $sformatf("STATUS.BYTEORDER mismatch: actual=%0b exp=%0b",
@@ -1336,7 +1341,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
             `uvm_error(`gfn, $sformatf("STATUS.READY (%0b) inconsistent with CMDQD (%0d)",
                                        spi_status_reg.ready, spi_status_reg.cmd_qd))
           end
-          if (single_access) begin
+          // u_status_{tx,rx}wm.q registers the comparison 1 core clock after u_control_*_watermark.q;
+          // allow a 4-clock pipeline window when concurrent sequences poll STATUS during CONTROL writes.
+          if (single_access && (((($realtime() - last_wm_wr_time) / 1ps)) > (64'd4 * clk_ps))) begin
             if (spi_status_reg.tx_wm !== (spi_status_reg.tx_qd < spi_ctrl_reg.tx_watermark)) begin
               `uvm_error(`gfn, $sformatf("STATUS.TXWM (%0b) mismatch for TXQD=%0d, TX_WATERMARK=%0d",
                                          spi_status_reg.tx_wm, spi_status_reg.tx_qd,
@@ -1348,19 +1355,50 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
                                          spi_ctrl_reg.rx_watermark))
             end
           end
-          if (scb_quiescent && spi_ctrl_reg.spien && (sw_error_bits == 6'b0) &&
-              (&cfg.m_spi_agent_cfg.vif.csb === 1'b1) && !prev_cmd_csaat &&
-              (wait_idle_ref_time > 0) &&
+          // Stuck-STATUS.ACTIVE backstop across all 4 idle regimes (post-reset / idle-halted,
+          // post-frame WaitIdle, parked IdleCSBActive, and post-OUTPUT_EN=0 internal execution)
+          if (no_inflight_seg && !in_rst_exit_window &&
               (cfg.force_spi_fsm_vif == null || cfg.force_spi_fsm_vif.fast_mode == 0)) begin
             int unsigned idle_cs = (prev_cmd_csid < SPI_HOST_NUM_CS) ? prev_cmd_csid : 0;
-            longint unsigned wait_idle_bound_ps =
-              longint'(active_cs_configopts[idle_cs].csnidle + 3) *
-              longint'(active_cs_configopts[idle_cs].clkdiv + 1) *
-              longint'(cfg.clk_rst_vif.clk_period_ps) +
-              longint'(24 * cfg.clk_rst_vif.clk_period_ps);
-            if ((($realtime() - wait_idle_ref_time) / 1ps) > wait_idle_bound_ps &&
-                spi_status_reg.active) begin
-              `uvm_error(`gfn, "STATUS.ACTIVE remained stuck high past quiescent WaitIdle bound")
+            bit exp_idle_now = 1'b0;
+            string idle_regime = "";
+
+            if ((wait_idle_ref_time == 0) && (last_csaat_seg_done_time == 0) &&
+                (internal_exec_ref_time == 0) && (&cfg.m_spi_agent_cfg.vif.csb === 1'b1) &&
+                !prev_cmd_csaat &&
+                ((staged_cmd_q.size() == 0) || !spi_ctrl_reg.spien || (sw_error_bits != 6'b0))) begin
+              // Regime 1 & 4: Post-reset idle or idle-halted before any frame executed
+              exp_idle_now = 1'b1;
+              idle_regime  = "post-reset/idle-halted";
+            end else if (scb_quiescent && spi_ctrl_reg.spien && (sw_error_bits == 6'b0)) begin
+              if ((&cfg.m_spi_agent_cfg.vif.csb === 1'b1) && !prev_cmd_csaat &&
+                  (wait_idle_ref_time > 0)) begin
+                longint unsigned wait_idle_bound_ps =
+                  (u64_t'(active_cs_configopts[idle_cs].csnidle) + 64'd3) *
+                  (u64_t'(active_cs_configopts[idle_cs].clkdiv) + 64'd1) * clk_ps +
+                  (64'd24 * clk_ps);
+                if ((($realtime() - wait_idle_ref_time) / 1ps) > wait_idle_bound_ps) begin
+                  exp_idle_now = 1'b1;
+                  idle_regime  = "quiescent WaitIdle";
+                end
+              end else if (prev_cmd_csaat && (last_csaat_seg_done_time > 0)) begin
+                longint unsigned csaat_idle_bound_ps =
+                  (64'd2 * (u64_t'(active_cs_configopts[idle_cs].clkdiv) + 64'd1) +
+                   64'd24) * clk_ps;
+                if ((($realtime() - last_csaat_seg_done_time) / 1ps) > csaat_idle_bound_ps) begin
+                  exp_idle_now = 1'b1;
+                  idle_regime  = "parked IdleCSBActive";
+                end
+              end else if ((internal_exec_ref_time > 0) &&
+                           ((($realtime() - internal_exec_ref_time) / 1ps) >
+                            internal_exec_bound_ps)) begin
+                exp_idle_now = 1'b1;
+                idle_regime  = "post-OUTPUT_EN=0 internal execution";
+              end
+            end
+            if (exp_idle_now && spi_status_reg.active) begin
+              `uvm_error(`gfn, $sformatf(
+                "STATUS.ACTIVE remained stuck high in %s idle regime", idle_regime))
             end
           end
 
@@ -1374,8 +1412,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
             // Allow 1-word transient within the u_merge -> u_rx_fifo -> u_status_rxqd.q + AXI R-channel
             // pipeline window immediately following CSB deassertion; enforce exact match once settled.
             bit          csb_settled = csb_all_hi &&
-                                       (($realtime() - prev_frame_csb_rise_time) >
-                                        (24 * cfg.clk_rst_vif.clk_period_ps));
+                                       (((($realtime() - prev_frame_csb_rise_time) / 1ps)) >
+                                        (64'd24 * clk_ps));
             if (spi_status_reg.txstall || spi_status_reg.rxstall) begin
               `uvm_error(`gfn, $sformatf(
                 "STATUS stall bit asserted while inactive & quiescent: txstall=%0b rxstall=%0b",
@@ -1439,9 +1477,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         sw_error_bits[5] = 1'b1;
       end
       if (exp_full) begin
-        if (!sw_error_bits[1]) sw_err_set_time[1] = $realtime();
         sw_error_bits[1] = 1'b1;
       end
+      predict_error_intr({!mask_ok, 3'b000, exp_full, 1'b0});
 
       if (mask_ok && !exp_full) begin
         tx_word_t w;
@@ -1449,7 +1487,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         foreach (bytes[i]) begin
           if (byte_en[i]) begin
             w.bytes.push_back(bytes[i]);
-            cur_tx_fifo_bytes++;
             `uvm_info(`gfn, $sformatf("Write to TXFIFO: 0x%0x", bytes[i]), UVM_DEBUG)
           end
         end
@@ -1474,8 +1511,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       if (exp_empty) begin
         // Expected underflow: RXDATA read on empty RX FIFO must return 0x0 and set underflow error.
         // Unverified zero-valued reads are flagged by check_unverified_underflows() (Comment #12).
-        if (!sw_error_bits[2]) sw_err_set_time[2] = $realtime();
         sw_error_bits[2] = 1'b1;
+        predict_error_intr(6'b000100);
         if (cfg.en_scb) unverified_underflow_cnt++;
         if (cfg.en_scb && (value[31:0] != 32'h0)) begin
           `uvm_error(`gfn, $sformatf(
@@ -1507,7 +1544,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     end
     prev_cmd_csaat            = 0;
     prev_cmd_csid             = 0;
-    exp_halted_cmd_qd         = 0;
     unverified_underflow_cnt  = 0;
     pending_invalid_cmd_q.delete();
     exp_rx_pending_seg_cnt    = 0;
@@ -1520,6 +1556,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     has_prev_frame_cfg        = 1'b0;
     prev_frame_csb_rise_time  = 0;
     wait_idle_ref_time        = 0;
+    last_csaat_seg_done_time  = 0;
+    internal_exec_ref_time    = 0;
+    internal_exec_bound_ps    = 0;
     last_sck_idle_switch_time = 0;
     saw_sck_idle_switch       = 1'b0;
     if (kind == "HARD") begin
@@ -1527,12 +1566,13 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       void'(ral.intr_state.predict(.value(2'b00), .kind(UVM_PREDICT_DIRECT)));
       spi_ctrl_reg         = '{default: '0};
       spi_ctrl_reg.rx_watermark = 8'h7f;
-      spi_error_enable_reg = '{default: '0};
+      last_wm_wr_time      = 0;
+      // RTL resets all 5 ERROR_ENABLE fields to 1'b1 (5'h1F)
+      spi_error_enable_reg = '{default: 1'b1};
       spi_event_enable_reg = '{default: '0};
       spi_intr_enable_reg  = '{default: '0};
       spi_intr_test_reg    = '{default: '0};
       sw_error_bits        = 6'b0;
-      sw_err_set_time      = '{default: 0};
       spi_configopts       = '{default: '0};
       for (int i = 0; i < SPI_HOST_NUM_CS; i++) begin
         spi_configopts_per_cs[i] = '{default: '0};
@@ -1557,7 +1597,6 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     in_tx_seg_cnt = checked_tx_seg_cnt;
     in_rx_seq_cnt = checked_rx_seq_cnt;
     cur_trans_segments = 0;
-    cur_tx_fifo_bytes = 0;
   endfunction : reset
 
   function void check_phase(uvm_phase phase);

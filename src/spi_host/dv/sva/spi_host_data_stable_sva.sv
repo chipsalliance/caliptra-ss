@@ -9,7 +9,7 @@ import uvm_pkg::*;
 `endif
 
 // Verifies SPI host launch/sample stability using the FSM's accepted-command
-// configuration (fsm_cpol_i, fsm_cpha_i, fsm_full_cyc_i) rather than live CSR
+// configuration (fsm_cpol_i, fsm_cpha_i) rather than live CSR
 // reg2hw.configopts, so pipelined mid-command single-bit CPOL/CPHA updates for
 // queued descriptors never corrupt active-command sample-edge selection.
 //
@@ -34,7 +34,6 @@ module spi_host_data_stable_sva #(
   input logic [3:0]                                               cio_sd_en_o,
   input logic                                                     fsm_cpol_i,
   input logic                                                     fsm_cpha_i,
-  input logic                                                     fsm_full_cyc_i,
   input logic [1:0]                                               fsm_cmd_speed_d_i,
   input logic                                                     fsm_cmd_rd_en_d_i,
   input logic                                                     fsm_cmd_wr_en_d_i,

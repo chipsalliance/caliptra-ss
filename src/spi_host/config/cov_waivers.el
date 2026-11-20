@@ -13,19 +13,23 @@
 //   [SW-CONTRACT-UNR]  Defensive RTL arms guarded by firmware contracts & assertions (documented below,
 //                      intentionally kept UNWAIVED in raw code coverage per Comment #7).
 //
-// Additional documented structural UNR notes in spi_host_axi wrapper (unwaived in raw score):
-//   - spi_host.sv:122 (`assign unused_pt_en = passthrough_i.passthrough_en;` in gen_passthrough_ignore):
-//     [TARGET-CFG] For NumCS=2, PassthroughNumCSCompat_Bound_A (bound in spi_host_bind.sv with active
-//     !rst_ni reset disable) requires !passthrough_i.passthrough_en on every active clock edge;
-//     sub-cycle coverage pulses were removed per Comment #22.
-//   - spi_host_fsm.sv:423,629 & spi_host_shift_register.sv:59,64 (`speed_i == RsvdSpd (2'b11)`):
-//     [SW-CONTRACT-UNR] Unreachable under confirmed Option A firmware contract requiring CONTROL.SW_RST
-//     queue flush before clearing ERROR_STATUS.CMDINVAL (guarded by ValidSpeed_Bound_A); kept unwaived.
-//   - sub2tlul.sv:91,94 (cur_txn direct valid_get_txn <-> valid_put_txn FSM transitions):
-//     [DESIGN-UNR] pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), forcing cur_txn back to
-//     no_txn upon AccessAck/AccessAckData before a new request can assert tl_o.a_valid.
-//   - axi_addr.v:180 (`2'b11` 8-byte beat alignment arm):
-//     [TARGET-CFG] spi_host_axi fixes AxiDw=32 (DSZ=2, max legal AXI4 AxSIZE=3'b010 = 4 bytes).
+// Summary of structural UNR categories in spi_host_axi wrapper:
+//   - Waived [TARGET-CFG] / [DESIGN-UNR] entries below:
+//     * spi_host.sv:122 (`passthrough_i.passthrough_en` in gen_passthrough_ignore):
+//       [TARGET-CFG] For NumCS=2, PassthroughNumCSCompat_Bound_A (bound in spi_host_bind.sv with
+//       active !rst_ni reset disable) requires !passthrough_i.passthrough_en on every active clock
+//       edge; sub-cycle coverage pulses were removed per Comment #22.
+//     * sub2tlul.sv:91,94 (cur_txn direct valid_get_txn <-> valid_put_txn FSM transitions):
+//       [DESIGN-UNR] pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), forcing cur_txn back to
+//       no_txn upon AccessAck/AccessAckData before a new request can assert tl_o.a_valid.
+//     * axi_addr.v:180 (`2'b11` 8-byte beat alignment arm):
+//       [TARGET-CFG] spi_host_axi fixes AxiDw=32 (DSZ=2, max legal AXI4 AxSIZE=3'b010 = 4 bytes).
+//   - Intentionally UNWAIVED entries:
+//     * spi_host_fsm.sv:423,629 & spi_host_shift_register.sv:59,64 (`speed_i == RsvdSpd (2'b11)`):
+//       [SW-CONTRACT-UNR] Unreachable under confirmed Option A firmware contract requiring
+//       CONTROL.SW_RST queue flush before clearing ERROR_STATUS.CMDINVAL (guarded by
+//       ValidSpeed_Bound_A); kept unwaived.
+//     * All SVA assertions (including the 5 unhit AXI_SUB_*_HSHAKE_ERR valid-drop assertions).
 //==================================================
 
 //==================================================

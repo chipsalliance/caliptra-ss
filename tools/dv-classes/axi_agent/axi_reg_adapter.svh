@@ -31,9 +31,13 @@ endfunction
 function uvm_sequence_item axi_reg_adapter::reg2bus(const ref uvm_reg_bus_op rw);
   axi_reg_op_item bus_item = axi_reg_op_item::type_id::create("bus_item");
   uvm_reg_item    reg_item = get_item();
-  uvm_reg         cur_reg  = (reg_item != null && $cast(cur_reg, reg_item.element)) ? cur_reg : null;
+  uvm_reg         cur_reg  = null;
   axi_reg_op_item ext_item;
   bit             is_target_reg = 1'b0;
+
+  if (reg_item != null && !$cast(cur_reg, reg_item.element)) begin
+    cur_reg = null;
+  end
 
   // Take a copy of the uvm_reg_bus_op (which will be a deep copy because uvm_reg_bus_op is a
   // struct)

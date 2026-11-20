@@ -30,7 +30,6 @@ module spi_host_bind;
     .cio_sd_en_o,
     .fsm_cpol_i        (u_spi_core.u_fsm.cpol_q),
     .fsm_cpha_i        (u_spi_core.u_fsm.cpha_q),
-    .fsm_full_cyc_i    (u_spi_core.u_fsm.full_cyc_q),
     .fsm_cmd_speed_d_i (u_spi_core.u_fsm.cmd_speed_d),
     .fsm_cmd_rd_en_d_i (u_spi_core.u_fsm.cmd_rd_en_d),
     .fsm_cmd_wr_en_d_i (u_spi_core.u_fsm.cmd_wr_en_d),

@@ -34,10 +34,6 @@
   sim_tops: ["tb"]
 
   build_opts: [
-    "-cc /usr/bin/gcc",
-    "-ld /usr/bin/g++",
-    "-LDFLAGS -B/usr/bin",
-    "-CFLAGS -B/usr/bin",
     "+define+CLP_ASSERT_ON",
     "+define+INC_ASSERT",
     "+incdir+{proj_root}/third_party/caliptra-rtl/src/caliptra_prim/rtl",
@@ -211,14 +207,6 @@
     {
       name: cover_reg_top_vcs_cov_cfg_file
       value: "-cm_hier {self_dir}/../config/cov_hier.cfg"
-    },
-    {
-      name: vcs_build_opt_debug_region
-      value: "-debug_access+all"
-    },
-    {
-      name: vcs_build_opt_debug_access
-      value: "-debug_access+all"
     }
   ]
 }

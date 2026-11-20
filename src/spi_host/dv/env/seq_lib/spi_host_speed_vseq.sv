@@ -142,19 +142,29 @@ class spi_host_speed_vseq extends spi_host_smoke_vseq;
   endtask
 
   // Drives an identical delayed-MISO waveform where MISO holds early_byte (0x5A) through the
-  // nominal half-cycle posedge SCK, then transitions 2 core clocks later (mid-high-phase at
-  // clkdiv=4) to late_byte (0xA5) before the full-cycle negedge SCK:
+  // nominal half-cycle leading SCK edge (posedge for CPOL=0, negedge for CPOL=1), then transitions
+  // 2 core clocks later (mid-active-phase at clkdiv=4) to late_byte (0xA5) before the full-cycle
+  // trailing SCK edge (negedge for CPOL=0, posedge for CPOL=1):
   //   - FULLCYC = 0 must capture 0x5A (nominal half-cycle sample_en_q)
   //   - FULLCYC = 1 must capture 0xA5 (full-cycle sample_en_q2)
+  //   - Sweeps CS0/CS1 and CPOL=0/1 (with CPHA=0 per confirmed Option A contract)
   //   - Negative controls prove both DUT ignoring FULLCYC and scoreboard ignoring FULLCYC fail.
-  virtual task drive_delayed_miso_byte(int cs_idx, bit [7:0] early_b, bit [7:0] late_b);
+  virtual task drive_delayed_miso_byte(int cs_idx, bit [7:0] early_b, bit [7:0] late_b,
+                                       bit cpol = 1'b0);
     @(negedge cfg.m_spi_agent_cfg.vif.csb[cs_idx]);
     cfg.m_spi_agent_cfg.vif.sio_out[1] <= early_b[7];
     for (int b = 7; b >= 0; b--) begin
-      @(posedge cfg.m_spi_agent_cfg.vif.sck);
-      cfg.clk_rst_vif.wait_clks(2);
-      cfg.m_spi_agent_cfg.vif.sio_out[1] <= late_b[b];
-      @(negedge cfg.m_spi_agent_cfg.vif.sck);
+      if (cpol == 1'b0) begin
+        @(posedge cfg.m_spi_agent_cfg.vif.sck);
+        cfg.clk_rst_vif.wait_clks(2);
+        cfg.m_spi_agent_cfg.vif.sio_out[1] <= late_b[b];
+        @(negedge cfg.m_spi_agent_cfg.vif.sck);
+      end else begin
+        @(negedge cfg.m_spi_agent_cfg.vif.sck);
+        cfg.clk_rst_vif.wait_clks(2);
+        cfg.m_spi_agent_cfg.vif.sio_out[1] <= late_b[b];
+        @(posedge cfg.m_spi_agent_cfg.vif.sck);
+      end
       cfg.m_spi_agent_cfg.vif.sio_out[1] <= (b > 0) ? early_b[b - 1] : 1'bz;
     end
     cfg.m_spi_agent_cfg.vif.sio_out <= 4'bzzzz;
@@ -172,36 +182,39 @@ class spi_host_speed_vseq extends spi_host_smoke_vseq;
     cfg.m_spi_agent_cfg.vif.set_flash_model_en(1'b0);
 
     for (int cs = 0; cs < SPI_HOST_NUM_CS; cs++) begin
-      for (int fc = 0; fc <= 1; fc++) begin
-        bit [31:0] cfg_w = {1'b0, 1'b0, bit'(fc), 1'b0, 4'd0, 4'd1, 4'd1, 16'd4};
-        bit [7:0]  exp_b = fc ? LATE_MISO : EARLY_MISO;
-        prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+      for (int cpol = 0; cpol <= 1; cpol++) begin
+        for (int fc = 0; fc <= 1; fc++) begin
+          bit [31:0] cfg_w = {bit'(cpol), 1'b0, bit'(fc), 1'b0, 4'd0, 4'd1, 4'd1, 16'd4};
+          bit [7:0]  exp_b = fc ? LATE_MISO : EARLY_MISO;
+          prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
 
-        csr_wr(.ptr(ral.csid), .value(cs));
-        if (cs == 1) csr_wr(.ptr(ral.configopts_1), .value(cfg_w));
-        else         csr_wr(.ptr(ral.configopts),   .value(cfg_w));
+          csr_wr(.ptr(ral.csid), .value(cs));
+          if (cs == 1) csr_wr(.ptr(ral.configopts_1), .value(cfg_w));
+          else         csr_wr(.ptr(ral.configopts),   .value(cfg_w));
 
-        write_txdata(32'h0000_003C, 4'b0001, status);
-        wait_ready_for_command();
-        cmd.direction = Bidir;
-        cmd.mode      = Standard;
-        cmd.csaat     = 1'b0;
-        cmd.len       = 9'd0;
-        fork
-          drive_delayed_miso_byte(cs, EARLY_MISO, LATE_MISO);
-          begin
-            program_command_reg(cmd);
-            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+          write_txdata(32'h0000_003C, 4'b0001, status);
+          wait_ready_for_command();
+          cmd.direction = Bidir;
+          cmd.mode      = Standard;
+          cmd.csaat     = 1'b0;
+          cmd.len       = 9'd0;
+          fork
+            drive_delayed_miso_byte(cs, EARLY_MISO, LATE_MISO, bit'(cpol));
+            begin
+              program_command_reg(cmd);
+              csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+            end
+          join
+          csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+          ral.rxdata.read(status, 0, rdata);
+          `DV_CHECK_EQ(rdata[7:0], exp_b,
+                       $sformatf("Delayed-MISO capture mismatch on CS%0d for CPOL=%0d FULLCYC=%0d",
+                                 cs, cpol, fc))
+          cfg.clk_rst_vif.wait_clks(10);
+          if (cfg.en_scb) begin
+            `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                         "Expected scoreboard RX check on delayed-MISO FULLCYC transfer")
           end
-        join
-        csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
-        ral.rxdata.read(status, 0, rdata);
-        `DV_CHECK_EQ(rdata[7:0], exp_b,
-                     $sformatf("Delayed-MISO capture mismatch on CS%0d for FULLCYC=%0d", cs, fc))
-        cfg.clk_rst_vif.wait_clks(10);
-        if (cfg.en_scb) begin
-          `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
-                       "Expected scoreboard RX check on delayed-MISO FULLCYC transfer")
         end
       end
     end
