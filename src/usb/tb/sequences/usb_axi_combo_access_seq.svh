@@ -18,6 +18,14 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
   typedef enum {COMBO_OKAY, COMBO_ERROR, COMBO_OBSERVE} response_expectation_e;
   typedef enum {COMBO_FIXED, COMBO_INCR, COMBO_WRAP} combo_burst_e;
 
+  // DEV1 response holds stay below the Axi4PC 16-cycle MAX_WAIT recommendation.
+  localparam int unsigned DEV1_STALL = 15;
+  localparam int unsigned TRANSITION_STEPS = 8;
+  localparam int unsigned TRANSITION_UNMAPPED = 3;
+  // 256 DWORDs from here end at 0x7FF: inside the 0x40-0x7FF Combo hole and one 4 KiB page.
+  localparam logic [31:0] LONG_HOLE_OFFSET = 32'h400;
+  localparam int unsigned AXI_MAX_INCR_BEATS = 256;
+
   protected logic [31:0] offsets[3];
   protected logic [31:0] masks[3] = '{USB_DEV0_ROUTE_MASK, '1, '1};
   protected string region_names[3] = '{"DEV0-CSR", "OCP-Recovery", "Hub"};
@@ -26,17 +34,20 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
   protected logic [31:0] hub_high_offset;
   protected int unsigned checked_words, positive_pairs;
   protected int unsigned expected_errors, error_recoveries, write_probes;
+  protected int unsigned dev1_requests, transition_requests;
 
   function new(string name = "usb_axi_combo_access_seq");
     super.new(name);
   endfunction
 
+  // Build a request on the current bridge with any size, length, and burst type.
+  // Write beats after the first get random data.
   protected function aaxi_master_tr make_request(string label, logic [31:0] offset, bit is_write, logic [31:0] first_word = '0, int unsigned beats = 1, int unsigned size = 2, combo_burst_e burst = COMBO_INCR);
     aaxi_master_tr request;
     logic [31:0] data;
 
-    // Select the Combo manager without applying the DEV0-CSR-only address guard.
-    request = create_transaction(USB_DEV0_CSR, offset, is_write, first_word, authorized_user);
+    // Select the current bridge's manager without applying the per-target address guard.
+    request = create_transaction(bridge_target, offset, is_write, first_word, authorized_user);
     request.set_name(label);
     request.len = beats - 1;
     request.size = size;
@@ -61,6 +72,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     return request;
   endfunction
 
+  // Check every response beat: OKAY, an error (SLVERR/DECERR), or just log it.
   protected function bit check_response(aaxi_master_tr request, response_expectation_e expected = COMBO_OKAY);
     logic [1:0] response;
     bit is_write = request.kind == AAXI_WRITE;
@@ -86,6 +98,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     return 1'b1;
   endfunction
 
+  // Build an INCR request that covers the same DWORDs as the given burst.
   protected function aaxi_master_tr linear_footprint(aaxi_master_tr request, bit is_write);
     uvm_reg_addr_t first;
     int unsigned words;
@@ -94,6 +107,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     return make_request({request.get_name(), "-linear"}, 32'(first), is_write, is_write ? $urandom() : '0, words);
   endfunction
 
+  // Check each read beat against the last write beat that hit the same address.
   protected function void compare_read(aaxi_master_tr actual, aaxi_master_tr written, logic [31:0] mask = '1);
     logic [31:0] expected_word, actual_word;
     uvm_reg_addr_t address;
@@ -124,22 +138,51 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     end
   endfunction
 
-  protected task write_read_word(int unsigned region, logic [31:0] value, output bit passed);
+  // Write one masked DWORD at an offset on the current bridge, then read it back and compare.
+  protected task write_read_offset(string label, logic [31:0] offset, logic [31:0] value, logic [31:0] mask, output bit passed);
     aaxi_master_tr written, readback;
 
     passed = 1'b0;
-    written = make_request(region_names[region], offsets[region], 1'b1, value & masks[region]);
+    written = make_request(label, offset, 1'b1, value & mask);
     issue_request(written);
     if (!check_response(written)) return;
-    readback = make_request(region_names[region], offsets[region], 1'b0);
+    readback = make_request(label, offset, 1'b0);
     issue_request(readback);
     if (!check_response(readback)) return;
-    compare_read(readback, written, masks[region]);
+    compare_read(readback, written, mask);
     positive_pairs++;
     passed = 1'b1;
-    `uvm_info("USB_COMBO_DATA", $sformatf("PASS %s AXI=0x%016h expected=0x%08h actual=0x%08h mask=0x%08h", region_names[region], readback.addr, data_word(written, 0), data_word(readback, 0), masks[region]), UVM_LOW)
+    `uvm_info("USB_COMBO_DATA", $sformatf("PASS %s AXI=0x%016h expected=0x%08h actual=0x%08h mask=0x%08h", label, readback.addr, data_word(written, 0), data_word(readback, 0), mask), UVM_LOW)
   endtask
 
+  // Single-DWORD write/read of one Combo region's test register.
+  protected task write_read_word(int unsigned region, logic [31:0] value, output bit passed);
+    write_read_offset(region_names[region], offsets[region], value, masks[region], passed);
+  endtask
+
+  // Check every beat of a read that lands on offset against the expected masked value.
+  protected function void check_word_at(aaxi_master_tr request, logic [31:0] offset, logic [31:0] expected, logic [31:0] mask);
+    uvm_reg_addr_t address = base_address + offset;
+    logic [31:0] actual;
+    int unsigned hits = 0;
+
+    if (request.data.size() != 4 * (int'(request.len) + 1)) begin
+      `uvm_fatal("USB_COMBO_DATA", $sformatf("%s: returned %0d bytes for %0d beats", request.get_name(), request.data.size(), int'(request.len) + 1))
+    end
+    for (int unsigned beat = 0; beat <= int'(request.len); beat++) begin
+      if (beat_address(request, beat) != address) continue;
+      actual = data_word(request, beat) & mask;
+      if (actual !== (expected & mask)) begin
+        `uvm_fatal("USB_COMBO_DATA", $sformatf("%s AXI=0x%016h BURST=%0h beat=%0d expected=0x%08h actual=0x%08h mask=0x%08h", request.get_name(), address, request.burst, beat, expected & mask, actual, mask))
+      end
+      hits++;
+      checked_words++;
+    end
+    if (hits == 0) `uvm_fatal("USB_COMBO_DATA", $sformatf("%s: no beat reached AXI=0x%016h", request.get_name(), address))
+  endfunction
+
+  // Write a burst, read it back with the same burst, and compare. WRAP bursts also
+  // get a linear readback.
   protected task write_read_burst(string label, logic [31:0] offset, int unsigned beats, combo_burst_e burst);
     aaxi_master_tr written, readback;
 
@@ -160,6 +203,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_COMBO_BURST", $sformatf("PASS %s %s offset=0x%08h beats=%0d", label, burst.name(), offset, beats), UVM_LOW)
   endtask
 
+  // Run FIXED and WRAP bursts of several lengths, then the long INCR cases.
   protected task run_burst_cases();
     int unsigned fixed_lengths[3] = '{1, 2, 16};
     int unsigned wrap_lengths[4] = '{2, 4, 8, 16};
@@ -170,8 +214,48 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     foreach (wrap_lengths[index]) begin
       write_read_burst($sformatf("WRAP-%0d", wrap_lengths[index]), hub_high_offset + 4 * (wrap_lengths[index] - 1), wrap_lengths[index], COMBO_WRAP);
     end
+    run_long_incr_cases();
   endtask
 
+  // INCR bursts longer than 16 beats: all of Hub DESCRIPTOR_HIGH (data-checked), then
+  // AxLEN=255 read and write in the unmapped hole (every R beat and the B must be an error).
+  protected task run_long_incr_cases();
+    int unsigned hub_beats = int'(p_sequencer.reg_model.combo.hub.DESCRIPTOR_HIGH.m_mem.get_size());
+    aaxi_master_tr request;
+    int unsigned nonzero_words;
+    bit negative_ok = 1'b1;
+    bit request_ok, positive_ok;
+
+    if (hub_beats < 17 || hub_beats > AXI_MAX_INCR_BEATS || (hub_high_offset % 4096) + 4 * hub_beats > 4096) begin
+      `uvm_fatal("USB_COMBO_BURST", $sformatf("Hub DESCRIPTOR_HIGH (%0d DWORDs at 0x%08h) is not a legal >16-beat INCR footprint", hub_beats, hub_high_offset))
+    end
+    write_read_burst($sformatf("Hub-INCR-%0d", hub_beats), hub_high_offset, hub_beats, COMBO_INCR);
+
+    for (int unsigned direction = 0; direction < 2; direction++) begin
+      string direction_name;
+
+      if (direction == 1) direction_name = "write";
+      else direction_name = "read";
+      request = make_request($sformatf("unmapped-INCR-%0d-%s", AXI_MAX_INCR_BEATS, direction_name), LONG_HOLE_OFFSET, direction == 1, $urandom(), AXI_MAX_INCR_BEATS);
+      issue_request(request);
+      request_ok = check_response(request, COMBO_ERROR);
+      if (!request_ok) negative_ok = 1'b0;
+      if (direction == 0) begin
+        // AXI defines no read data for error beats; record what came back.
+        nonzero_words = 0;
+        for (int unsigned beat = 0; beat <= int'(request.len); beat++) begin
+          if (data_word(request, beat) !== '0) nonzero_words++;
+        end
+        `uvm_info("USB_COMBO_OBSERVE", $sformatf("%s AXI=0x%016h non-OKAY beat payload: %0d/%0d nonzero DWORDs", request.get_name(), request.addr, nonzero_words, AXI_MAX_INCR_BEATS), UVM_LOW)
+      end
+      `uvm_info("USB_COMBO_DECODE", $sformatf("%s AXI=0x%016h beats=%0d expected_SLVERR_or_DECERR=%0b", request.get_name(), request.addr, AXI_MAX_INCR_BEATS, request_ok), UVM_LOW)
+    end
+    write_read_word(0, $urandom(), positive_ok);
+    if (negative_ok && positive_ok) error_recoveries++;
+  endtask
+
+  // Read and write unmapped Combo offsets and expect errors. After each one, check
+  // that a normal access still works.
   protected task run_unmapped_cases();
     logic [31:0] holes[4] = '{32'h40, 32'h7fc, hub_end, combo_bytes - 4};
     aaxi_master_tr request;
@@ -190,6 +274,72 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     end
   endtask
 
+  // Back-to-back same-ID single-beat reads, then writes, that walk the Combo map in a fixed
+  // order: DEV0-CSR, Recovery, Hub, Recovery, Unmapped, DEV0-CSR, Recovery, DEV0-CSR.
+  // Same-ID requests complete in order (AXI A6.5), so the last write to each register wins.
+  protected task run_region_transitions();
+    int unsigned order[TRANSITION_STEPS] = '{0, 1, 2, 1, TRANSITION_UNMAPPED, 0, 1, 0};
+    logic [31:0] step_offsets[TRANSITION_STEPS];
+    logic [31:0] step_data[TRANSITION_STEPS];
+    logic [31:0] expected[3];
+    aaxi_master_tr requests[TRANSITION_STEPS], readback;
+    uvm_reg_addr_t history[$];
+    string tag = {tag_prefix, "_TRANSITION"};
+    bit is_write, seeded;
+
+    foreach (order[step]) step_offsets[step] = order[step] == TRANSITION_UNMAPPED ? 32'h40 : offsets[order[step]];
+    foreach (offsets[region]) begin
+      expected[region] = $urandom() & masks[region];
+      write_read_word(region, expected[region], seeded);
+      if (!seeded) `uvm_fatal(tag, $sformatf("%s seed write/read failed", region_names[region]))
+    end
+    for (int unsigned pass = 0; pass < 2; pass++) begin
+      is_write = pass == 1;
+      foreach (requests[step]) begin
+        step_data[step] = $urandom();
+        if (is_write && order[step] != TRANSITION_UNMAPPED) begin
+          step_data[step] &= masks[order[step]];
+          expected[order[step]] = step_data[step];
+        end
+        requests[step] = make_request($sformatf("transition-%s-%0d", is_write ? "write" : "read", step), step_offsets[step], is_write, step_data[step]);
+      end
+      start_inflight_tracker(is_write ? "combo_transition_writes" : "combo_transition_reads", 0);
+      // Queue every request at once with no response stalls so AHB address phases chain.
+      foreach (requests[step]) begin
+        automatic int slot = step;
+        fork
+          issue_request(requests[slot], 0, inflight_timeout);
+        join_none
+      end
+      wait fork;
+      stop_inflight_tracker(tag);
+      transition_requests += TRANSITION_STEPS;
+      history = is_write ? inflight_tracker.write_history : inflight_tracker.read_history;
+      if (history.size() != TRANSITION_STEPS) begin
+        `uvm_fatal(tag, $sformatf("%0d/%0d %s addresses accepted", history.size(), TRANSITION_STEPS, is_write ? "write" : "read"))
+      end
+      foreach (requests[step]) begin
+        if (history[step] != requests[step].addr) begin
+          `uvm_fatal(tag, $sformatf("TB issue order differs at step %0d: expected AXI=0x%016h accepted=0x%016h", step, requests[step].addr, history[step]))
+        end
+      end
+      foreach (requests[step]) begin
+        if (order[step] == TRANSITION_UNMAPPED) void'(check_response(requests[step], COMBO_ERROR));
+        else if (check_response(requests[step]) && !is_write) begin
+          check_word_at(requests[step], step_offsets[step], expected[order[step]], masks[order[step]]);
+        end
+      end
+      `uvm_info(tag, $sformatf("%s pass: %0d back-to-back requests accepted in order %p", is_write ? "Write" : "Read", TRANSITION_STEPS, order), UVM_LOW)
+    end
+    foreach (offsets[region]) begin
+      readback = make_request($sformatf("%s-after-transitions", region_names[region]), offsets[region], 1'b0);
+      issue_request(readback);
+      if (check_response(readback)) check_word_at(readback, offsets[region], expected[region], masks[region]);
+    end
+  endtask
+
+  // Check that reads crossing into unmapped space get an error there. Log, without
+  // checking, an outside-window read and byte/halfword accesses.
   protected task run_observations();
     logic [31:0] edges[2] = '{32'h40, hub_end};
     aaxi_master_tr request;
@@ -282,6 +432,8 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     end
   endtask
 
+  // Send 2-10 random reads and writes at once with random bursts. Check that reads
+  // and writes overlapped, then check all responses and data.
   protected task run_random_accesses();
     aaxi_master_tr requests[], seeds[], readback;
     bit is_write[], seeded[];
@@ -377,12 +529,14 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_COMBO_RANDOM", $sformatf("%s requests=%0d, accepted read/write overlap verified, peak reads/writes=%0d/%0d; all requests completed", passed ? "PASS" : "FAIL response checks", request_count, max_reads, max_writes), UVM_LOW)
   endtask
 
+  // Send 6 writes and 4 reads with slow responses so the bridge queues fill. Check
+  // errors on the unmapped ones, same-ID order, and data.
   protected task run_backpressure();
     aaxi_master_tr requests[10], seeds[10], readback;
     bit seeded[10];
     aaxi_sequencer manager;
     usb_axi_inflight_callbacks tracker;
-    int unsigned ids[6] = '{2, 3, 2, 4, 3, 2};
+    aaxi_id_t ids[6];
     // The first write's long BREADY hold backs up the write responses so every bridge FIFO fills;
     // the other holds stay short to keep the batch fast.
     int unsigned read_stall = 32, write_stall = 16, first_write_stall = 512;
@@ -394,10 +548,11 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     if (p_sequencer.reg_model.combo.hub.DESCRIPTOR_HIGH.m_mem.get_size() < 160) begin
       `uvm_fatal("USB_COMBO_BACKPRESSURE", "Backpressure batch requires 160 contiguous Hub descriptor DWORDs")
     end
+    separated_id_pattern(ids);
     foreach (requests[index]) begin
       offset = index == 2 ? 32'h40 : index == 6 ? 32'h100 : hub_high_offset + 64 * index;
       requests[index] = make_request($sformatf("backpressure-%0d", index), offset, index < 6, $urandom(), 16);
-      requests[index].id = aaxi_id_t'(ids[index % 6]);
+      requests[index].id = ids[index % 6];
       if (index > 6) begin
         seeds[index] = make_request("Hub-read-seed", offset, 1'b1, $urandom(), 16);
         issue_request(seeds[index]);
@@ -455,6 +610,140 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_COMBO_BACKPRESSURE", $sformatf("%s: accepted/completed all 10 requests, read/write overlap and separated same-ID order verified; ARIDs=%p AWIDs=%p", passed ? "PASS" : "FAIL response checks", tracker.read_ids, tracker.write_ids), UVM_LOW)
   endtask
 
+  // Enable the DEV1 filter with every allowlist entry set to the test USER.
+  protected task configure_dev1_policy();
+    usb_dev1_filter_api_seq_t policy;
+
+    policy = usb_dev1_filter_api_seq_t::type_id::create("dev1_policy");
+    policy.op = USB_AXI_USER_FILTER_SET_POLICY;
+    policy.enable = 1'b1;
+    foreach (policy.priv_axi_users[index]) policy.priv_axi_users[index] = authorized_user.value;
+    policy.start(p_sequencer.dev1_filter_sequencer, this);
+  endtask
+
+  // Legal DWORD traffic on the DEV1 CSR bridge: singles, INCR/FIXED/WRAP bursts, and a
+  // concurrent multi-ID batch with short response holds. Only the RW INTEN/INTROUTE
+  // registers change; W1C INTSTAT and W1S INTSETSTAT are written with zero (no effect).
+  protected task run_dev1_csr_accesses();
+    usb_target_e saved_target = bridge_target;
+    string saved_name = bridge_name;
+    uvm_reg_addr_t saved_base = base_address;
+    int unsigned first_launched = launched;
+    // INTEN shares INTROUTE's EP/FRAME/DEV field layout (RAL).
+    logic [31:0] mask = USB_DEV1_ROUTE_MASK;
+    logic [31:0] inten, introute, intstat, intsetstat, offset, route_value, enable_value;
+    logic [31:0] words[], batch_offsets[6];
+    aaxi_master_tr request, readback, writes[6], reads[2];
+    aaxi_id_t ids[6];
+    int unsigned beats;
+    string tag = {tag_prefix, "_DEV1"};
+    bit passed;
+
+    bridge_target = USB_DEV1_CSR;
+    bridge_name = "DEV1 CSR";
+    base_address = map_for(USB_DEV1_CSR).get_base_addr(UVM_NO_HIER);
+    configure_dev1_policy();
+    intstat = csr_offset(USB_DEV1_CSR, "INTSTAT");
+    inten = csr_offset(USB_DEV1_CSR, "INTEN");
+    intsetstat = csr_offset(USB_DEV1_CSR, "INTSETSTAT");
+    introute = csr_offset(USB_DEV1_CSR, "INTROUTE");
+    beats = csr_offset(USB_DEV1_CSR, "EPTOGGLE") / 4 + 1;
+    if (intstat % 16 != 0 || inten != intstat + 4 || intsetstat != intstat + 8 || introute != intstat + 12) begin
+      `uvm_fatal(tag, "WRAP-4 window must hold INTSTAT, INTEN, INTSETSTAT, INTROUTE in order")
+    end
+
+    route_value = $urandom() & mask;
+    write_read_offset("DEV1-INTROUTE", introute, route_value, mask, passed);
+    enable_value = $urandom() & mask;
+    write_read_offset("DEV1-INTEN", inten, enable_value, mask, passed);
+
+    readback = make_request("DEV1-INCR-read", '0, 1'b0, '0, beats);
+    issue_request(readback);
+    if (check_response(readback)) begin
+      check_word_at(readback, introute, route_value, mask);
+      check_word_at(readback, inten, enable_value, mask);
+    end
+
+    // FIXED: the last write beat wins.
+    request = make_request("DEV1-FIXED-write", introute, 1'b1, $urandom(), 4, 2, COMBO_FIXED);
+    issue_request(request);
+    if (check_response(request)) begin
+      route_value = data_word(request, 3) & mask;
+      readback = make_request("DEV1-FIXED-read", introute, 1'b0, '0, 4, 2, COMBO_FIXED);
+      issue_request(readback);
+      if (check_response(readback)) compare_read(readback, request, mask);
+    end
+
+    // WRAP-4 from INTROUTE visits INTROUTE, INTSTAT, INTEN, INTSETSTAT.
+    route_value = $urandom() & mask;
+    enable_value = $urandom() & mask;
+    request = make_request("DEV1-WRAP-write", introute, 1'b1, '0, 4, 2, COMBO_WRAP);
+    words = new[4];
+    foreach (words[beat]) begin
+      offset = 32'(beat_address(request, beat) - base_address);
+      words[beat] = offset == introute ? route_value : offset == inten ? enable_value : '0;
+    end
+    set_write_words(request, words);
+    issue_request(request);
+    if (check_response(request)) begin
+      readback = make_request("DEV1-WRAP-read", introute, 1'b0, '0, 4, 2, COMBO_WRAP);
+      issue_request(readback);
+      if (check_response(readback)) begin
+        check_word_at(readback, introute, route_value, mask);
+        check_word_at(readback, inten, enable_value, mask);
+      end
+    end
+
+    // Six writes with IDs A,B,A,C,B,A, then two reads (B, A); every response is held
+    // DEV1_STALL cycles so the response FIFOs fill.
+    separated_id_pattern(ids);
+    route_value = $urandom() & mask;
+    enable_value = $urandom() & mask;
+    batch_offsets = '{introute, inten, intsetstat, intstat, intsetstat, intstat};
+    foreach (writes[index]) begin
+      writes[index] = make_request($sformatf("DEV1-batch-write-%0d", index), batch_offsets[index], 1'b1, index == 0 ? route_value : index == 1 ? enable_value : '0);
+      writes[index].id = ids[index];
+    end
+    foreach (reads[index]) begin
+      reads[index] = make_request($sformatf("DEV1-batch-read-%0d", index), '0, 1'b0, '0, beats);
+      reads[index].id = ids[index + 1];
+    end
+    start_inflight_tracker("dev1_csr_tracker", ($size(writes) + $size(reads) * beats) * DEV1_STALL);
+    foreach (writes[index]) begin
+      automatic int slot = index;
+      fork
+        issue_request(writes[slot], DEV1_STALL, inflight_timeout);
+      join_none
+    end
+    wait fork;
+    foreach (reads[index]) begin
+      automatic int slot = index;
+      fork
+        issue_request(reads[slot], DEV1_STALL, inflight_timeout, 0, 1'b0);
+      join_none
+    end
+    wait fork;
+    stop_inflight_tracker(tag);
+    if (inflight_tracker.accepted != $size(writes) + $size(reads)) begin
+      `uvm_fatal(tag, $sformatf("Accepted %0d/%0d batch requests", inflight_tracker.accepted, $size(writes) + $size(reads)))
+    end
+    foreach (writes[index]) void'(check_response(writes[index]));
+    foreach (reads[index]) begin
+      if (check_response(reads[index])) begin
+        check_word_at(reads[index], introute, route_value, mask);
+        check_word_at(reads[index], inten, enable_value, mask);
+      end
+    end
+    `uvm_info(tag, $sformatf("Batch AWIDs=%p ARIDs=%p separated same-ID writes=%0b", inflight_tracker.write_ids, inflight_tracker.read_ids, inflight_tracker.separated_write_id), UVM_LOW)
+
+    write_read_offset("DEV1-INTEN-restore", inten, '0, mask, passed);
+    write_read_offset("DEV1-INTROUTE-restore", introute, '0, mask, passed);
+    dev1_requests = launched - first_launched;
+    bridge_target = saved_target;
+    bridge_name = saved_name;
+    base_address = saved_base;
+  endtask
+
   // Enable Combo filtering with every allowlist entry set to the test USER.
   protected task configure_combo_policy();
     usb_combo_filter_api_seq_t policy;
@@ -488,10 +777,12 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     end
   endtask
 
+  // Put back the Combo filter policy the normal tests use.
   protected virtual task restore_policy();
     configure_combo_policy();
   endtask
 
+  // Add to the checked-word count.
   protected virtual function void count_checked(int unsigned words);
     checked_words += words;
   endfunction
@@ -525,6 +816,8 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     expected_errors = 0;
     error_recoveries = 0;
     write_probes = 0;
+    dev1_requests = 0;
+    transition_requests = 0;
     hazard_cases = 0;
     policy_cases = 0;
     reset_abandoned = 0;
@@ -533,6 +826,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     if (!std::randomize(axi_user)) `uvm_fatal("USB_COMBO_USER", "AXI USER randomization failed")
     
     authorized_user = usb_axi_user_override::with_value(axi_user);
+    randomize_manager_ids();
     configure_combo_policy();
     
     combo_map = map_for(USB_DEV0_CSR);
@@ -559,6 +853,9 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     run_random_accesses();
     
     run_unmapped_cases();
+
+    // Back-to-back requests that move the Combo decoder between regions, including Unmapped.
+    run_region_transitions();
     
     run_observations();
     
@@ -566,6 +863,9 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     run_write_observations();
     
     run_backpressure();
+
+    // Legal DWORD singles, bursts and a concurrent batch on the DEV1 CSR bridge.
+    run_dev1_csr_accesses();
 
     //Race reads and writes to the same Hub address and check AXI ordering rules
     run_same_address_hazards(hub_high_offset);
@@ -580,7 +880,7 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
     run_reset_with_outstanding(hub_high_offset, hub_high_offset + 'h40, hub_high_offset + 'h80);
     
     if (launched != finished + reset_abandoned) `uvm_fatal("USB_COMBO_RESPONSE", "Combo requests remain outstanding")
-    `uvm_info("USB_COMBO_SUMMARY", $sformatf("Completed %0d/%0d requests (items unreturned after reset=%0d), %0d checked DWORDs, %0d single-word write/read pairs, %0d expected SLVERR/DECERR responses, %0d SLVERR/DECERR-to-OKAY recoveries, %0d crossing/outside-window write probes, hazard_cases=%0d/6, policy_cases=%0d/4, mixed_user=%s (%0d/%0d), reset=%s; OOB/narrow/outside-window/after-reset contents are observations, not added USB guarantees", finished, launched, reset_abandoned, checked_words, positive_pairs, expected_errors, error_recoveries, write_probes, hazard_cases, policy_cases, mixed_passed ? "PASS" : "FAIL", mixed_requests, MIXED_SLOTS, reset_passed ? "PASS" : "FAIL"), UVM_LOW)
+    `uvm_info("USB_COMBO_SUMMARY", $sformatf("Completed %0d/%0d requests (items unreturned after reset=%0d), %0d checked DWORDs, %0d single-word write/read pairs, %0d expected SLVERR/DECERR responses, %0d SLVERR/DECERR-to-OKAY recoveries, %0d crossing/outside-window write probes, region-transition requests=%0d, DEV1 CSR requests=%0d, hazard_cases=%0d/6, policy_cases=%0d/4, mixed_user=%s (%0d/%0d), reset=%s; OOB/narrow/outside-window/after-reset contents are observations, not added USB guarantees", finished, launched, reset_abandoned, checked_words, positive_pairs, expected_errors, error_recoveries, write_probes, transition_requests, dev1_requests, hazard_cases, policy_cases, mixed_passed ? "PASS" : "FAIL", mixed_requests, MIXED_SLOTS, reset_passed ? "PASS" : "FAIL"), UVM_LOW)
     completed = 1'b1;
   endtask
 endclass

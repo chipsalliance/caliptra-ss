@@ -40,6 +40,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     super.new(name);
   endfunction
 
+  // Build a RAM test case that uses the target's default ID.
   protected function ram_case_t make_case(string label, ram_burst_e burst, uvm_reg_addr_t offset, int unsigned beats);
     ram_case_t c;
 
@@ -52,6 +53,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     return c;
   endfunction
 
+  // Convert the local burst type to the Avery burst type.
   protected function aaxi_burst_type axi_burst(ram_burst_e burst);
     case (burst)
       RAM_FIXED: return AAXI_BURST_FIXED;
@@ -60,10 +62,13 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     endcase
   endfunction
 
+  // RAM offset of one beat of a case.
   protected function uvm_reg_addr_t beat_offset(ram_case_t c, int unsigned beat);
     return burst_beat_address(axi_burst(c.burst), c.offset, c.beats, beat);
   endfunction
 
+  // Send a case as a read or write. Writes without data get random words that
+  // differ from what is already stored.
   protected task send_ram_request(inout ram_case_t c, input bit is_write, output aaxi_master_tr request, input int unsigned response_stall = 0, input time request_timeout = 0, input bit stall_each_read_beat = 0, input int unsigned write_data_delay = 0);
     int unsigned word;
 
@@ -95,6 +100,8 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     issue_request(request, response_stall, request_timeout, write_data_delay, stall_each_read_beat);
   endtask
 
+  // Check that a write returned OKAY and record its words as expected. On an error,
+  // mark those words unknown.
   protected function bit check_write(aaxi_master_tr request, ram_case_t c);
     if (request.resp !== AAXI_RESP_OKAY) begin
       `uvm_error("USB_DEV0_RAM_RESPONSE", $sformatf("%s %s write AXI=0x%016h USER=0x%0h SIZE=%0d beats=%0d expected_resp=%0h actual_resp=%0h", c.label, c.burst.name(), request.addr, request.awuser, request.size, c.beats, AAXI_RESP_OKAY, request.resp))
@@ -111,6 +118,8 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     return 1'b1;
   endfunction
 
+  // Check that a read returned OKAY on every beat and that its data matches the
+  // expected words.
   protected function bit check_read(aaxi_master_tr request, ram_case_t c);
     logic [31:0] actual;
     logic [31:0] expected;
@@ -153,6 +162,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     return passed;
   endfunction
 
+  // Build an INCR case that covers the same words as the given case.
   protected function ram_case_t footprint(ram_case_t c);
     uvm_reg_addr_t first;
     int unsigned words;
@@ -161,6 +171,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     return make_case({c.label, "-footprint"}, RAM_INCR, first, words);
   endfunction
 
+  // Write a case, read it back, and compare. WRAP cases also get a linear readback.
   protected task write_read_ram(ram_case_t c);
     ram_case_t span;
     aaxi_master_tr request;
@@ -179,6 +190,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_DEV0_RAM_CASE", $sformatf("PASS %s %s %s offset=0x%08h beats=%0d USER=0x%0h", usb_target_name(ram_target), c.label, c.burst.name(), c.offset, c.beats, authorized_user.value), UVM_LOW)
   endtask
 
+  // Enable both AXI filters with every allowlist entry set to the test USER.
   protected task configure_ram_policies();
     usb_combo_allowlist_t combo_users;
     usb_dev1_allowlist_t dev1_users;
@@ -188,6 +200,8 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     set_axi_user_filter_policies(1'b1, combo_users, 1'b1, dev1_users);
   endtask
 
+  // Single-DWORD writes and reads, with other accesses between a write and its
+  // readback.
   protected task run_single_beat_cases();
     ram_case_t c;
     ram_case_t earlier;
@@ -215,6 +229,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     if (passed) positive_cases++;
   endtask
 
+  // Write and read back FIXED, INCR, and WRAP bursts of several lengths.
   protected task run_burst_cases();
     int unsigned fixed_lengths[3] = '{1, 2, 16};
     int unsigned incr_lengths[5] = '{1, 2, 4, 16, 256};
@@ -231,6 +246,8 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     end
   endtask
 
+  // Send 1-16 random reads and writes at once with slow responses. Check that
+  // reads and writes overlapped, then check all data.
   protected task run_overlapping_accesses();
     ram_case_t cases[];
     ram_case_t span;
@@ -333,6 +350,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_DEV0_RAM_OVERLAP", $sformatf("%s %s requests=%0d response_stall=%0d cycles overlap=%0s max_reads=%0d max_writes=%0d; all requests completed", passed ? "PASS" : "FAIL", usb_target_name(ram_target), request_count, response_stall, read_write_overlap ? "verified" : "N/A (single request)", max_reads, max_writes), UVM_LOW)
   endtask
 
+  // Write and read back the first and last words of the RAM.
   protected task run_boundary_cases();
     write_read_ram(make_case("first-DWORD", RAM_INCR, 0, 1));
     write_read_ram(make_case("last-DWORD", RAM_INCR, ram_bytes - 4, 1));
@@ -341,13 +359,15 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     write_read_ram(make_case("last-WRAP", RAM_WRAP, ram_bytes - 4, 16));
   endtask
 
+  // Send 6 writes and 4 reads with slow responses so the bridge queues fill. Check
+  // same-ID order and data.
   protected task run_fifo_saturation();
     ram_case_t cases[10];
     aaxi_master_tr requests[10];
     aaxi_master_tr readback;
     aaxi_sequencer manager_sequencer;
     usb_axi_inflight_callbacks tracker;
-    int unsigned ids[6] = '{2, 3, 2, 4, 3, 2};
+    aaxi_id_t ids[6];
     // The first write's long BREADY hold backs up the write responses so every bridge FIFO fills;
     // the other holds stay short to keep the batch fast.
     int unsigned read_stall = 32;
@@ -357,9 +377,10 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     time request_timeout;
     bit passed = 1'b1;
 
+    separated_id_pattern(ids);
     foreach (cases[index]) begin
       cases[index] = make_case($sformatf("fifo-%0d", index), RAM_INCR, 'h6000 + 64 * index, 16);
-      cases[index].id = aaxi_id_t'(ids[index % 6]);
+      cases[index].id = ids[index % 6];
       `uvm_info("USB_DEV0_RAM_SATURATION", $sformatf("%s write=%0b RAM_INCR offset=0x%08h beats=16 ID=%0d", cases[index].label, index < 6, cases[index].offset, cases[index].id), UVM_LOW)
       if (index >= 6) begin
         send_ram_request(cases[index], 1'b1, requests[index]);
@@ -420,15 +441,19 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     set_axi_user_allowlists(combo_users, dev1_users);
   endtask
 
+  // Put back the filter policy the normal tests use.
   protected virtual task restore_policy();
     configure_ram_policies();
   endtask
 
+  // Add to the checked-beat counts.
   protected virtual function void count_checked(int unsigned words);
     checked_beats += words;
     target_stats[ram_target].comparisons += words;
   endfunction
 
+  // Log what a halfword (AxSIZE=1) write and read do to a RAM word. Only the DWORD
+  // setup is checked.
   protected task run_halfword_probe();
     logic [31:0] offset = 32'h0000_5000;
     logic [31:0] seed_data = 32'ha1b2_c3d4;
@@ -461,6 +486,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
     `uvm_info("USB_DEV0_RAM_SIZE_PROBE", $sformatf("Observed DWORD after halfword write/read: before=0x%08h after=0x%08h; observation is not a supported-access guarantee", seed_data, actual), UVM_LOW)
   endtask
 
+  // Run every RAM test on one target (DEV0 or DEV1 RAM) and print a summary.
   protected task run_ram_cases(usb_target_e target);
     usb_axi_user_t axi_user;
     uvm_reg_map target_map;
@@ -489,6 +515,7 @@ class usb_axi_dev_ram_rw_seq extends usb_axi_bridge_base_seq;
       `uvm_fatal("USB_DEV0_RAM_RANDOM", $sformatf("%s USER randomization failed", usb_target_name(ram_target)))
     end
     authorized_user = usb_axi_user_override::with_value(axi_user);
+    randomize_manager_ids();
 
     // Keep the selected USER; only the policy-change phase alters the allowlist and it restores it.
     configure_ram_policies();

@@ -57,11 +57,14 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
   protected uvm_reg_addr_t hub_scratch_base;
   protected logic [31:0] hub_scratch_offset;
   protected int unsigned hub_slots;
+  // Distinct random IDs used by scratch requests.
+  protected bit scratch_ids[aaxi_id_t];
 
   function new(string name = "usb_axi_during_usb_traffic_seq");
     super.new(name);
   endfunction
 
+  // Send one scratch request on the target's manager and wait for it to finish.
   protected task issue_scratch_request(usb_target_e target, aaxi_master_tr request, string kind, int unsigned pair);
     usb_axi_single_request_seq child;
 
@@ -97,6 +100,9 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     foreach (written[beat]) written[beat] = $urandom();
 
     request = create_transaction(target, offset, 1'b1, written[0], null);
+    // Scratch pairs run one request at a time, so each request can take its own random ID.
+    request.id = random_axi_id();
+    scratch_ids[request.id] = 1'b1;
     request.len = beats - 1;
     request.data.delete();
     request.strobes.delete();
@@ -114,6 +120,8 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     end
 
     request = create_transaction(target, offset, 1'b0, '0, null);
+    request.id = random_axi_id();
+    scratch_ids[request.id] = 1'b1;
     request.len = beats - 1;
     issue_scratch_request(target, request, "read", pair);
     if (request.rresp_Q.size() != beats || request.data.size() != beats * 4) begin
@@ -152,6 +160,7 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     return 1'b0;
   endfunction
 
+  // Note whether any RAM or Hub scratch request is pending right now.
   protected function void sample_window_overlap();
     window_ram_outstanding |= scratch_outstanding(bus_tracker, scratch_base, SCRATCH_BYTES);
     window_hub_outstanding |= scratch_outstanding(hub_tracker, hub_scratch_base, hub_slots * SLOT_BYTES);
@@ -224,6 +233,8 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     process monitors[$];
     bit usb_done;
 
+    // Native accesses from the parent scenario also use random per-manager IDs.
+    randomize_manager_ids();
     check_buffer_clear_of_endpoint_list("AXI scratch", SCRATCH_OFFSET, SCRATCH_BYTES);
     manager_sequencer = sequencer_for(USB_DEV0_SRAM);
     scratch_base = map_for(USB_DEV0_SRAM).get_base_addr(UVM_NO_HIER) + SCRATCH_OFFSET;
@@ -285,7 +296,7 @@ class usb_axi_during_usb_traffic_seq extends usb_double_buffer_bulk_seq;
     end
     if (!completed) return;
     completed = 1'b0;
-    `uvm_info("USB_AXI_DURING_USB", $sformatf("Scratch AXI: RAM %0d write/read pairs, %0d beats checked; Hub %0d write/read pairs, %0d beats checked; bulk DATA packets OUT=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d) IN=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d); non-bulk DATA packets ignored=%0d", axi_pairs, axi_beats, hub_pairs, hub_beats, tx_data_packets, tx_overlapped, tx_hub_overlapped, rx_data_packets, rx_overlapped, rx_hub_overlapped, non_bulk_data_packets), UVM_LOW)
+    `uvm_info("USB_AXI_DURING_USB", $sformatf("Scratch AXI: RAM %0d write/read pairs, %0d beats checked; Hub %0d write/read pairs, %0d beats checked; %0d distinct random AXI IDs; bulk DATA packets OUT=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d) IN=%0d (with RAM AXI outstanding=%0d, Hub AXI outstanding=%0d); non-bulk DATA packets ignored=%0d", axi_pairs, axi_beats, hub_pairs, hub_beats, scratch_ids.num(), tx_data_packets, tx_overlapped, tx_hub_overlapped, rx_data_packets, rx_overlapped, rx_hub_overlapped, non_bulk_data_packets), UVM_LOW)
     if (tx_overlapped == 0 || rx_overlapped == 0) begin
       `uvm_fatal("USB_AXI_DURING_USB", "No bulk DATA packet in one direction overlapped an outstanding RAM scratch AXI request")
     end

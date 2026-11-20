@@ -36,6 +36,8 @@ class usb_axi_inflight_callbacks extends aaxi_callbacks;
     super.new(name);
   endfunction
 
+  // Called when the bus accepts a read address. Record its ID and address, and
+  // note when an ID repeats after a different ID.
   virtual task master_read_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
     if (read_ids.size() > 0 && read_ids[$] != tn.id && read_addresses[tn.id].size() > 0) separated_read_id = 1'b1;
     read_addresses[tn.id].push_back(tn.addr);
@@ -46,6 +48,8 @@ class usb_axi_inflight_callbacks extends aaxi_callbacks;
     accepted++;
   endtask
 
+  // Called when the bus accepts a write address. Record its ID and address, and
+  // note when an ID repeats after a different ID.
   virtual task master_write_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
     if (write_ids.size() > 0 && write_ids[$] != tn.id && write_addresses[tn.id].size() > 0) separated_write_id = 1'b1;
     write_addresses[tn.id].push_back(tn.addr);
@@ -67,6 +71,7 @@ class usb_axi_inflight_callbacks extends aaxi_callbacks;
     reads--;
   endtask
 
+  // Called when a write finishes. It must be the oldest pending write with that ID.
   virtual task write_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
     if (writes == 0) `uvm_fatal("USB_AXI_INFLIGHT", "Write completed without an accepted address")
     if (write_addresses[tn.id].size() == 0 || tn.addr !== write_addresses[tn.id][0]) begin
@@ -128,6 +133,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
   pure virtual protected task set_allowlist(bit allow);
   // Reprogram the policy the sequence's normal phases expect.
   pure virtual protected task restore_policy();
+  // Add to the sequence's count of checked data words.
   pure virtual protected function void count_checked(int unsigned words);
 
   // Target-specific checks after reset, before the post-reset burst.
@@ -135,6 +141,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     passed = 1'b1;
   endtask
 
+  // Return one beat of a request's data as a DWORD.
   protected function logic [31:0] data_word(aaxi_master_tr request, int unsigned beat);
     logic [31:0] data;
 
@@ -158,6 +165,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     endcase
   endfunction
 
+  // Address of one beat of a request, following its burst type.
   protected function uvm_reg_addr_t beat_address(aaxi_master_tr request, int unsigned beat);
     return burst_beat_address(aaxi_burst_type'(request.burst), request.addr, int'(request.len) + 1, beat);
   endfunction
@@ -180,6 +188,17 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     end
   endfunction
 
+  // Three distinct random full-width IDs in the order A,B,A,C,B,A, so each
+  // same-ID repeat is separated by other IDs.
+  protected function void separated_id_pattern(output aaxi_id_t ids[6]);
+    aaxi_id_t a, b, c;
+
+    if (!std::randomize(a, b, c) with { unique {a, b, c}; }) begin
+      `uvm_fatal({tag_prefix, "_ID"}, "Distinct AXI ID randomization failed")
+    end
+    ids = '{a, b, a, c, b, a};
+  endfunction
+
   // Authorized INCR DWORD request on the target's manager.
   // USER defaults to the authorized test USER.
   protected function aaxi_master_tr incr_request(string label, logic [31:0] offset, bit is_write, int unsigned beats, usb_axi_user_override user = null);
@@ -195,10 +214,12 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     return request;
   endfunction
 
+  // Build an authorized INCR read of the given number of DWORDs.
   protected function aaxi_master_tr build_read(string label, logic [31:0] offset, int unsigned beats, usb_axi_user_override user = null);
     return incr_request(label, offset, 1'b0, beats, user);
   endfunction
 
+  // Build an authorized INCR write that carries the given words.
   protected function aaxi_master_tr build_write(string label, logic [31:0] offset, logic [31:0] words[], usb_axi_user_override user = null);
     aaxi_master_tr request;
 
@@ -247,6 +268,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     return 1'b1;
   endfunction
 
+  // Check that a read returned OKAY and the expected word on every beat.
   protected function bit check_read_words(aaxi_master_tr request, logic [31:0] expected[]);
     if (!check_okay(request)) return 1'b0;
     if (request.data.size() != 4 * expected.size()) begin
@@ -290,6 +312,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     manager.cfg.agent.add_callback(inflight_tracker);
   endtask
 
+  // Remove the tracker. By default, stop the test if any request is still pending.
   protected task stop_inflight_tracker(string tag, bit require_idle = 1'b1);
     aaxi_sequencer manager;
 
@@ -300,6 +323,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     end
   endtask
 
+  // Wait until the bus has accepted count requests; stop the test if it takes too long.
   protected task wait_for_acceptance(int unsigned count, string label);
     for (int unsigned cycle = 0; inflight_tracker.accepted < count; cycle++) begin
       if (cycle >= 4096) `uvm_fatal({tag_prefix, "_INFLIGHT"}, $sformatf("%s: request not accepted within %0d cycles", label, cycle))
@@ -551,6 +575,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     return int'((address - start) / (4 * MIXED_SLOT_WORDS));
   endfunction
 
+  // Count how many pending batch requests are allowed and how many are denied.
   protected function void count_mixed_pending(usb_axi_inflight_callbacks::address_queue_t pending[int unsigned], logic [31:0] first_offset, mixed_user_case_t cases[MIXED_SLOTS], output int unsigned allowed, output int unsigned denied);
     int slot;
 
