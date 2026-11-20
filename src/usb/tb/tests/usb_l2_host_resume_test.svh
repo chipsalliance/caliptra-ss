@@ -21,9 +21,11 @@ class usb_l2_host_resume_test extends usb_base_test;
     test_timeout = 3ms;
   endfunction
 
+  // Select downstream compatibility only for the existing FS host-resume case.
   virtual function void configure_env_cfg(usb_env_cfg cfg);
+    super.configure_env_cfg(cfg);
     if (cfg.speed == USB_SPEED_FULL) begin
-      usb_vip_cfg_builder::type_id::set_type_override(usb_host_resume_cfg_builder::get_type());
+      cfg.resume_timing_policy = usb_env_cfg::USB_RESUME_TIMING_FS_HOST;
     end
   endfunction
 

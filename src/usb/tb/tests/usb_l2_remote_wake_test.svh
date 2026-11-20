@@ -25,9 +25,10 @@ class usb_l2_remote_wake_test extends usb_base_test;
     return USB_FS_ENUMERATION_BUDGET + USB_FS_WAKE_PERMISSION_BUDGET + 35ms + USB_FS_TRANSFER_TIMEOUT + USB_FS_FRAME_PERIOD;
   endfunction
 
-  function void build_phase(uvm_phase phase);
-    usb_vip_cfg_builder::type_id::set_type_override(usb_l2_remote_wake_cfg_builder::get_type());
-    super.build_phase(phase);
+  // Select the existing paired upstream/downstream compatibility at either speed.
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    super.configure_env_cfg(cfg);
+    cfg.resume_timing_policy = usb_env_cfg::USB_RESUME_TIMING_L2_REMOTE_WAKE;
   endfunction
 
   task run_phase(uvm_phase phase);

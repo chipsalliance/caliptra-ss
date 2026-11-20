@@ -17,9 +17,9 @@
 // object, fills its defaults, and publishes it to usb_env through
 // uvm_config_db. It holds only bench-level data: the advertised endpoint
 // layout, the enumerated device address, the DEV0 endpoint-list placement,
-// the LPM timing policy, and the bench-wide timeouts. usb_vip_cfg_builder
-// translates it into the Synopsys SVT agent configurations, so no VIP type
-// is declared here.
+// the LPM and resume timing policies, and the bench-wide timeouts.
+// usb_vip_cfg_builder translates it into the Synopsys SVT agent configurations,
+// so no VIP type is declared here.
 
 class usb_env_cfg extends uvm_object;
   `uvm_object_utils(usb_env_cfg)
@@ -31,6 +31,15 @@ class usb_env_cfg extends uvm_object;
     USB_LPM_TIMING_LEGACY_HIRD1
   } usb_lpm_timing_policy_e;
   usb_lpm_timing_policy_e lpm_timing_policy = USB_LPM_TIMING_DEFAULT;
+
+  // Resume compatibility is independent of LPM timing. Default keeps the native
+  // scaled preset; FS host and L2 remote wake retain their existing opt-ins.
+  typedef enum int {
+    USB_RESUME_TIMING_DEFAULT,
+    USB_RESUME_TIMING_FS_HOST,
+    USB_RESUME_TIMING_L2_REMOTE_WAKE
+  } usb_resume_timing_policy_e;
+  usb_resume_timing_policy_e resume_timing_policy = USB_RESUME_TIMING_DEFAULT;
 
   // VIP anchor of the control endpoint. SVT requires endpoint_cfg[0] to be
   // the default control endpoint and models it as one bidirectional entry,
@@ -364,6 +373,7 @@ class usb_env_cfg extends uvm_object;
     end
     axi_delay_random = rhs_cfg.axi_delay_random;
     lpm_timing_policy = rhs_cfg.lpm_timing_policy;
+    resume_timing_policy = rhs_cfg.resume_timing_policy;
     speed = rhs_cfg.speed;
     device_address = rhs_cfg.device_address;
     endpoint_list_base = rhs_cfg.endpoint_list_base;
@@ -398,6 +408,7 @@ class usb_env_cfg extends uvm_object;
         endpoint_cfgs.size() != rhs_cfg.endpoint_cfgs.size() ||
         axi_delay_random != rhs_cfg.axi_delay_random ||
         lpm_timing_policy !== rhs_cfg.lpm_timing_policy ||
+        resume_timing_policy !== rhs_cfg.resume_timing_policy ||
         speed != rhs_cfg.speed ||
         device_address != rhs_cfg.device_address ||
         endpoint_list_base !== rhs_cfg.endpoint_list_base ||
@@ -425,10 +436,11 @@ class usb_env_cfg extends uvm_object;
 
   virtual function string convert2string();
     return $sformatf(
-      "speed=%s axi_delay_random=%0b lpm_timing_policy=%s device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
+      "speed=%s axi_delay_random=%0b lpm_timing_policy=%s resume_timing_policy=%s device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
       speed.name(),
       axi_delay_random,
       lpm_timing_policy.name(),
+      resume_timing_policy.name(),
       device_address,
       endpoint_list_base,
       reset_timeout,
@@ -445,6 +457,7 @@ class usb_env_cfg extends uvm_object;
     printer.print_string("speed", speed.name());
     printer.print_field_int("axi_delay_random", axi_delay_random, 1, UVM_BIN);
     printer.print_string("lpm_timing_policy", lpm_timing_policy.name());
+    printer.print_string("resume_timing_policy", resume_timing_policy.name());
     printer.print_field_int("device_address", device_address, $bits(device_address), UVM_DEC);
     printer.print_field_int("endpoint_list_base", endpoint_list_base, $bits(endpoint_list_base), UVM_HEX);
     printer.print_time("reset_timeout", reset_timeout);

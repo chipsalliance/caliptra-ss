@@ -113,6 +113,10 @@ package usb_tb_pkg;
   localparam time USB_DEFAULT_CONTROL_TRANSFER_TIMEOUT = 100us;
   localparam time USB_DEFAULT_TEST_TIMEOUT = 1ms;
 
+  // Candidate external-DUT resume budget shared by configuration and stimulus.
+  // Accelerated functional timing only, not a nominal USB timing oracle.
+  localparam time USB_ACCELERATED_HOST_RESUME_BUDGET = 4ms;
+
   // Accelerated FS policy, not hardware timer minima or nominal timing signoff.
   localparam time USB_FS_FRAME_PERIOD = 1ms;
   localparam time USB_FS_RESET_DURATION = 1500us;
@@ -288,9 +292,6 @@ package usb_tb_pkg;
     usb_init_host_seq::ENUMERATION_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT + USB_FS_FRAME_PERIOD;
   localparam time USB_FS_LPM_DISCOVERY_BUDGET = usb_lpm_capability_host_seq::DISCOVERY_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT;
   localparam time USB_FS_WAKE_PERMISSION_BUDGET = usb_remote_wake_enable_host_seq::AUTHORIZATION_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT;
-
-  `include "env/usb_l2_remote_wake_cfg_builder.svh"
-  `include "env/usb_host_resume_cfg_builder.svh"
 
   `include "tests/usb_base_test.svh"
   `include "tests/usb_axi_read_backpressure_test.svh"

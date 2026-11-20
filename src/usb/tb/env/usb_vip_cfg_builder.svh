@@ -51,12 +51,13 @@ class usb_vip_cfg_builder extends uvm_object;
     configure_topology();
     configure_endpoints(cfg);
     configure_timers();
+    configure_resume_timers(cfg);
     configure_lpm_timers(cfg);
     configure_tracing();
     configure_coverage();
     validate_vip_cfgs();
-    `uvm_info("USB_CFG", $sformatf("Native USB2 configuration ready: bus=%s host=%s UTMI_capability=%s inactivity=%0.0f ps",
-      bus_speed.name(), host_cfg.speed.name(), device_phy_cfg.speed.name(), host_cfg.tinactivity), UVM_LOW)
+    `uvm_info("USB_CFG", $sformatf("Native USB2 configuration ready: bus=%s host=%s UTMI_capability=%s inactivity=%0.0f ps resume_policy=%s",
+      bus_speed.name(), host_cfg.speed.name(), device_phy_cfg.speed.name(), host_cfg.tinactivity, cfg.resume_timing_policy.name()), UVM_LOW)
   endfunction
 
   // One local HS/FS host and one remote device, with no hub between.
@@ -204,6 +205,54 @@ class usb_vip_cfg_builder extends uvm_object;
     end
     `uvm_info("USB_CFG", $sformatf("FS reset profile %s: drive=%0.0f ps retained window=%0.0f..%0.0f ps; DUT admission required",
       cfg.get_name(), cfg.tdrst, cfg.tdrst_min, cfg.tdrst_max), UVM_LOW)
+  endfunction
+
+  // Apply only the existing resume opt-ins after common timers and before LPM.
+  // These accelerated functional profiles are not nominal USB timing signoff.
+  protected virtual function void configure_resume_timers(usb_env_cfg cfg);
+    svt_usb_configuration resume_cfgs[2];
+
+    case (cfg.resume_timing_policy)
+      usb_env_cfg::USB_RESUME_TIMING_DEFAULT: begin end
+      usb_env_cfg::USB_RESUME_TIMING_FS_HOST: begin
+        if (bus_speed == USB_SPEED_FULL) begin
+          apply_downstream_resume_budget(host_cfg);
+          apply_downstream_resume_budget(device_phy_cfg);
+          host_cfg.enable_sof_during_recovery = 1'b1;
+        end
+      end
+      usb_env_cfg::USB_RESUME_TIMING_L2_REMOTE_WAKE: begin
+        resume_cfgs[0] = host_cfg;
+        resume_cfgs[1] = device_phy_cfg;
+        foreach (resume_cfgs[index]) begin
+          // The external DUT is not scaled: retain native upstream 1..15 ms checks.
+          resume_cfgs[index].tdrsmup_min = vip_ps(1ms);
+          resume_cfgs[index].tdrsmup_max = vip_ps(15ms);
+          resume_cfgs[index].tdrsmup = vip_ps(1ms);
+          resume_cfgs[index].tdrsmup_min_longint = longint'(vip_ps(1ms));
+          resume_cfgs[index].tdrsmup_max_longint = longint'(vip_ps(15ms));
+          resume_cfgs[index].tdrsmup_longint = longint'(vip_ps(1ms));
+          apply_downstream_resume_budget(resume_cfgs[index]);
+        end
+        // Software recovery excludes device accesses, not resumed bus framing.
+        host_cfg.enable_sof_during_recovery = 1'b1;
+      end
+      default: `uvm_fatal("USB_CFG", $sformatf("Unsupported resume timing policy %0d", cfg.resume_timing_policy))
+    endcase
+  endfunction
+
+  // Pair the candidate external-DUT drive/check budget and integer mirrors.
+  // Callers retain native scaled recovery and independently qualify DUT admission.
+  protected function void apply_downstream_resume_budget(svt_usb_configuration cfg);
+    cfg.tdrsmdn = vip_ps(USB_ACCELERATED_HOST_RESUME_BUDGET);
+    cfg.tdrsmdn_min = cfg.tdrsmdn;
+    cfg.tdrsmdn_nom = cfg.tdrsmdn;
+    cfg.tdrsmdn_longint = longint'(cfg.tdrsmdn);
+    cfg.tdrsmdn_min_longint = cfg.tdrsmdn_longint;
+    cfg.tdrsmdn_nom_longint = cfg.tdrsmdn_longint;
+    cfg.block_resume = 1'b0;
+    `uvm_info("USB_CFG", $sformatf("Downstream resume configuration: real drive/min/nom=%0.0f/%0.0f/%0.0f ps constraint mirrors=%0d/%0d/%0d ps",
+      cfg.tdrsmdn, cfg.tdrsmdn_min, cfg.tdrsmdn_nom, cfg.tdrsmdn_longint, cfg.tdrsmdn_min_longint, cfg.tdrsmdn_nom_longint), UVM_LOW)
   endfunction
 
   // Apply the selected LPM policy to both peers after the common scaled preset.

@@ -84,7 +84,7 @@ class usb_host_resume_host_seq extends usb_host_base_seq;
     end
     if (guard_fs_l2) begin
       real budget_ps;
-      budget_ps = usb_vip_cfg_builder::vip_ps(usb_l2_remote_wake_host_seq::ACCELERATED_HOST_RESUME_BUDGET);
+      budget_ps = usb_vip_cfg_builder::vip_ps(USB_ACCELERATED_HOST_RESUME_BUDGET);
       if (l1 || !(usb_cfg.speed === svt_usb_types::FS) ||
           !((usb_cfg.tdrsmdn == budget_ps) === 1'b1) || !((usb_cfg.tdrsmdn_min == budget_ps) === 1'b1) ||
           !((usb_cfg.tdrsmdn_nom == budget_ps) === 1'b1) ||
