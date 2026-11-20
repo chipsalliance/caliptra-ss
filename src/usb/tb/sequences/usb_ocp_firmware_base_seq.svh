@@ -115,6 +115,12 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
             endpoint_entry(1'b1,1'b0,0,OUT_BUFFER));
   endtask
 
+  virtual task ocp_do_check_owned_setup(logic [7:0] request_type,
+      logic [7:0] request, logic [15:0] value, logic [15:0] index,
+      logic [15:0] length, output bit handled);
+    handled = 0;
+  endtask
+
   task ocp_service_setup();
     usb_ocp_base_epn_profile profile;
     logic [31:0] word0;
@@ -125,6 +131,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     logic [15:0] index;
     logic [15:0] length;
     bytes_t data;
+    bit handled;
     read32(memory_target,SETUP_BUFFER,word0);
     read32(memory_target,SETUP_BUFFER+4,word1);
     request_type = word0[7:0];
@@ -135,6 +142,8 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     // OCP requests belong solely to hardware. In particular do not clear
     // SETUP, arm a response, or consume endpoint SRAM on its behalf.
     if (device == 1 && request_type inside {8'h21,8'ha1}) return;
+    ocp_do_check_owned_setup(request_type,request,value,index,length,handled);
+    if (handled) return;
     profile = ocp_cfg.ocp_get_epn_profile(device);
     ocp_write_csr("INTSTAT",ocp_get_mask("INTSTAT","EP0IN"));
     case (request)

@@ -128,6 +128,7 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
       native_ep.speed = usb_cfg.remote_device_cfg[device].connected_bus_speed;
       native_ep.max_packet_size = ep.max_packet_size;
       native_ep.interval = ep.interval;
+      native_ep.allow_aligned_transfer_without_zero_length = 1;
       native_ep.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_ZERO;
       native_ep.usb_20_isoc_without_first_last_transaction = 0;
       case (ep.transfer_type)
@@ -246,16 +247,11 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
   endtask
 
   task ocp_do_check_overlap_window(svt_usb_transfer tr, int device);
-    usb_ocp_base_epn_host_seq peers[2][2];
-    usb_ocp_base_epn_model epn_model;
-    usb_ocp_base_epn_profile profile;
     svt_usb_device_status device_status;
     svt_usb_endpoint_status endpoint_status;
     usb_ocp_base_control c;
     int phase;
     int generation;
-    int period;
-    int microframe;
     logic [7:0] expected_setup[8];
     longint unsigned setup_order;
     bit resumed_original;
@@ -307,6 +303,25 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
     `uvm_info("OCP_EPN_PAUSED",$sformatf(
       "IS_PAUSED with matching accepted SETUP phase=%0d generation=%0d setup_order=%0d",
       phase,generation,setup_order),UVM_LOW)
+    ocp_do_check_epn_pair(tr,phase);
+    if (!c.active || c.status_acked || c.generation != generation ||
+        endpoint_status.processing_paused !== svt_usb_endpoint_status::IS_PAUSED)
+      `uvm_fatal("OCP_EPN_CAPTURE_LATE", "Lost matching paused control before accepted EPN/SRAM proof")
+    ocp_do_check_paused_continuation(tr,phase,generation,resumed_original);
+    if (resumed_original)
+      `uvm_info("OCP_EPN_RESUMED",$sformatf(
+        "Resumed exact original OCP phase=%0d generation=%0d; STATUS and recovery remain required",
+        phase,generation),UVM_LOW)
+  endtask
+
+  // Scheduling and consumption are shared by paused and naturally blocked
+  // OCP windows. The caller owns its window proof and enclosing deadline.
+  task ocp_do_check_epn_pair(svt_usb_transfer tr, int phase);
+    usb_ocp_base_epn_host_seq peers[2][2];
+    usb_ocp_base_epn_model epn_model;
+    usb_ocp_base_epn_profile profile;
+    int period;
+    int microframe;
     period = 1;
     for (int port = 0; port < 2; port++) begin
       if (!ocp_check_selected_device(port+1)) continue;
@@ -337,6 +352,8 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
         peers[port][dir].ocp_cfg = ocp_cfg;
         peers[port][dir].phase = phase;
         peers[port][dir].data_tag = profile.data_tag;
+        peers[port][dir].payload_length = profile.ocp_get_payload_length(
+          dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase);
         peers[port][dir].scheduled_microframe = microframe;
       end
     end
@@ -356,14 +373,6 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
       if (!peers[port][0].completed || !peers[port][1].completed)
         `uvm_fatal("OCP_EPN_CAPTURE_LATE", "Native endpoint pair returned incomplete")
     end
-    if (!c.active || c.status_acked || c.generation != generation ||
-        endpoint_status.processing_paused !== svt_usb_endpoint_status::IS_PAUSED)
-      `uvm_fatal("OCP_EPN_CAPTURE_LATE", "Lost matching paused control before accepted EPN/SRAM proof")
-    ocp_do_check_paused_continuation(tr,phase,generation,resumed_original);
-    if (resumed_original)
-      `uvm_info("OCP_EPN_RESUMED",$sformatf(
-        "Resumed exact original OCP phase=%0d generation=%0d; STATUS and recovery remain required",
-        phase,generation),UVM_LOW)
   endtask
 
   task body();
