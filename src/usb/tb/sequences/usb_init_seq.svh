@@ -381,12 +381,13 @@ class usb_init_seq extends usb_base_seq;
     if (byte_count == 0 || byte_count > data_bytes.size() || byte_count > ep0_in_endpoint.max_packet_size) begin
       `uvm_fatal("USB_INIT_SEQ", "Invalid EP0 data response length")
     end
+    // Unused lanes of a partial final word are written as zero.
     for (int unsigned byte_index = 0; byte_index < byte_count; byte_index += 4) begin
       word = 0;
       for (int unsigned lane = 0; lane < 4 && byte_index + lane < byte_count; lane++) begin
         word[lane * 8 +: 8] = data_bytes[byte_index + lane];
       end
-      write_sram_bytes(USB_DEV0_SRAM, ep0_in_buffer_offset + byte_index, word, byte_count - byte_index);
+      write32(USB_DEV0_SRAM, ep0_in_buffer_offset + byte_index, word);
     end
     write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b1, 1'b0, byte_count, ep0_in_buffer_offset));
   endtask
