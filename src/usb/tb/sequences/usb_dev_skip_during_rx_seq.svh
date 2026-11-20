@@ -45,6 +45,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     ((32'h1 << (USB_DEV0_NBPHYSEP + 2)) - 1) & ~32'h0000_000f;
   localparam logic [31:0] TOKEN_OVERLAP_EPINUSE_MASK =
     32'h2aaa_aaa0 & TOKEN_OVERLAP_SKIP_MASK;
+  localparam int unsigned TOKEN_OVERLAP_MIN_SKIP_WRITES = 40;
 
   logic [31:0] token_overlap_in_buffer_offset = 32'h0000_0900;
   int unsigned token_overlap_in_bytes = 16;
@@ -332,20 +333,8 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     bit stop_skip_wave;
 
     in_endpoint = get_endpoint(skip_target_ep_number, USB_DIRECTION_IN);
-    dummy_ep2_out = usb_endpoint_cfg::create_endpoint(
-      "dummy_ep2_out",
-      2,
-      USB_DIRECTION_OUT,
-      USB_TRANSFER_TYPE_BULK,
-      `SVT_USB_HS_BULK_MAX_PACKET_SIZE
-    );
-    dummy_ep2_in = usb_endpoint_cfg::create_endpoint(
-      "dummy_ep2_in",
-      2,
-      USB_DIRECTION_IN,
-      USB_TRANSFER_TYPE_BULK,
-      `SVT_USB_HS_BULK_MAX_PACKET_SIZE
-    );
+    dummy_ep2_out = get_endpoint(2, USB_DIRECTION_OUT);
+    dummy_ep2_in = get_endpoint(2, USB_DIRECTION_IN);
     dummy_active_int_mask = dummy_ep2_out.csr_bit_mask() | dummy_ep2_in.csr_bit_mask();
     check_buffer_clear_of_endpoint_list(
       "Token-overlap bulk IN",
@@ -366,11 +355,19 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     enable_endpoint_interrupt(in_endpoint);
     clear_endpoint_interrupt(in_endpoint);
 
-    // Arm dummy EP2 OUT (physical 4, buffer 0) and EP2 IN (physical 5, buffer 1
-    // with EPINUSE set) so READ_EPINFO_SKIP exercises both 64-bit word halves.
+    // EP2 is now advertised and selected by enumeration. Verify readiness before
+    // arming OUT buffer 0 and IN buffer 1 to stress both 64-bit word halves.
+    read_endpoint_entry(dummy_ep2_out, observed_dummy_out_entry, 0);
+    read_endpoint_entry(dummy_ep2_in, observed_dummy_in_entry, 1);
+    if (observed_dummy_out_entry.active !== 1'b0 || observed_dummy_out_entry.disabled !== 1'b0 ||
+        observed_dummy_in_entry.active !== 1'b0 || observed_dummy_in_entry.disabled !== 1'b0) begin
+      `uvm_fatal("USB_SKIP_RX_SEQ", $sformatf("Configured EP2 must be enabled and software-owned before arming: OUT=%s IN=%s",
+        describe_entry(observed_dummy_out_entry), describe_entry(observed_dummy_in_entry)))
+    end
     dummy_armed_entry = endpoint_entry(1'b1, 1'b0, 0, 0);
     write_endpoint_entry(dummy_ep2_out, dummy_armed_entry, 0);
     write_endpoint_entry(dummy_ep2_in, dummy_armed_entry, 1);
+    `uvm_info("USB_SKIP_RX_SEQ", "Armed configured EP2 OUT buffer 0 and IN buffer 1 for active word-half skip stress", UVM_LOW)
     ral_write32("EPBUFCFG", p_sequencer.reg_model.combo.dev0_csr.EPBUFCFG, TOKEN_OVERLAP_SKIP_MASK);
     ral_write32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, TOKEN_OVERLAP_EPINUSE_MASK);
     ral_write32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, TOKEN_OVERLAP_SKIP_MASK);
@@ -441,7 +438,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
             disable fork;
           end
           begin
-            while (!stop_skip_wave) begin
+            while (!stop_skip_wave || skip_wave_writes < TOKEN_OVERLAP_MIN_SKIP_WRITES) begin
               ral_write32("EPSKIP", p_sequencer.reg_model.combo.dev0_csr.EPSKIP, TOKEN_OVERLAP_SKIP_MASK);
               skip_wave_writes++;
               // Vary inter-write spacing (15..45 ns) to sweep EPSKIP across the IN token EOP window.
@@ -461,12 +458,12 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
         );
         read_endpoint_entry(dummy_ep2_out, observed_dummy_out_entry, 0);
         read_endpoint_entry(dummy_ep2_in, observed_dummy_in_entry, 1);
-        if (observed_dummy_out_entry.active !== 1'b0 ||
-            observed_dummy_in_entry.active !== 1'b0) begin
+        if (observed_dummy_out_entry.active !== 1'b0 || observed_dummy_out_entry.disabled !== 1'b0 ||
+            observed_dummy_in_entry.active !== 1'b0 || observed_dummy_in_entry.disabled !== 1'b0) begin
           `uvm_fatal(
             "USB_SKIP_RX_SEQ",
             $sformatf(
-              "Token-overlap skip did not clear dummy entries: ep2_out=%s ep2_in=%s",
+              "Token-overlap skip did not retire enabled EP2 entries: ep2_out=%s ep2_in=%s",
               describe_entry(observed_dummy_out_entry),
               describe_entry(observed_dummy_in_entry)
             )
