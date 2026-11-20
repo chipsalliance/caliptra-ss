@@ -210,9 +210,8 @@ class usb_ocp_fifo_backpressure_ep0_host_seq extends usb_ocp_base_host_seq;
       usb_ocp_fifo_backpressure_ep0_checker::RELEASE_PROOF);
     fifo_checker.ocp_check_release_dma();
     ocp_do_check_empty_batch();
-    // USB 5.5.5: old operation was replaced. OCP 8.2.5/9.2: submit a new
-    // legal command containing only its unaccepted suffix, never replay the
-    // previously accepted full FIFO prefix or reset the image/FIFO.
+    // The canceled request accepted no bytes: submit its complete DWORD as a
+    // fresh command after drain, without replaying earlier completed writes.
     super.ocp_do_check_control(device,bm,request,value,index,length,write_data,read_data);
   endtask
 

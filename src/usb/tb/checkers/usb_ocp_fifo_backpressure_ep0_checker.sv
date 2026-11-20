@@ -43,10 +43,16 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
   longint unsigned native_order;
   longint unsigned drain_order;
   int unsigned actual_dma_bytes;
+  int unsigned completed_prefix_bytes;
+  longint unsigned completed_prefix_order;
+  logic [7:0] blocked_setup[8];
   int unsigned blocked_generation;
   int unsigned blocked_epoch;
   int unsigned nak_count;
   int unsigned ping_nak_count;
+  int unsigned post_release_out_naks;
+  int unsigned post_release_ping_naks;
+  bit [1:0] witness_phase_checked;
   int unsigned standard_crosschecks;
   usb_ocp_base_control blocked_control;
   usb_ocp_base_control standard_control[2];
@@ -102,7 +108,8 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
         if (negative_count > 1)
           uvm_pkg::uvm_report_fatal("OCP_FIFO_EP0_GUARD", "Duplicate usb_ocp_negative_fifo_ep0 selector", UVM_NONE, `__FILE__, `__LINE__);
         mode = args[i].substr(negative_prefix.len(),args[i].len()-1);
-        if (!(mode inside {"full","blocked","replacement","sram_setup","sram_response"}))
+        if (!(mode inside {"full","blocked","replacement","sram_setup","sram_response",
+                           "completed_prefix","missing_blocked","resubmit","witness_phase"}))
           uvm_pkg::uvm_report_fatal("OCP_FIFO_EP0_GUARD", "Unknown FIFO EP0 canary value", UVM_NONE, `__FILE__, `__LINE__);
       end else if (uvm_is_match({variant_prefix,"*"},args[i])) begin
         variant_count++;
@@ -129,9 +136,10 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
     if (canary_mode != gate) return 0;
     if (canary_applied)
       `uvm_fatal("OCP_FIFO_EP0_GUARD", "Duplicate FIFO EP0 canary application")
-    if (!experiment_armed || ocp_cfg == null || actual == null || dma_released ||
+    if (!experiment_armed || ocp_cfg == null || actual == null ||
+        dma_released != (gate == "resubmit") ||
         !model.require_dev0_ep0_replacement)
-      `uvm_fatal("OCP_FIFO_EP0_GUARD", "FIFO EP0 canary lacks its owned held experiment")
+      `uvm_fatal("OCP_FIFO_EP0_GUARD", "FIFO EP0 canary lacks its owned experiment phase")
     canary_applied = 1;
     `uvm_info("OCP_FIFO_EP0_CANARY", $sformatf(
       "gate=%s order=%0d epoch=%0d generation=%0d",
@@ -331,10 +339,22 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
       peer,standard_native,native_retired,pending_standard_axi.size()), UVM_NONE)
   endtask
 
+  function bit ocp_check_witness_eligible(usb_ocp_event item, bit released);
+    usb_ocp_event t = model.token;
+    usb_ocp_base_control c = model.control[1];
+    return !released &&
+      item.kind == usb_ocp_event::USB_PACKET && item.pid == svt_usb_packet::NAK &&
+      t != null && t.endpoint === 0 && model.token_device == 1 &&
+      c.active === 1 && c.setup[0] === 8'h21 &&
+      c.ocp_get_value() === 16'(OCP_CMD_INDIRECT_FIFO_DATA) &&
+      t.pid inside {svt_usb_packet::OUT,svt_usb_packet::PING} && full_status_seen;
+  endfunction
+
   virtual function void ocp_check_event_before(usb_ocp_event item);
     usb_ocp_base_control c;
     usb_ocp_event t;
     int unsigned expected_generation;
+    int unsigned expected_completed_bytes;
     if (!experiment_armed) return;
     accepted_before_event = model.accepted_bytes;
     replacements_before_event = model.dev0_ep0_write_replacements;
@@ -381,11 +401,7 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
     end
     // USB 2.0 8.5.1/8.5.3: only DATA-stage OUT/NAK or HS PING/NAK
     // demonstrates blocking. STATUS NAK/NYET is not this witness.
-    if (item.kind == usb_ocp_event::USB_PACKET && item.pid == svt_usb_packet::NAK &&
-        t != null && t.endpoint === 0 && model.token_device == 1 &&
-        c.active === 1 && c.setup[0] === 8'h21 &&
-        c.ocp_get_value() === 16'(OCP_CMD_INDIRECT_FIFO_DATA) &&
-        t.pid inside {svt_usb_packet::OUT,svt_usb_packet::PING} && full_status_seen) begin
+    if (ocp_check_witness_eligible(item,dma_released)) begin
       if (item.host_tx !== 0 || item.packet_valid !== 1 ||
           t.packet_valid !== 1 || t.host_tx !== 1 || t.address !== c.address ||
           model.token_epoch != c.epoch || model.token_generation != c.generation ||
@@ -411,9 +427,28 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
         expected_generation++;
       if (model.token_generation != expected_generation)
         `uvm_fatal("OCP_FIFO_EP0_BLOCKED", "NAK witness lacks held full FIFO and original live DATA context")
+      if (completed_prefix_bytes != model.fifo_depth_words*4 ||
+          completed_prefix_order >= item.order)
+        `uvm_fatal("OCP_FIFO_EP0_PREFIX", "Retained FIFO prefix lacks completed STATUS/native write evidence")
+      expected_completed_bytes = model.fifo_depth_words*4;
+      if (!blocked_seen && ocp_check_canary("completed_prefix",item,c.epoch,c.generation))
+        expected_completed_bytes += 4;
+      if (completed_prefix_bytes != expected_completed_bytes)
+        `uvm_fatal("OCP_FIFO_EP0_PREFIX", "Retained FIFO prefix lacks completed STATUS/native write evidence")
+      if (canary_mode == "witness_phase" &&
+          !witness_phase_checked[t.pid == svt_usb_packet::PING]) begin
+        // Check a private phase operand without replaying or altering this real NAK.
+        if (ocp_check_witness_eligible(item,1))
+          `uvm_fatal("OCP_FIFO_EP0_PHASE", "Released-phase NAK can grant original held-FIFO witness credit")
+        witness_phase_checked[t.pid == svt_usb_packet::PING] = 1;
+        `uvm_info("OCP_FIFO_EP0_PHASE", $sformatf(
+          "Private released-phase exclusion: kind=%s actual_released=%0b released_operand=1 eligible=0 order=%0d",
+          t.pid.name(),dma_released,item.order), UVM_NONE)
+      end
       if (!blocked_seen) begin
         blocked_seen = 1;
         blocked_control = c;
+        blocked_setup = c.setup;
         blocked_generation = c.generation;
         blocked_epoch = c.epoch;
         blocked_order = item.order;
@@ -422,6 +457,15 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
           t.pid.name(),c.address,c.epoch,c.generation,blocked_order), UVM_NONE)
       end else if (blocked_control != c)
         `uvm_fatal("OCP_FIFO_EP0_BLOCKED", "Blocking witness crossed original control identity")
+    end
+    if (dma_released && item.kind == usb_ocp_event::USB_PACKET &&
+        item.pid == svt_usb_packet::NAK && item.host_tx === 0 &&
+        item.packet_valid === 1 && t != null && t.endpoint === 0 &&
+        model.token_device == 1 && c.active === 1 &&
+        c.setup[0] === 8'h21 &&
+        c.ocp_get_value() === 16'(OCP_CMD_INDIRECT_FIFO_DATA)) begin
+      if (t.pid == svt_usb_packet::OUT) post_release_out_naks++;
+      else if (t.pid == svt_usb_packet::PING) post_release_ping_naks++;
     end
   endfunction
 
@@ -432,6 +476,24 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
     int slot;
     if (!experiment_armed) return;
     c = model.control[1];
+    // Only successful packet/native cross-checks publish completed writes.
+    // The later canceled capacity+1 command contributes no retained bytes.
+    if (!dma_released && item.kind == usb_ocp_event::USB_TRANSFER &&
+        item.transfer_ok === 1 && item.address === model.address[1] &&
+        item.endpoint === 0 && item.setup[0] === 8'h21 &&
+        item.setup[1] === OCP_BREQUEST_XFER &&
+        {item.setup[3],item.setup[2]} === 16'(OCP_CMD_INDIRECT_FIFO_DATA)) begin
+      if (blocked_seen || c.status_acked !== 1 || item.setup !== c.setup ||
+          c.data.size() == 0 || c.data.size()%4 != 0 ||
+          completed_prefix_bytes+c.data.size() > model.fifo_depth_words*4 ||
+          item.order <= completed_prefix_order)
+        `uvm_fatal("OCP_FIFO_EP0_PREFIX", "Completed FIFO write lacks unique full-prefix STATUS/native context")
+      completed_prefix_bytes += c.data.size();
+      completed_prefix_order = item.order;
+    end
+    if (blocked_seen && !dma_released &&
+        model.accepted_bytes != completed_prefix_bytes)
+      `uvm_fatal("OCP_FIFO_EP0_PREFIX", "Canceled zero-byte write changed the completed FIFO prefix ledger")
     if (model.accepted_bytes > expected_image.size() ||
         (model.accepted_bytes >= model.returned_bytes &&
           model.accepted_bytes-model.returned_bytes > model.fifo_depth_words*4))
@@ -453,10 +515,21 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
       if (replacement_seen) begin
         if (!drain_seen || !empty_status_seen)
           `uvm_fatal("OCP_FIFO_EP0_RESUBMIT", "Post-replacement bytes accepted before real drain and empty status")
-        if (!resubmitted_seen)
+        if (!resubmitted_seen) begin
+          if (c.epoch != blocked_epoch || c.setup !== blocked_setup ||
+              c.generation <= standard_generation[1] ||
+              accepted_before_event != completed_prefix_bytes ||
+              model.accepted_bytes != completed_prefix_bytes+4)
+            `uvm_fatal("OCP_FIFO_EP0_RESUBMIT", "Fresh request differs from the original wholly unaccepted DWORD")
+          expected_setup = blocked_setup;
+          if (ocp_check_canary("resubmit",item,c.epoch,c.generation))
+            expected_setup[6] += 8'd4;
+          if (c.setup !== expected_setup)
+            `uvm_fatal("OCP_FIFO_EP0_RESUBMIT", "Fresh request differs from the original wholly unaccepted DWORD")
           `uvm_info("OCP_FIFO_EP0_RESUBMIT", $sformatf(
             "Fresh OCP command accepted next unique image bytes at offset=%0d after real drain order=%0d",
             accepted_before_event,drain_order), UVM_NONE)
+        end
         resubmitted_seen = 1;
       end
     end
@@ -543,9 +616,19 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
   endfunction
 
   function void ocp_check_release_dma();
+    bit blocked_proved;
+    blocked_proved = blocked_seen;
+    if (canary_mode == "missing_blocked") begin
+      if (!experiment_armed || !blocked_seen || dma_released || canary_applied)
+        `uvm_fatal("OCP_FIFO_EP0_GUARD", "Missing-witness comparison lacks its owned release boundary")
+      canary_applied = 1;
+      blocked_proved = 0;
+      `uvm_info("OCP_FIFO_EP0_CANARY", "gate=missing_blocked; private release proof excludes the original witness", UVM_NONE)
+    end
     if (dma_released || !dma_hold_entered || !full_prefix_seen || !full_status_seen ||
-        !blocked_seen || !replacement_seen || !native_retired ||
+        !blocked_proved || !replacement_seen || !native_retired ||
         !standard_native[0] || !standard_native[1] || actual_dma_bytes != 0 ||
+        completed_prefix_bytes != model.fifo_depth_words*4 ||
         model.accepted_bytes != model.fifo_depth_words*4 || pending_standard_axi.size() != 0)
       `uvm_fatal("OCP_FIFO_EP0_BARRIER", "Planned DMA release precedes full/blocked/replacement/native/SRAM obligations")
     dma_released = 1;
@@ -553,8 +636,10 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
   endfunction
 
   virtual function void ocp_check_replacements();
-    if (canary_mode != "")
+    if (canary_mode != "" && canary_mode != "witness_phase")
       `uvm_fatal("OCP_FIFO_EP0_GUARD", "Selected FIFO EP0 canary reached final checks without targeted rejection")
+    if (canary_mode == "witness_phase" && witness_phase_checked !== 2'b11)
+      `uvm_fatal("OCP_FIFO_EP0_PHASE", "Released-phase exclusion lacks actual OUT/NAK and PING/NAK contexts")
     if (!experiment_armed || !full_prefix_seen || !full_status_seen || !blocked_seen ||
         !replacement_seen || !native_retired || !dma_released || !drain_seen ||
         !empty_status_seen || !resubmitted_seen || standard_crosschecks != 2 ||
@@ -569,9 +654,10 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
     if (negative_replacement || negative_abort_prefix)
       `uvm_fatal("OCP_FIFO_EP0_GUARD", "Use only row-owned controls, not other replacement checker injections")
     `uvm_info("OCP_FIFO_EP0_EVIDENCE", $sformatf(
-      "capacity=%0d OUT_NAK=%0d PING_NAK=%0d full_order=%0d blocked_order=%0d replacement_order=%0d native_order=%0d drain_order=%0d standard_native=%p SRAM_setup=%p SRAM_response=%p accepted=%0d DMA=%0d",
-      model.fifo_depth_words,nak_count,ping_nak_count,full_order,blocked_order,
-      replacement_order,native_order,drain_order,standard_native,setup_reads,
+      "capacity=%0d OUT_NAK=%0d PING_NAK=%0d completed_prefix=%0d completed_order=%0d post_release_OUT_NAK=%0d post_release_PING_NAK=%0d full_order=%0d blocked_order=%0d replacement_order=%0d native_order=%0d drain_order=%0d standard_native=%p SRAM_setup=%p SRAM_response=%p accepted=%0d DMA=%0d",
+      model.fifo_depth_words,nak_count,ping_nak_count,completed_prefix_bytes,
+      completed_prefix_order,post_release_out_naks,post_release_ping_naks,
+      full_order,blocked_order,replacement_order,native_order,drain_order,standard_native,setup_reads,
       response_writes,model.accepted_bytes,actual_dma_bytes), UVM_NONE)
   endfunction
 endclass
