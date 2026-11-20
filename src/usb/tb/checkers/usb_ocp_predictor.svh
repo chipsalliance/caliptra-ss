@@ -36,6 +36,11 @@ class usb_ocp_predictor extends uvm_object;
   int unsigned token_device;
   int unsigned token_epoch;
   int unsigned token_generation;
+  bit token_overlap_valid;
+  int unsigned token_ocp_epoch;
+  int unsigned token_ocp_generation;
+  bit token_ocp_write;
+  usb_ocp_base_control completed_peer_controls[$];
   int unsigned usb_completions[3];
   int unsigned control_data_stage_errors = 0;
   int unsigned transfer_crosschecks[3];
@@ -234,6 +239,18 @@ class usb_ocp_predictor extends uvm_object;
 
   // USB 2.0 9.1.1.3: only USB transfer state belongs to this epoch.
   function void ocp_cancel_usb_epoch(int device);
+    if (require_dev1_ep0_overlap && device == 2) begin
+      usb_ocp_base_control fresh;
+      if (!control[device].status_acked)
+        control[device].peer_overlap_count = '{default:0};
+      control[device].active = 0;
+      fresh = usb_ocp_base_control::type_id::create("reset_peer_control");
+      fresh.epoch = control[device].epoch;
+      fresh.generation = control[device].generation;
+      fresh.status_setup_order = control[device].status_setup_order;
+      fresh.configuration = control[device].configuration;
+      control[device] = fresh;
+    end
     control[device].epoch++;
     control[device].active = 0;
     control[device].status_acked = 0;
@@ -337,6 +354,19 @@ class usb_ocp_predictor extends uvm_object;
     c = control[device];
     if (data.bytes.size() != 8 || data.pid != svt_usb_packet::DATA0)
       `uvm_fatal("OCP_SETUP", "SETUP requires eight DATA0 bytes")
+    if (require_dev1_ep0_overlap && device == 2) begin
+      // A completed generation can still await its native monitor snapshot.
+      // A new SETUP discards only the unfinished generation's candidates.
+      if (!c.status_acked) c.peer_overlap_count = '{default:0};
+      c.active = 0;
+      fresh = usb_ocp_base_control::type_id::create("peer_control");
+      fresh.epoch = c.epoch;
+      fresh.generation = c.generation;
+      fresh.configuration = c.configuration;
+      fresh.previous_setup_order = c.status_setup_order;
+      control[device] = fresh;
+      c = fresh;
+    end
     if (require_dev0_ep0_replacement && device == 1 && c.active &&
         c.setup[0] inside {8'ha1,8'h21} && data.bytes[0][6:5] === 0) begin
       if (replaced_controls[device].size() >= 16384)
@@ -369,6 +399,7 @@ class usb_ocp_predictor extends uvm_object;
     c.status_frozen = 0;
     c.status_setup_order = token.order;
     c.status_data_order = 0;
+    c.status_complete_order = 0;
     c.status_read = (device == 1 && c.setup[0] === 8'ha1 &&
                     c.setup[2] inside {OCP_CMD_DEVICE_STATUS,OCP_CMD_RECOVERY_STATUS});
     if (c.status_read)
@@ -508,12 +539,31 @@ class usb_ocp_predictor extends uvm_object;
       activation_status_acked = 1;
   endfunction
 
+  function void ocp_record_peer_overlap(usb_ocp_event handshake, string stage);
+    usb_ocp_base_control peer;
+    if (!token_overlap_valid || handshake.packet_valid !== 1 ||
+        control[1].active !== 1 || control[1].epoch != token_ocp_epoch ||
+        control[1].generation != token_ocp_generation ||
+        control[1].setup[0] !== (token_ocp_write ? 8'h21 : 8'ha1)) return;
+    peer = control[2];
+    if (peer.peer_overlap_count[token_ocp_write] == 0)
+      peer.peer_overlap[token_ocp_write] = '{
+        ocp_epoch:token_ocp_epoch,ocp_generation:token_ocp_generation,
+        stage:stage,token_order:token.order,handshake_order:handshake.order};
+    peer.peer_overlap_count[token_ocp_write]++;
+    `uvm_info("OCP_OVERLAP_ACCEPT",$sformatf(
+      "source=%s window=%s ocp=%0d/%0d peer=%0d/%0d stage=%s token=%0d handshake=%0d",
+      get_name(),token_ocp_write ? "write" : "read",token_ocp_epoch,token_ocp_generation,
+      peer.epoch,peer.generation,stage,token.order,handshake.order),UVM_HIGH)
+  endfunction
+
   function void ocp_observe_packet(usb_ocp_event item);
     usb_ocp_base_control c;
     usb_ocp_base_epn_model epn;
     logic incoming;
     logic status_stage;
     logic toggle;
+    bit valid_data_stage;
     string setup_context;
     int unsigned setup_generation;
     if (full_speed && item.pid inside {svt_usb_packet::PING,svt_usb_packet::NYET} &&
@@ -535,6 +585,7 @@ class usb_ocp_predictor extends uvm_object;
         if (epn_models[i] != null) epn_models[i].iso_no_handshake = 0;
       token = item;
       candidate = null;
+      token_overlap_valid = 0;
       if (!item.packet_valid) begin token = null; return; end
       token_device = ocp_find_device(item.address);
       epn = ocp_get_epn(token_device);
@@ -551,11 +602,14 @@ class usb_ocp_predictor extends uvm_object;
         token = epn.token;
         return;
       end
-      // USB 2.0 5.5.4 permits transactions from independent control pipes
-      // between an OCP control's accepted SETUP and completed STATUS.
-      if (token_device == 2 && control[1].active) begin
-        if (control[1].setup[0] === 8'ha1) dev1_ep0_read_overlap++;
-        if (control[1].setup[0] === 8'h21) dev1_ep0_write_overlap++;
+      // USB 2.0 5.5.4, 8.5.1 and 8.6.2: bind the window at the token,
+      // but grant provisional evidence only at a fresh acceptance handshake.
+      if (require_dev1_ep0_overlap && token_device == 2 &&
+          control[1].active === 1 && control[1].setup[0] inside {8'ha1,8'h21}) begin
+        token_overlap_valid = 1;
+        token_ocp_epoch = control[1].epoch;
+        token_ocp_generation = control[1].generation;
+        token_ocp_write = (control[1].setup[0] === 8'h21);
       end
       if (item.pid == svt_usb_packet::SETUP) begin
         foreach (setup_status_versions[i]) begin
@@ -633,6 +687,7 @@ class usb_ocp_predictor extends uvm_object;
         if (item.pid != svt_usb_packet::ACK)
           `uvm_fatal("OCP_SETUP", "SETUP requires ACK")
         ocp_accept_setup(token_device, candidate);
+        ocp_record_peer_overlap(item,"SETUP");
       end else begin
         if (!c.active) `uvm_fatal("OCP_STAGE", "DATA without active control transfer")
         status_stage = (c.ocp_get_length() == 0 || incoming != c.setup[0][7]);
@@ -645,9 +700,17 @@ class usb_ocp_predictor extends uvm_object;
           if (!c.setup[0][7] && c.data.size() != c.ocp_get_length())
             `uvm_fatal("OCP_LENGTH", "OUT status before full data stage")
           // USB 2.0 8.5.1: HS control OUT Data/Status accept ACK or NYET.
+          c.status_complete_order = item.order;
           ocp_accept_status(token_device);
+          ocp_record_peer_overlap(item,"STATUS");
+          if (require_dev1_ep0_overlap && token_device == 2) begin
+            if (completed_peer_controls.size() >= 16384)
+              `uvm_fatal("OCP_OVERLAP", "Uncrosschecked completed-peer queue exceeded bound")
+            completed_peer_controls.push_back(c);
+          end
         end else if (toggle === c.next_toggle[incoming]) begin
           // USB 2.0 5.5.3/8.5.3.3: new DATA is not a last-packet retry.
+          valid_data_stage = (c.data.size() < c.ocp_get_length());
           if (c.data.size() == c.ocp_get_length()) begin
             control_data_stage_errors++;
             `uvm_error("OCP_CONTROL_DATA_STAGE", $sformatf(
@@ -660,6 +723,7 @@ class usb_ocp_predictor extends uvm_object;
           if (c.data.size() > c.ocp_get_length())
             `uvm_fatal("OCP_LENGTH", "Control data exceeds wLength")
           if (!incoming) ocp_accept_out(token_device, candidate);
+          if (valid_data_stage) ocp_record_peer_overlap(item,"DATA");
         end
         // A retry with the previous toggle has no second acceptance effect.
       end
