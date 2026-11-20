@@ -102,6 +102,7 @@ class usb_ocp_predictor extends uvm_object;
   usb_ocp_base_epn_profile epn_profiles[2];
   bit require_mixed_epn;
   bit full_speed;
+  usb_ocp_protocol_stall_model stall_model;
   int unsigned mixed_generation[2];
 
   function new(string name = "usb_ocp_predictor");
@@ -370,6 +371,7 @@ class usb_ocp_predictor extends uvm_object;
       c.status_versions = setup_status_versions[(c.setup[2] === OCP_CMD_RECOVERY_STATUS) ? 1 : 0];
     foreach (setup_status_versions[i]) setup_status_versions[i].delete();
     ocp_prepare_response(device);
+    if (stall_model != null) stall_model.ocp_capture_setup(device,c);
   endfunction
 
   function void ocp_accept_out(int device, usb_ocp_event data);
@@ -606,7 +608,9 @@ class usb_ocp_predictor extends uvm_object;
         end else if (c.generation != 0)
           setup_context = $sformatf("accepted SETUP=%p",c.setup);
         else setup_context = "SETUP unavailable (no accepted generation)";
-        `uvm_fatal("OCP_STALL",$sformatf(
+        if (stall_model == null ||
+            !stall_model.ocp_check_stall(token_device,c,token,item,candidate))
+          `uvm_fatal("OCP_STALL",$sformatf(
           "Unexpected STALL device=%s slot=%0d addr=%0d ep=%0d token=%s epoch=%0d setup_generation=%0d %s",
           (token_device == 0) ? "hub" : ((token_device == 1) ? "dev0" : "dev1"),
           token_device,token.address,token.endpoint,token.pid.name(),token_epoch,

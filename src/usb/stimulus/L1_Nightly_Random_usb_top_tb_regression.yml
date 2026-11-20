@@ -22,6 +22,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_epn_fs_overlap_iso: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_epn_overlap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit_bus_activate: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit_bus_data: { weight: 100 }
