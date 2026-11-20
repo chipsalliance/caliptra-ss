@@ -23,6 +23,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
   int unsigned device = 1;
   int unsigned phase;
   int unsigned data_tag;
+  int unsigned payload_length = 0;
   int unsigned scheduled_microframe;
 
   function new(string name = "usb_ocp_base_epn_host_seq");
@@ -50,10 +51,11 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
       `uvm_fatal("OCP_EPN_HOST", "Only discovered FS/HS USB2 endpoints are supported")
     if (device == 2 && address !== usb_cfg.remote_device_cfg[device].device_address)
       `uvm_fatal("OCP_EPN_HOST", "EPN wire address does not match its enumerated native slot")
-    expected = usb_ocp_base_epn_profile::ocp_prepare_stream(endpoint.direction,phase,data_tag);
+    expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
+      endpoint.direction,phase,payload_length,data_tag);
     size = expected.size();
-    if (size < 1 || size >= endpoint.max_packet_size)
-      `uvm_fatal("OCP_EPN_HOST", "Planned short stream exceeds discovered maxpacket")
+    if (size < 1 || size > endpoint.max_packet_size)
+      `uvm_fatal("OCP_EPN_HOST", "Planned stream exceeds discovered maxpacket")
     ep_number = 4'(endpoint.ep_number);
     case (endpoint.transfer_type)
       USB_TRANSFER_TYPE_BULK: transfer_type = (endpoint.direction == USB_DIRECTION_IN) ?
@@ -87,6 +89,10 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
           payload_intended_byte_count == local::size;
           payload_start_ix == 0;
           schedule_priority == 99;
+          // USB2 5.7.3/5.8.3: the exact requested count ends the transfer.
+          if (local::size == local::endpoint.max_packet_size &&
+              local::endpoint.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS)
+            aligned_transfer_ends_with_zero_length == 0;
           if (local::endpoint.transfer_type != USB_TRANSFER_TYPE_BULK) {
             start_uframe_bus_interval == int'(local::scheduled_microframe);
             end_uframe_bus_interval == -1;

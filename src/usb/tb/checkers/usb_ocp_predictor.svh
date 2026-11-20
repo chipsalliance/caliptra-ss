@@ -266,6 +266,10 @@ class usb_ocp_predictor extends uvm_object;
     epn = usb_ocp_base_epn_model::type_id::create("epn_model");
     epn.device = profile.device;
     epn.data_tag = profile.data_tag;
+    for (int dir = 0; dir < 2; dir++)
+      for (int phase = 0; phase < 2; phase++)
+        epn.payload_lengths[dir][phase] = profile.ocp_get_payload_length(
+          dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase);
     epn.full_speed = profile.full_speed;
     epn.discovery.full_speed = profile.full_speed;
     epn.list_base = list_base;
