@@ -362,51 +362,26 @@
 
   // Write the first byte_count bytes of write_data to the SRAM word at
   // address, leaving the word's other bytes untouched. Counts of four or more
-  // write the whole word. A partial word uses aligned narrow AXI writes (a
-  // halfword, then a byte) because the AXI-to-AHB bridge ignores WSTRB but
-  // forwards AxSIZE as HSIZE, which the packet memory uses as its byte select.
+  // write the whole word. The USB AXI ports accept only aligned AxSIZE=2
+  // DWORD accesses and ignore WSTRB, so a partial word is an aligned DWORD
+  // read-modify-write. The word must already hold known data.
   task write_sram_bytes(usb_target_e target, logic [31:0] address, logic [31:0] write_data, int unsigned byte_count, input usb_axi_user_override user_override = null);
+    logic [31:0] old_data;
+    logic [31:0] mask;
+
     if (!(target inside {USB_DEV0_SRAM, USB_DEV1_SRAM})) begin
-      `uvm_fatal("USB_ADDRESS", $sformatf("Narrow writes target packet memory only, not %s", usb_target_name(target)))
+      `uvm_fatal("USB_ADDRESS", $sformatf("write_sram_bytes requires packet memory, not %s", usb_target_name(target)))
+    end
+    if (byte_count == 0) begin
+      return;
     end
     if (byte_count >= 4) begin
       write32(target, address, write_data, user_override);
       return;
     end
-    if (byte_count >= 2) begin
-      narrow_write(target, address, 0, 1, write_data, user_override);
-    end
-    if (byte_count % 2 == 1) begin
-      narrow_write(target, address, byte_count & 2, 0, write_data, user_override);
-    end
-  endtask
-
-  // Write 1 << size bytes from byte lane lane_offset of write_data to that
-  // lane of the word at address, with the same checks and counting as
-  // access(). The lane offset must be aligned to the transfer size.
-  protected task narrow_write(usb_target_e target, logic [31:0] address, int unsigned lane_offset, int unsigned size, logic [31:0] write_data, input usb_axi_user_override user_override = null);
-    aaxi_master_tr transaction;
-    int unsigned byte_total;
-
-    byte_total = 1 << size;
-    if (size > 1 || lane_offset % byte_total != 0 || lane_offset + byte_total > 4) begin
-      `uvm_fatal("USB_ADDRESS", $sformatf("Illegal narrow write: lane=%0d size=%0d", lane_offset, size))
-    end
-    check_address(target, address);
-    transaction = create_transaction(target, address, 1'b1, write_data, user_override);
-    transaction.addr += lane_offset;
-    transaction.size = size;
-    transaction.data.delete();
-    transaction.strobes.delete();
-    for (int unsigned byte_index = 0; byte_index < byte_total; byte_index++) begin
-      transaction.data.push_back(write_data[8 * (lane_offset + byte_index) +: 8]);
-    end
-    `uvm_info("USB_ACCESS", $sformatf("Start %s narrow write offset=0x%08h addr=0x%08h bytes=%0d data=0x%08h", usb_target_name(target), address + lane_offset, transaction.addr, byte_total, write_data), UVM_LOW)
-    execute_transaction(target, 32'(transaction.addr), 1'b1, transaction);
-    if (transaction.resp !== AAXI_RESP_OKAY) begin
-      `uvm_fatal("USB_RESPONSE", $sformatf("%s narrow write addr=0x%08h response=0x%h, expected OKAY", usb_target_name(target), transaction.addr, transaction.resp))
-    end
-    target_stats[target].writes++;
+    mask = byte_lane_mask(byte_count);
+    read32(target, address, old_data, user_override);
+    write32(target, address, (old_data & ~mask) | (write_data & mask), user_override);
   endtask
 
   // Bound a COMBO RAL register operation, including sequencer arbitration.

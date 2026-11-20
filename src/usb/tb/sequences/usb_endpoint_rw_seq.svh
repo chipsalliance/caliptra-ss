@@ -322,7 +322,7 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   endtask
 
   // For each partial byte count, seed SRAM row 0 with a full word, write only
-  // the leading bytes of a second pattern through narrow transfers, and
+  // the leading bytes of a second pattern with a DWORD read-modify-write, and
   // require the remaining bytes to keep the seeded value.
   task exercise_partial_sram_writes(usb_target_e target);
     logic [31:0] seed_data;
@@ -337,7 +337,7 @@ class usb_endpoint_rw_seq extends usb_base_seq;
       write_sram_bytes(target, sram_offset(target, 0), new_data, byte_count);
       expect32(target, sram_offset(target, 0), (seed_data & ~mask) | (new_data & mask));
     end
-    `uvm_info("USB_SRAM", $sformatf("Completed %s 1-, 2-, and 3-byte narrow write checks", usb_target_name(target)), UVM_LOW)
+    `uvm_info("USB_SRAM", $sformatf("Completed %s 1-, 2-, and 3-byte partial-word write checks", usb_target_name(target)), UVM_LOW)
   endtask
 
   // After all native target exercises, re-read the retained route/HUB patterns

@@ -478,7 +478,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // Retry NAKed DATA, replay accepted DATA, then complete status and drain.
         // Run checks:
         // * ACK/NYET acceptance counts each unique DATA packet once.
-        // * Status completion commits exactly 20 bytes.
+        // * Full DATA acceptance commits 20 bytes; STATUS completes control.
         // * Repeated history consumption is rejected.
         // * Drain bounds and READ_INDEX match the consumed DWORDs.
         adapter.configure(8, 8, 16, 1'b1, 32, 64);
@@ -519,16 +519,19 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 4, svt_usb_packet::NYET);
         ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4, 1, 1) &&
-            (adapter.committed_byte_count() == 12) &&
-            adapter.indices_match(5, 2), "owner abort before status cannot commit");
-        ocp_packet_check_true(adapter.observe_drain(3) && adapter.indices_match(5, 5) &&
+            (adapter.committed_byte_count() == 16) &&
+            (adapter.partial_byte_count() == 0) &&
+            adapter.lifecycle_idle() &&
+            adapter.indices_match(6, 2),
+            "full accepted DATA survives owner abort before STATUS");
+        ocp_packet_check_true(adapter.observe_drain(4) && adapter.indices_match(6, 6) &&
             adapter.observe_reset() && adapter.indices_match(0, 0),
             "drain and reset reconcile independently");
 
         // -------------------------------------------------------------------------
         // Retry corrupt DATA and corrupt or unacknowledged status responses.
         // Run checks:
-        // * Valid completion commits the retried write once.
+        // * Full DATA acceptance commits the retried write once.
         // * An ACK following corrupt OUT DATA cannot establish acceptance.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -542,7 +545,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
             (adapter.committed_byte_count() == 4) &&
             adapter.indices_match(1, 0),
-            "corrupt DATA/no-handshake and repeated status commit only once");
+            "clean DATA acceptance commits once despite repeated STATUS");
         ocp_packet_check_true(adapter.observe_reset(), "reset retry history");
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -557,7 +560,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // Handshakes have no CRC; the OUT-reply fixture uses unexpected DATA.
         // Run checks:
         // * An unsolicited OUT reply allocates no bytes.
-        // * Unsolicited status DATA cannot commit the earlier accepted bytes.
+        // * Unsolicited status DATA cannot complete control or undo accepted DATA.
         foreach (orphan_replies[i]) begin
             ocp_packet_emit_synthetic_fifo_setup();
             ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -582,9 +585,10 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK);
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
-            (adapter.committed_byte_count() == 0) &&
-            (adapter.partial_byte_count() == 4),
-            "orphan status DATA1 after corruption cannot commit");
+            (adapter.committed_byte_count() == 4) &&
+            (adapter.partial_byte_count() == 0) &&
+            adapter.lifecycle_idle() && adapter.indices_match(1, 0),
+            "orphan STATUS rejected while full accepted DATA stays committed");
         ocp_packet_check_true(adapter.observe_reset(), "reset orphan status reply");
 
         // -------------------------------------------------------------------------
@@ -592,7 +596,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // Run checks:
         // * Earlier accepted bytes and the expected DATA0 toggle are preserved.
         // * An ACKed DATA replay adds no bytes.
-        // * Status completion commits exactly 20 bytes once.
+        // * Full DATA acceptance commits 20 bytes once; STATUS remains checked.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -684,7 +688,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // -------------------------------------------------------------------------
         // Omit DATA/status ACK and vary packet length, toggle, target and capacity.
         // Run checks:
-        // * Missing or invalid packets cannot establish acceptance or commit.
+        // * Missing/invalid DATA cannot commit; missing STATUS cannot complete control.
         // * Unattributed/duplicate handshakes and over-capacity DATA are rejected.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_status();
@@ -723,7 +727,10 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1, 0);
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
-            (adapter.committed_byte_count() == 0), "missing status ACK cannot commit");
+            (adapter.committed_byte_count() == 4) &&
+            (adapter.partial_byte_count() == 0) &&
+            adapter.lifecycle_idle() && adapter.indices_match(1, 0),
+            "missing STATUS ACK fails control completion but retains full DATA");
         ocp_packet_check_true(adapter.observe_reset(), "reset missing completion");
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT, 0, 0, 7'd6);
@@ -798,6 +805,101 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_fifo_status();
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(8),
             "FIFO transfer limit independently enforced");
+    endfunction
+
+    protected function void ocp_packet_check_synthetic_full_data_commit_boundary();
+        svt_usb_packet::pid_name_enum accepting_replies[2] = '{
+            svt_usb_packet::ACK, svt_usb_packet::NYET};
+        adapter.configure(8, 8, 16, 1'b1, 32, 64);
+        foreach (accepting_replies[i]) begin
+            // Default callers still require STATUS, even though DATA commits.
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_fifo_out(
+                svt_usb_packet::DATA1, 4, accepting_replies[i]);
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                adapter.lifecycle_idle() && adapter.indices_match(1, 0),
+                "full DATA without STATUS commits but cannot prove completed control");
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4),
+                "replayed observation cannot commit full DATA twice");
+            ocp_packet_check_true(adapter.observe_reset(), "reset no-STATUS fixture");
+
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_fifo_out(
+                svt_usb_packet::DATA1, 4, accepting_replies[i]);
+            ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4, 1, 1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                adapter.lifecycle_idle() && adapter.indices_match(1, 0) &&
+                adapter.observe_abort(0) && (adapter.committed_byte_count() == 4),
+                "explicit owner abort cannot undo full ACK/NYET-accepted DATA");
+            ocp_packet_check_true(!adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "window-consumed full-DATA owner abort cannot be observed again");
+            ocp_packet_check_true(adapter.observe_reset(), "reset accepted owner-abort fixture");
+
+            adapter.configure(8, 8, 16, 1'b1, 32, 2);
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_fifo_out(
+                svt_usb_packet::DATA1, 4, accepting_replies[i]);
+            ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4, 1, 0, 1) &&
+                adapter.observe_abort(0) && adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "unrelated abort preserves completed DATA and its first owned abort");
+            ocp_packet_check_true(!adapter.observe_abort(1) &&
+                (adapter.committed_byte_count() == 4) &&
+                (adapter.partial_byte_count() == 0) &&
+                (adapter.free_byte_count() == 24) && adapter.indices_match(1, 0),
+                "duplicate direct full-DATA owner abort rejected without changing contents");
+            ocp_packet_check_true(adapter.observe_drain(1) &&
+                adapter.indices_match(1, 1) && (adapter.committed_byte_count() == 0),
+                "independent drain allowed after full DATA owner retirement without STATUS");
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_fifo_out(
+                svt_usb_packet::DATA1, 4, accepting_replies[i]);
+            ocp_packet_emit_synthetic_fifo_status();
+            ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4) && adapter.indices_match(2, 1),
+                "fresh request completes after full-DATA owner abort and drain");
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 4) && adapter.indices_match(2, 1),
+                "owned abort preserves image progress after independent drain");
+            adapter.configure(8, 8, 16, 1'b1, 32, 64);
+            ocp_packet_check_true(adapter.observe_reset(), "reset accepted interrupted fixture");
+        end
+
+        // Synthetic multi-packet request: only 16 of 20 bytes were accepted.
+        ocp_packet_emit_synthetic_fifo_setup();
+        ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
+        ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(20, 1, 1) &&
+            (adapter.committed_byte_count() == 0) &&
+            (adapter.partial_byte_count() == 0) && adapter.indices_match(0, 0),
+            "owner abort discards incomplete multi-packet DATA without commit");
+        ocp_packet_check_true(adapter.observe_reset(), "reset partial owner-abort fixture");
+
+        for (int unsigned scenario = 0; scenario < 3; scenario++) begin
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+            ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::DATA1),
+                .bytes(4), .bad_crc(scenario == 2));
+            if (scenario != 0)
+                ocp_packet_emit_synthetic_packet(
+                    scenario == 1 ? svt_usb_packet::NAK : svt_usb_packet::ACK, 1'b1);
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 0) && adapter.indices_match(0, 0),
+                "DATA capture/no ACK, NAK, or ACK of CRC-corrupt DATA cannot commit");
+            ocp_packet_check_true(adapter.observe_reset(), "reset unaccepted DATA fixture");
+        end
+        `uvm_info("OCP_PACKET_SELFTEST",
+            "Full ACK/NYET DATA commits independently of STATUS; control completion, replay, once-only direct/window owner abort, retained image progress, drain and unaccepted/partial controls checked.",
+            UVM_NONE)
     endfunction
 
     protected task ocp_packet_do_exercise_and_check_live_fifo();
@@ -1343,6 +1445,16 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                      fifo_model.can_accept_next_packet() &&
                      !fifo_model.can_ack_ping(),
                      "short packet fits while maximum-packet PING cannot ACK");
+        fifo_model.abort_batch(1'b1);
+        // Use a multi-packet fixture for incomplete accepted DATA. A full
+        // single-packet acceptance is not a discardable partial batch.
+        fifo_model.configure(8, 8, 8, 1'b0);
+        fifo_model.begin_batch(20);
+        fifo_model.accept_packet(8);
+        fifo_model.accept_packet(8);
+        fifo_model.accept_packet(4);
+        fifo_model.commit_batch();
+        fifo_model.begin_batch(16);
         fifo_model.accept_packet(8);
         ocp_packet_check_true(fifo_model.partial_byte_count() == 8 &&
                      fifo_model.committed_byte_count() == 20,
@@ -1359,7 +1471,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // Run checks:
         // * An unrelated abort preserves partial and committed bytes.
         // * A FIFO-write abort drops partial bytes; drain consumes committed bytes.
-        fifo_model.begin_batch(8);
+        fifo_model.begin_batch(16);
         fifo_model.accept_packet(8);
         fifo_model.abort_batch(1'b0);
         ocp_packet_check_true(fifo_model.partial_byte_count() == 8 &&
@@ -1380,9 +1492,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // * Partial data counts exact bytes; commit rounds storage to DWORDs.
         // * Both indices wrap at FIFO depth, not at the maximum transfer length.
         fifo_model.begin_batch(15);
-        ocp_packet_check_true(fifo_model.next_packet_bytes() == 15 &&
+        ocp_packet_check_true(fifo_model.next_packet_bytes() == 8 &&
                      fifo_model.can_accept_next_packet(), "rounded batch capacity");
-        fifo_model.accept_packet(15);
+        fifo_model.accept_packet(8);
+        ocp_packet_check_true(fifo_model.next_packet_bytes() == 7 &&
+                     fifo_model.can_accept_next_packet(), "rounded final packet capacity");
+        fifo_model.accept_packet(7);
         ocp_packet_check_true(fifo_model.partial_byte_count() == 15, "partial byte precision");
         fifo_model.commit_batch();
         ocp_packet_check_true(fifo_model.free_byte_count() == 16 &&
@@ -1400,6 +1515,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // * Invalid acceptance or completion histories are rejected.
         observer.stop_window();
         ocp_packet_check_synthetic_fifo_adapter();
+        ocp_packet_check_synthetic_full_data_commit_boundary();
         ocp_packet_check_snapshot_lengths();
 
         // -------------------------------------------------------------------------

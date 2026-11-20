@@ -33,11 +33,14 @@ enum printf_verbosity verbosity_g = LOW;
 #endif
 
 #define INTERRUPTED_TRANSFER_MAILBOX_POLL_LIMIT 1000000u
+#define INTERRUPTED_TRANSFER_CLAIM_ABORT_POLL_LIMIT 1024u
+#define INTERRUPTED_TRANSFER_CLAIM_ABORT_CLEARED 0x01u
 
 // Private verification-channel commands, not OCP Recovery commands.
 enum interrupted_transfer_opcode {
     OPCODE_READ_FIFO_BYTE = 0x05u,
     OPCODE_READ_BATCH_ABORTED = 0x06u,
+    OPCODE_CLAIM_ABORT = 0x07u,
 };
 
 static void fail_and_halt(const char *message)
@@ -56,6 +59,49 @@ static uint8_t generation_is_newer(uint16_t generation,
     // Serial-number arithmetic accepts wrap but rejects duplicates and stale
     // generations, including the ambiguous half-space distance.
     return (distance != 0u) && (distance < 0x8000u);
+}
+
+static uint8_t claim_abort_and_check_self_clear(void)
+{
+    uint32_t ctrl_word = 0u;
+    uint32_t path_disable;
+
+    if (cptra_usb_ocp_recovery_read_caliptra_ctrl(&ctrl_word) != 0u) {
+        fail_and_halt("CPTRA: claim-abort initial DMA read failed");
+    }
+    if ((ctrl_word & RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK) != 0u) {
+        fail_and_halt("CPTRA: claim-abort already pending");
+    }
+    path_disable = ctrl_word & RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK;
+    // Keep only the persistent PATH_DISABLE field. Never replay the adjacent
+    // GENERAL_ERROR request from a read/modify/write of action bits.
+    ctrl_word = path_disable | RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK;
+    if (cptra_usb_ocp_recovery_write_dword(
+            SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL, ctrl_word) != 0u) {
+        fail_and_halt("CPTRA: claim-abort DMA write failed");
+    }
+    for (uint32_t poll = 0u;
+         poll < INTERRUPTED_TRANSFER_CLAIM_ABORT_POLL_LIMIT;
+         ++poll) {
+        if (cptra_usb_ocp_recovery_read_caliptra_ctrl(&ctrl_word) != 0u) {
+            fail_and_halt("CPTRA: claim-abort poll DMA read failed");
+        }
+        if ((ctrl_word & RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK) !=
+            path_disable) {
+            fail_and_halt("CPTRA: claim-abort changed PATH_DISABLE");
+        }
+        if ((ctrl_word &
+             RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK) != 0u) {
+            fail_and_halt("CPTRA: claim-abort observed GENERAL_ERROR request");
+        }
+        if ((ctrl_word & RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK) == 0u) {
+            VPRINTF(LOW, "CPTRA: claim-abort self-cleared after %u DMA reads\n",
+                    poll + 1u);
+            return INTERRUPTED_TRANSFER_CLAIM_ABORT_CLEARED;
+        }
+    }
+    fail_and_halt("CPTRA: claim-abort did not self-clear within poll bound");
+    return 0u;
 }
 
 void main(void)
@@ -144,6 +190,13 @@ void main(void)
                 fail_and_halt("CPTRA: BATCH_ABORTED DMA read failed");
             }
             data = aborted;
+            break;
+
+        case OPCODE_CLAIM_ABORT:
+            if (byte_index != 0u) {
+                fail_and_halt("CPTRA: claim-abort with unpublished FIFO bytes");
+            }
+            data = claim_abort_and_check_self_clear();
             break;
 
         case CPTRA_USB_OCP_FW_COMMAND_FLOW_COMPLETE:

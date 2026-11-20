@@ -21,6 +21,17 @@ class usb_dev_skip_during_rx_test extends usb_base_test;
     test_timeout = 3ms;
   endfunction
 
+  // EP2 buffers participate in active skip/writeback stress, so advertise them
+  // through the same public enumeration fixture as EP1 before handing them to hardware.
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    super.configure_env_cfg(cfg);
+    void'(cfg.add_endpoint(usb_endpoint_cfg::create_endpoint(
+      "ep2_skip_out", 2, USB_DIRECTION_OUT, USB_TRANSFER_TYPE_BULK, cfg.bulk_max_packet_size())));
+    void'(cfg.add_endpoint(usb_endpoint_cfg::create_endpoint(
+      "ep2_skip_in", 2, USB_DIRECTION_IN, USB_TRANSFER_TYPE_BULK, cfg.bulk_max_packet_size())));
+    `uvm_info("USB_SKIP_RX_TEST", "Advertising EP2 OUT/IN for legal active word-half skip stress; EP1 packet scenario unchanged", UVM_LOW)
+  endfunction
+
   task run_phase(uvm_phase phase);
     usb_dev_skip_during_rx_seq skip_sequence;
 

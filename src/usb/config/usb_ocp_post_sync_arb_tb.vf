@@ -1,0 +1,10 @@
++define+UVM_REG_DATA_TYPE=logic
++define+UVM_REG_DATA_WIDTH=128
++incdir+${UVM_HOME_2020}/src
++incdir+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl
+${UVM_HOME_2020}/src/uvm_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_test_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_tb.sv

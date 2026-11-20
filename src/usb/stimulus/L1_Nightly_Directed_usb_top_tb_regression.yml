@@ -37,4 +37,6 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_unsupported_request: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_host_resume: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_remote_wake: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_remote_wake: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }

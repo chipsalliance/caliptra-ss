@@ -758,6 +758,13 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           label))
         end
         if (agent_caps[OCP_CAP_PUSH_C_IMAGE] &&
+            !agent_caps[OCP_CAP_INDIRECT_CTRL] &&
+            !agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP Push C-image requires INDIRECT_CTRL OR INDIRECT_FIFO. Spec interpretation based on OCP Recovery v1.2 Sec 9.2, which updates this requirement from OCP Recovery v1.1 (caps=0x%04h).",
+                          label, agent_caps))
+        end
+        if (agent_caps[OCP_CAP_PUSH_C_IMAGE] &&
             !agent_caps[OCP_CAP_INDIRECT_CTRL]) begin
             `uvm_warning("OCP_BASE",
                 $sformatf("%s: PROT_CAP Push C-image requires INDIRECT_CTRL per OCP Recovery v1.1 Sec 9.2 (caps=0x%04h).",

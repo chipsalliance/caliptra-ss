@@ -19,6 +19,9 @@
 // from protocol discovery or independently checked firmware evidence. This does
 // not infer acceptance from a DUT index. OCP v1.1 Sections 8.2.5 and 9.2 define
 // DWORD rounding; PING's maximum-packet capacity is a separate local policy.
+// Atomic packet accounting predicts completed destination publication for live
+// ordinary/post-drain teardown tests. It does not model a mid-drain emergency
+// purge: only the isolated unit sink observes independently published words.
 class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
     `uvm_object_utils(caliptra_ss_usb_ocp_fifo_packet_model)
 
@@ -36,6 +39,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
     protected int unsigned write_index;
     protected int unsigned read_index;
     protected bit batch_active;
+    protected bit full_data_committed;
     protected bit configured;
     protected bit consumed_generation_valid;
     protected logic [15:0] consumed_generation;
@@ -79,6 +83,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
         write_index = 0;
         read_index = 0;
         batch_active = 1'b0;
+        full_data_committed = 1'b0;
     endfunction
 
     function int unsigned committed_byte_count();
@@ -122,6 +127,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
         requested_bytes = byte_count;
         partial_bytes = 0;
         batch_active = 1'b1;
+        full_data_committed = 1'b0;
     endfunction
 
     function void accept_packet(input int unsigned byte_count);
@@ -140,6 +146,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
         image_committed_bytes += rounded_bytes;
         write_index = (write_index + rounded_bytes / 4) % size_dwords;
         batch_active = 1'b0;
+        full_data_committed = 1'b1;
         partial_bytes = 0;
         requested_bytes = 0;
     endfunction
@@ -149,6 +156,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
     function void abort_batch(input bit owns_fifo_data);
         if (!owns_fifo_data) return;
         batch_active = 1'b0;
+        full_data_committed = 1'b0;
         partial_bytes = 0;
         requested_bytes = 0;
     endfunction
@@ -183,14 +191,17 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
     endfunction
 
     function bit observe_abort(input bit owns_fifo_data);
-        if (!configured || (owns_fifo_data && !batch_active)) return 1'b0;
+        // The wire owner may be torn down after its complete DATA committed.
+        if (!configured ||
+            (owns_fifo_data && !batch_active && !full_data_committed)) return 1'b0;
         abort_batch(owns_fifo_data);
         return 1'b1;
     endfunction
 
     // USB 2.0 8.5.3/8.5.2: ACK and NYET accept OUT DATA; NAK does
     // not. Data-toggle replay must not allocate space twice. OCP Recovery
-    // v1.1 8.2.5/9.2: only a completed batch advances the DWORD write index.
+    // v1.1 8.2.5/9.2 define FIFO lengths and DWORD accounting. The local
+    // commit boundary is clean acceptance of all declared DATA, not STATUS.
     // One complete, generation-qualified EP0 OUT request is consumed once.
     // No transfer-success flag or DUT write index can manufacture acceptance.
     function bit observe_window(
@@ -234,6 +245,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
         have_previous = 1'b0;
         previous_bytes = 0;
         saw_stall = 1'b0;
+        full_data_committed = 1'b0;
         if (packets.accepted_setup_count() != 1) return 1'b0;
         for (int unsigned i = 0; i < packets.packet_count(); i++) begin
             r = packets.get_packet(i);
@@ -301,6 +313,14 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
                                     (data_bytes != next_packet_bytes()))
                                     return 1'b0;
                                 accept_packet(data_bytes);
+                                if (partial_bytes == requested_bytes) begin
+                                    // Commit once at full DATA acceptance.
+                                    // Rounded final-word storage must fit too.
+                                    if ((((partial_bytes + 3) / 4) * 4) >
+                                        (usable_bytes - committed_bytes))
+                                        return 1'b0;
+                                    commit_batch();
+                                end
                                 previous_bytes = data_bytes;
                                 have_previous = 1'b1;
                                 expected_pid = (expected_pid === svt_usb_packet::DATA1) ?
@@ -354,7 +374,7 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
                         state = DONE;
                     end else if ((r.pid_name === svt_usb_packet::DATA1) &&
                                  (r.data_length == 0) && acceptance_allowed &&
-                                 (partial_bytes == requested_bytes))
+                                 full_data_committed)
                         state = STATUS_ACK;
                     else return 1'b0;
                 end
@@ -369,10 +389,8 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
                         !(r.pid_name === svt_usb_packet::ACK) ||
                         r.crc_error_detected || r.data_error_detected ||
                         owner_abort) return 1'b0;
-                    // DWORD padding consumes space even for a short packet.
-                    if ((((partial_bytes + 3) / 4) * 4) >
-                        (usable_bytes - committed_bytes)) return 1'b0;
-                    commit_batch();
+                    // STATUS proves control completion, not another commit.
+                    // Missing/corrupt STATUS never rolls back accepted DATA.
                     state = DONE;
                 end
                 default: return 1'b0;
@@ -382,9 +400,10 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
             if (acceptance_allowed && !observe_abort(1'b1)) return 1'b0;
             return saw_stall || (state != WAIT_SETUP);
         end
-        // An explicitly interrupted observation can preserve an outstanding
-        // FIFO owner. It must subsequently receive owner-abort/reset evidence;
-        // a new FIFO request cannot silently overwrite that partial batch.
+        // An explicitly interrupted observation may omit STATUS. Full DATA
+        // is already irrevocable; incomplete DATA remains a partial owner
+        // requiring later owner-abort/reset evidence. This flag never proves
+        // successful control completion for default callers.
         if (unrelated_abort && (state != WAIT_SETUP))
             return observe_abort(1'b0);
         return (state == DONE) && !batch_active;

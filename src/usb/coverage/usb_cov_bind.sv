@@ -139,7 +139,7 @@ module usb_cov_bind;
     .sync_sieint_success_o       (`USB_COV_ARB.sync_sieint_success_o),
     .fifo_empty                  (`USB_COV_REC.u_a4_cms_fifo.fifo_empty),
     .fifo_full                   (`USB_COV_REC.u_a4_cms_fifo.fifo_full),
-    .fifo_region_reset           (`USB_COV_REC.fifo_region_reset),
+    .fifo_region_reset           (`USB_COV_REC.rb_hwif_out.CALIPTRA_STATUS.REGION_RESET.value),
     .fifo_overflow               (`USB_COV_REC.fifo_overflow),
     .image_push_done             (`USB_COV_REC.image_push_done),
     .batch_aborted               (`USB_COV_REC.batch_aborted)

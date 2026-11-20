@@ -3012,7 +3012,9 @@ Firmware and SoC agents must issue only aligned 32-bit DWORD accesses on all fou
 - Use 4-byte-aligned addresses and `ARSIZE`/`AWSIZE = 3'b010` (4 bytes per beat).
 - Supply a complete DWORD and `WSTRB = 4'b1111` on every write beat.
 
-Byte, halfword, unaligned, and partial- or zero-strobe writes are not permitted; byte, halfword, and unaligned reads are also not permitted. These restrictions apply to every beat of a burst.
+A misaligned address or wrong `AxSIZE` causes USB to reject the burst with `SLVERR`, without touching the target. Reads return zero data on every beat; writes must still send all data beats before receiving their single error response.
+
+USB neither checks nor honors `WSTRB`. A write with partial or zero strobes is not rejected; it writes the entire DWORD.
 
 ### AXI USER Filtering
 

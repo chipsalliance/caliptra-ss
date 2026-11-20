@@ -31,11 +31,13 @@
 //     a. Program FIFO image size 2, write two deterministic DWORDs.
 //     b. Wait FIFO_NONEMPTY_SEEN.
 //     c. USB write INDIRECT_FIFO_CTRL RESET=1.
-//     d. Read ctrl back; require RESET byte zero (device cleared).
-//     e. Read status; require empty/W==R.
-//     f. Wait USB_FIFO_RESET_OBSERVED (CALIPTRA_STATUS is diagnostic only).
+//     d. Wait USB_FIFO_RESET_OBSERVED (public REGION_RESET W1C checks passed).
+//     e. Read ctrl back; require RESET byte zero (device cleared).
+//     f. Read status; require empty/W==R.
 //     g. Refill FIFO with two DWORDs. Wait FW_FIFO_RESET_OBSERVED.
 //     h. Independently read ctrl/status; require RESET zero and empty.
+//        Firmware requires a fresh REGION_RESET event, then checks W1C with
+//        nonempty FIFO before draining the exact distinct post-reset payload.
 //  5. DEVICE_RESET RA action (capability conditional):
 //     - If DEVICE_RESET capability bit zero, require unsupported error.
 //     - If advertised, USB write RESET_CTRL=1; boundedly observe reset_n.
@@ -301,18 +303,26 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             ocp_do_fifo_ctrl_write(8'h00, 1'b1, 32'd0,
                                      "W1DC_FIFO_USB_RESET");
 
-            // Verify RESET self-cleared and FIFO is empty with W==R.
-            ocp_w1dc_do_read_and_check_usb_fifo_reset("W1DC_USB_RESET");
-
-            // Wait firmware USB_FIFO_RESET_OBSERVED.
-            // CALIPTRA_STATUS data from firmware is diagnostic only;
-            // it is not an OCP-specified expected value.
+            // Firmware publishes only after explicit-reset REGION_RESET set,
+            // read/zero/bit0-zero preservation and W1C readback-zero checks.
+            // REGION_RESET permissions are the public vendor contract, not
+            // an OCP-specified status field. Defer additional USB readbacks
+            // until those CPUif checks finish; live arbiter state is not frozen.
             ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_USB_FIFO_RESET_OBSERVED,
                           "W1DC_USB_FIFO_RESET_OBS");
+            if (sem_vif.get_fw_data() !== 8'h00) begin
+                `uvm_error("W1DC_SEQ",
+                    "Firmware reported USB FIFO RESET stuck after consumption.")
+            end
+            // Verify RESET self-cleared and FIFO is empty with W==R.
+            ocp_w1dc_do_read_and_check_usb_fifo_reset("W1DC_USB_RESET");
             `uvm_info("W1DC_SEQ",
-                $sformatf("USB_FIFO_RESET_OBSERVED: caliptra_status_region_reset=%0b (diagnostic)",
-                          sem_vif.get_fw_data()),
+                "USB FIFO reset and public REGION_RESET set/W1C checks complete.",
                 UVM_MEDIUM)
+            `uvm_info("W1DC_SEQ",
+                {"REGION_RESET no-op checks use full-word zero/bit0-zero writes; ",
+                 "disabled-byte strobes are not exercised."},
+                UVM_NONE)
 
             // Refill FIFO (firmware is waiting for this).
             ocp_do_fifo_ctrl_write(8'h00, 1'b0, 32'd2,
@@ -322,6 +332,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             // Wait firmware FW_FIFO_RESET_OBSERVED (firmware did the reset).
             ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FW_FIFO_RESET_OBSERVED,
                           "W1DC_FW_FIFO_RESET_OBS");
+            if (sem_vif.get_fw_data() !== 8'h00) begin
+                `uvm_error("W1DC_SEQ",
+                    "Firmware reported CPUif FIFO RESET stuck after consumption.")
+            end
 
             // Firmware reset is not a USB transfer, so explicitly synchronize
             // the passive scoreboard model at the externally observed reset
