@@ -128,6 +128,7 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
       native_ep.speed = usb_cfg.remote_device_cfg[device].connected_bus_speed;
       native_ep.max_packet_size = ep.max_packet_size;
       native_ep.interval = ep.interval;
+      native_ep.allow_aligned_transfer_without_zero_length = 1;
       native_ep.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_ZERO;
       native_ep.usb_20_isoc_without_first_last_transaction = 0;
       case (ep.transfer_type)
@@ -351,6 +352,8 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
         peers[port][dir].ocp_cfg = ocp_cfg;
         peers[port][dir].phase = phase;
         peers[port][dir].data_tag = profile.data_tag;
+        peers[port][dir].payload_length = profile.ocp_get_payload_length(
+          dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase);
         peers[port][dir].scheduled_microframe = microframe;
       end
     end

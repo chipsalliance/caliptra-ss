@@ -40,8 +40,10 @@ class usb_ocp_mixed_traffic_seq extends usb_ocp_bringup_seq;
     for (int device = 1; device <= 2; device++) begin
       profile = usb_ocp_base_epn_profile::type_id::create($sformatf("firmware_profile%0d",device));
       profile.device = device;
+      profile.full_speed = ocp_cfg.full_speed;
       profile.transfer_type = selected_type;
       profile.data_tag = 64*device;
+      profile.ocp_prepare_payload_lengths();
       ocp_cfg.epn_profiles[device-1] = profile;
       memory_map = map_for((device == 1) ? USB_DEV0_SRAM : USB_DEV1_SRAM);
       scoreboard.model.ocp_configure_epn_profile(profile,ocp_cfg.endpoint_list_base,
