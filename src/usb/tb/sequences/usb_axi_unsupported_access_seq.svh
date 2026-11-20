@@ -15,7 +15,7 @@
 // Unsupported AXI request shapes on every USB AXI region. Per CaliptraSSHardwareSpecification
 // "DWORD-only accesses" and CaliptraSSIntegrationSpecification "AXI Access Restrictions":
 // - an unaligned address or AxSIZE!=2 rejects the whole burst with SLVERR and never touches the target;
-// - a rejected read returns every requested beat with zero data and SLVERR;
+// - a rejected read returns every requested beat with SLVERR and zero on every RDATA byte lane;
 // - a rejected write accepts every data beat and returns a single SLVERR;
 // - USB ignores WSTRB, so a legal DWORD write with partial or zero strobes writes the whole DWORD.
 // Each probe is followed by a legal access: mapped regions check that state is unchanged.
@@ -166,8 +166,30 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
     end
   endtask
 
+  // Run a read and record the full RDATA of each of its beats from the bus. The request keeps only
+  // the requested bytes (opt_auto_unalign_rw_exactly=1), so this also sees the other byte lanes.
+  protected task execute_read_sampling_bus(region_t region, aaxi_master_tr request, output logic [USB_AXI_DATA_WIDTH-1:0] bus_beats[$]);
+    aaxi_sequencer manager = sequencer_for(region.target);
+    bit done = 1'b0;
+
+    bus_beats.delete();
+    fork
+      begin
+        execute_transaction(region.target, 32'(request.addr), 1'b0, request);
+        done = 1'b1;
+      end
+      // RVALID and RREADY are both high at the falling edge before each handshake.
+      while (!done) begin
+        p_sequencer.cfg.wait_bus_negedge();
+        if (manager.cfg.vif.RVALID === 1'b1 && manager.cfg.vif.RREADY === 1'b1 && manager.cfg.vif.RID === request.id) begin
+          bus_beats.push_back(manager.cfg.vif.RDATA);
+        end
+      end
+    join
+  endtask
+
   // Send one unsupported request and require spec rejection: SLVERR on every read beat with
-  // all-zero data, or a single SLVERR for a write. Bursts stay within region.words DWORDs.
+  // zero on every RDATA byte lane, or a single SLVERR for a write. Bursts stay within region.words DWORDs.
   protected task run_probe(region_t region, int unsigned shape, bit is_write, int unsigned beats, bit is_fixed, output string label);
     aaxi_master_tr request;
     int unsigned size = SHAPE_SIZE[shape];
@@ -175,6 +197,8 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
     int unsigned first_bytes = (1 << size) - (lane % (1 << size));
     int unsigned total_bytes;
     int unsigned span_words;
+    logic [USB_AXI_DATA_WIDTH-1:0] bus_beats[$];
+    string data_text;
     bit ok = 1'b1;
 
     // INCR beats after the first are size-aligned; FIXED beats repeat the first beat's lanes.
@@ -202,7 +226,8 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
       request.wuser_A = new[beats];
       foreach (request.wuser_A[beat]) request.wuser_A[beat] = authorized_user.value;
     end
-    execute_transaction(region.target, 32'(request.addr), is_write, request);
+    if (is_write) execute_transaction(region.target, 32'(request.addr), 1'b1, request);
+    else execute_read_sampling_bus(region, request, bus_beats);
     probes++;
     if (beats == 1) single_beat++;
     else if (is_fixed) fixed_bursts++;
@@ -213,9 +238,10 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
         `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: BRESP=%s, expected SLVERR", label, request.addr, resp_name(request.resp)))
         ok = 1'b0;
       end
+      data_text = $sformatf("wdata=%p", request.data);
     end else begin
-      if (request.rresp_Q.size() != beats || request.data.size() != total_bytes) begin
-        `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: %0d responses and %0d bytes, expected %0d and %0d", label, request.addr, request.rresp_Q.size(), request.data.size(), beats, total_bytes))
+      if (request.rresp_Q.size() != beats || request.data.size() != total_bytes || bus_beats.size() != beats) begin
+        `uvm_error("USB_UNSUPPORTED_RESPONSE", $sformatf("%s AXI=0x%016h: %0d responses, %0d bytes and %0d bus beats, expected %0d, %0d and %0d", label, request.addr, request.rresp_Q.size(), request.data.size(), bus_beats.size(), beats, total_bytes, beats))
         ok = 1'b0;
       end
       foreach (request.rresp_Q[beat]) begin
@@ -225,16 +251,23 @@ class usb_axi_unsupported_access_seq extends usb_base_seq;
           break;
         end
       end
-      foreach (request.data[index]) begin
-        if (request.data[index] !== 8'h00) begin
-          `uvm_error("USB_UNSUPPORTED_DATA", $sformatf("%s AXI=0x%016h: byte%0d=0x%02h, expected 0x00 (data=%p)", label, request.addr, index, request.data[index], request.data))
+      // Check every byte lane, not only the requested bytes.
+      foreach (bus_beats[beat]) begin
+        if (bus_beats[beat] !== '0) begin
+          `uvm_error("USB_UNSUPPORTED_DATA", $sformatf("%s AXI=0x%016h: beat%0d RDATA=0x%08h, expected zero on every byte lane", label, request.addr, beat, bus_beats[beat]))
           ok = 1'b0;
           break;
         end
       end
+      data_text = "RDATA={";
+      foreach (bus_beats[beat]) begin
+        if (beat > 0) data_text = {data_text, ","};
+        data_text = {data_text, $sformatf("0x%08h", bus_beats[beat])};
+      end
+      data_text = {data_text, "}"};
     end
     if (ok) rejected++;
-    `uvm_info("USB_UNSUPPORTED_RESPONSE", $sformatf("%s %s AXI=0x%016h ID=0x%0h USER=0x%0h %s %s=%p", ok ? "PASS" : "FAIL", label, request.addr, request.id, authorized_user.value, response_text(request, is_write), is_write ? "wdata" : "rdata", request.data), UVM_LOW)
+    `uvm_info("USB_UNSUPPORTED_RESPONSE", $sformatf("%s %s AXI=0x%016h ID=0x%0h USER=0x%0h %s %s", ok ? "PASS" : "FAIL", label, request.addr, request.id, authorized_user.value, response_text(request, is_write), data_text), UVM_LOW)
   endtask
 
   // Legal DWORD writes with zero and random partial WSTRB must return OKAY and write every byte.

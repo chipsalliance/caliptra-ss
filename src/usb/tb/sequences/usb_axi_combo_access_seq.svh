@@ -305,6 +305,8 @@ class usb_axi_combo_access_seq extends usb_axi_bridge_base_seq;
       end
       start_inflight_tracker(is_write ? "combo_transition_writes" : "combo_transition_reads", 0);
       // Queue every request at once with no response stalls so AHB address phases chain.
+      // Bus order relies on join_none children starting in fork order: VCS does this, but IEEE 1800
+      // leaves it unspecified. The address check below misses a swap of two same-address steps.
       foreach (requests[step]) begin
         automatic int slot = step;
         fork

@@ -331,12 +331,25 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     end
   endtask
 
+  // Wait for BVALID on request's ID. The caller's BREADY stall keeps the write outstanding after it.
+  protected task wait_for_bvalid(aaxi_master_tr request, string label);
+    aaxi_sequencer manager = sequencer_for(bridge_target);
+
+    for (int unsigned cycle = 0; ; cycle++) begin
+      p_sequencer.cfg.wait_bus_negedge();
+      if (manager.cfg.vif.BVALID === 1'b1 && manager.cfg.vif.BID === request.id) break;
+      if (cycle >= 4096) `uvm_fatal({tag_prefix, "_HAZARD"}, $sformatf("%s: no BVALID within %0d cycles", label, cycle))
+    end
+  endtask
+
   // AXI A6.1/A6.2: a read racing an uncompleted write may return each byte's old or new value.
   // A6.5.1: once a same-ID read observes the write, later same-ID reads must observe it too.
-  protected function bit check_racing_read(aaxi_master_tr request, logic [31:0] old_words[], logic [31:0] new_words[], inout bit [3:0] seen_new[], output int unsigned new_bytes);
+  // armed_bytes counts the bytes that an earlier read had already seen new, which this read must keep.
+  protected function bit check_racing_read(aaxi_master_tr request, logic [31:0] old_words[], logic [31:0] new_words[], inout bit [3:0] seen_new[], output int unsigned new_bytes, output int unsigned armed_bytes);
     logic [7:0] actual, old_byte, new_byte;
 
     new_bytes = 0;
+    armed_bytes = 0;
     if (!check_okay(request)) return 1'b0;
     if (request.data.size() != 4 * old_words.size()) begin
       `uvm_fatal({tag_prefix, "_HAZARD"}, $sformatf("%s AXI=0x%016h returned %0d bytes for %0d beats", request.get_name(), request.addr, request.data.size(), old_words.size()))
@@ -346,6 +359,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
         actual = request.data[4 * beat + lane];
         old_byte = old_words[beat][8 * lane +: 8];
         new_byte = new_words[beat][8 * lane +: 8];
+        if (seen_new[beat][lane]) armed_bytes++;
         if (actual === new_byte) begin
           seen_new[beat][lane] = 1'b1;
           new_bytes++;
@@ -362,13 +376,17 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
 
   // Race same-address reads and a write; the second side starts once the first is accepted
   // and stalled. After both complete, A6.5.2 requires a later read to return the new data.
+  // With several reads after a write, the first races the delayed write data and the rest start
+  // after BVALID while BREADY is held, so later reads exercise the A6.5.1 monotonic check.
   protected task race_read_write(string label, int unsigned beats, logic [31:0] offset, bit write_first, int unsigned read_count, int unsigned data_delay = 0);
     aaxi_master_tr write_request, final_read;
     aaxi_master_tr read_requests[];
     logic [31:0] old_words[], new_words[];
     bit [3:0] seen_new[];
-    int unsigned first, overlapped, new_bytes;
-    string observed;
+    bit monotonic = write_first && read_count > 1;
+    int unsigned first, overlapped, new_bytes, armed_bytes;
+    int unsigned armed_total = 0;
+    string observed, armed_text;
     bit passed;
 
     seed_words(label, offset, beats, old_words, passed);
@@ -390,7 +408,10 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
       begin
         wait_for_acceptance(first + 1, label);
         if (write_first) begin
-          foreach (read_requests[index]) issue_request(read_requests[index], 0, inflight_timeout);
+          foreach (read_requests[index]) begin
+            if (monotonic && index == 1) wait_for_bvalid(write_request, label);
+            issue_request(read_requests[index], 0, inflight_timeout);
+          end
         end else issue_request(write_request, 0, inflight_timeout);
       end
     join
@@ -405,8 +426,13 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     passed = 1'b1;
     seen_new = new[beats];
     foreach (read_requests[index]) begin
-      if (!check_racing_read(read_requests[index], old_words, new_words, seen_new, new_bytes)) passed = 1'b0;
+      if (!check_racing_read(read_requests[index], old_words, new_words, seen_new, new_bytes, armed_bytes)) passed = 1'b0;
+      armed_total += armed_bytes;
       observed = {observed, $sformatf("%s%0d/%0d", index == 0 ? "" : ",", new_bytes, 4 * beats)};
+    end
+    if (passed && monotonic && armed_total == 0) begin
+      `uvm_error({tag_prefix, "_HAZARD"}, $sformatf("%s: A6.5.1 monotonic check never armed; no read before the last one observed the write (new bytes per racing read=[%s])", label, observed))
+      passed = 1'b0;
     end
     passed &= check_okay(write_request);
     if (!passed) return;
@@ -414,7 +440,8 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
     issue_request(final_read);
     if (!check_read_words(final_read, new_words)) return;
     hazard_cases++;
-    `uvm_info({tag_prefix, "_HAZARD"}, $sformatf("PASS %s %s offset=0x%08h beats=%0d %s-first, new bytes per racing read=[%s]; read after both completions returned new data", bridge_name, label, offset, beats, write_first ? "write" : "read", observed), UVM_LOW)
+    if (monotonic) armed_text = $sformatf("; A6.5.1 monotonic check armed on %0d bytes", armed_total);
+    `uvm_info({tag_prefix, "_HAZARD"}, $sformatf("PASS %s %s offset=0x%08h beats=%0d %s-first, new bytes per racing read=[%s]%s; read after both completions returned new data", bridge_name, label, offset, beats, write_first ? "write" : "read", observed, armed_text), UVM_LOW)
   endtask
 
   // AXI A6.6.1: a later same-ID write to the same location must be ordered after the earlier one.
@@ -456,7 +483,7 @@ virtual class usb_axi_bridge_base_seq extends usb_base_seq;
   protected task run_same_address_hazards(logic [31:0] first_offset);
     start_inflight_tracker("hazard_tracker", 4 * HAZARD_STALL + HAZARD_DATA_DELAY + 256);
     race_read_write("RAW", 1, first_offset, 1'b1, 1);
-    // Delaying W behind AW gives the in-order reads a chance to see old, then new data.
+    // Delaying W behind AW lets the first read see old data; later reads start after BVALID.
     race_read_write("RAW-monotonic-reads", 1, first_offset + 'h40, 1'b1, 4, HAZARD_DATA_DELAY);
     race_read_write("RAW-INCR4", 4, first_offset + 'h80, 1'b1, 1);
     race_read_write("WAR", 1, first_offset + 'hc0, 1'b0, 1);
