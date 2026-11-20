@@ -53,6 +53,8 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
     usb_init_seq init_sequence;
     usb_endpoint_cfg in_endpoint;
     usb_ep_entry_t in_entry;
+    usb_ep_entry_t expected_in_entry;
+    logic skipped_buffer;
     svt_usb_protocol_service_20_sof_off_sequence sof_off_sequence;
     svt_usb_protocol_service_20_sof_on_sequence sof_on_sequence;
     uvm_action saved_sequencer_warning_action;
@@ -98,15 +100,19 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
     end
     // Programmers Guide 4.2 forbids rewriting an Active command/status word.
     `uvm_info("USB_BAD_PID", "Malformed PID left the IN descriptor owned; requesting EPSKIP before cleanup", UVM_LOW)
-    request_endpoint_skip(in_endpoint);
-    wait_for_endpoint_skip_clear(in_endpoint, status_timeout);
-    in_entry.active = 1'b0;
-    check_endpoint_entry_writeback(in_endpoint, in_entry, "Bad-PID cleanup skip altered more than Active");
+    expected_in_entry = in_entry;
+    skip_selected_endpoint_buffer(in_endpoint, status_timeout, in_entry, skipped_buffer);
+    if (in_entry.active !== 1'b0) begin
+      `uvm_fatal("USB_BAD_PID", "Endpoint skip did not return selected IN ownership; cleanup/recovery cannot continue")
+      return;
+    end
+    expected_in_entry.active = 1'b0;
+    check_endpoint_entry_writeback(in_endpoint, expected_in_entry, "Bad-PID cleanup skip altered more than Active", skipped_buffer);
     `uvm_info("USB_BAD_PID",
-              $sformatf("EPSKIP returned IN ownership with residual/pointer preserved: %s", describe_entry(in_entry)), UVM_LOW)
+              $sformatf("EPSKIP returned IN buffer %0d ownership with residual/pointer preserved: %s", skipped_buffer, describe_entry(in_entry)), UVM_LOW)
     clear_endpoint_interrupt(in_endpoint);
-    write_endpoint_entry(in_endpoint, '0);
-    check_endpoint_entry_writeback(in_endpoint, '0, "Bad-PID cleanup did not clear the retired IN descriptor");
+    write_endpoint_entry(in_endpoint, '0, skipped_buffer);
+    check_endpoint_entry_writeback(in_endpoint, '0, "Bad-PID cleanup did not clear the retired IN descriptor", skipped_buffer);
     `uvm_info("USB_BAD_PID", "Bad-PID IN cleanup verified: skip retired ownership and descriptor cleared", UVM_LOW)
     sof_on_sequence =
         svt_usb_protocol_service_20_sof_on_sequence::type_id::create(

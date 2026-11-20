@@ -231,6 +231,7 @@ package usb_tb_pkg;
   `include "sequences/usb_interrupt_host_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
+  `include "sequences/usb_lpm_capability_host_seq.svh"
   `include "sequences/usb_unsupported_request_host_seq.svh"
   `include "sequences/usb_unsupported_request_seq.svh"
   `include "sequences/usb_resume_recovery_seq.svh"
@@ -254,6 +255,11 @@ package usb_tb_pkg;
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "sequences/usb_dev_skip_during_rx_seq.svh"
+  `include "sequences/usb_remote_wake_enable_host_seq.svh"
+  `include "sequences/usb_l1_remote_wake_host_seq.svh"
+  `include "sequences/usb_l1_remote_wake_seq.svh"
+  `include "sequences/usb_l2_remote_wake_host_seq.svh"
+  `include "sequences/usb_l2_remote_wake_seq.svh"
   `include "tests/usb_base_test.svh"
   `include "tests/usb_axi_read_backpressure_test.svh"
   `include "tests/usb_axi_write_backpressure_test.svh"
@@ -275,6 +281,8 @@ package usb_tb_pkg;
   `include "tests/usb_high_bandwidth_interrupt_test.svh"
   `include "tests/usb_dev_skip_test.svh"
   `include "tests/usb_dev_skip_during_rx_test.svh"
+  `include "tests/usb_l1_remote_wake_test.svh"
+  `include "tests/usb_l2_remote_wake_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
   // OCP-only architecture. Overrides are installed by usb_ocp_base_test,
   // never during package loading or generic environment construction.
