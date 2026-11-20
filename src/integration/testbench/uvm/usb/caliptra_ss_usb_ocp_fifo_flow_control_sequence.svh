@@ -34,6 +34,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         `uvm_field_int(max_polls, UVM_DEFAULT)
         `uvm_field_int(max_retries, UVM_DEFAULT)
         `uvm_field_int(randomize_chunks, UVM_DEFAULT)
+        `uvm_field_int(require_backpressure, UVM_DEFAULT)
         `uvm_field_int(final_valid_bytes, UVM_DEFAULT)
     `uvm_object_utils_end
 
@@ -46,6 +47,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
     int unsigned                     max_polls;
     int unsigned                     max_retries;
     bit                              randomize_chunks;
+    bit                              require_backpressure;
     int unsigned                     final_valid_bytes;
 
     int unsigned successful_attempts;
@@ -86,6 +88,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         max_polls          = 100;
         max_retries        = 10;
         randomize_chunks    = 1'b0;
+        require_backpressure = 1'b1;
         final_valid_bytes   = 3;
         successful_attempts = 0;
         rejected_attempts   = 0;
@@ -428,7 +431,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             end
             chunk_number++;
         end
-        if (observed_naks == 0) begin
+        if (require_backpressure && (observed_naks == 0)) begin
             `uvm_error("OCP_FIFO_FLOW",
                 "USB-NAK flow-control strategy completed without observing required protocol backpressure.")
         end
@@ -476,6 +479,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             null, get_full_name(), "max_retries", max_retries));
         void'(uvm_config_db#(bit)::get(
             null, get_full_name(), "randomize_chunks", randomize_chunks));
+        void'(uvm_config_db#(bit)::get(
+            null, get_full_name(), "require_backpressure", require_backpressure));
         void'(uvm_config_db#(int unsigned)::get(
             null, get_full_name(), "final_valid_bytes", final_valid_bytes));
         if ((final_valid_bytes == 0) || (final_valid_bytes > 4)) begin
