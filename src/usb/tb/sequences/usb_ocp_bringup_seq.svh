@@ -48,6 +48,8 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
       `uvm_fatal("OCP_FS_GUARD", "FS configuration/checker controls require the owned FS scenario")
     if (scoreboard.reset_model == null && $test$plusargs("usb_ocp_reset"))
       `uvm_fatal("OCP_RESET_GUARD", "Reset controls require the OCP reset/reinitialization testcase")
+    if (scoreboard.model.stall_model == null && $test$plusargs("usb_ocp_stall_negative_"))
+      `uvm_fatal("OCP_STALL_GUARD", "Protocol STALL controls require the owned testcase")
     if (scoreboard.l2_model == null &&
         ($test$plusargs("usb_ocp_l2_mode") || $test$plusargs("usb_ocp_l2_negative_retention") ||
          $test$plusargs("usb_ocp_l2_negative_peer") || $test$plusargs("usb_ocp_l2_negative_progress")))
