@@ -26,7 +26,7 @@ class usb_ocp_base_control extends uvm_object;
   logic status_frozen;
   longint unsigned status_setup_order;
   longint unsigned status_data_order;
-  longint unsigned previous_setup_order;
+  longint unsigned previous_completed_setup_order;
   longint unsigned status_complete_order;
   typedef struct {
     int unsigned ocp_epoch;
@@ -63,7 +63,7 @@ class usb_ocp_base_control extends uvm_object;
     status_frozen = 0;
     status_setup_order = 0;
     status_data_order = 0;
-    previous_setup_order = 0;
+    previous_completed_setup_order = 0;
     status_complete_order = 0;
     peer_overlap_count = '{default:0};
     replaced_at = 0;

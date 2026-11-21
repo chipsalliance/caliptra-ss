@@ -379,13 +379,21 @@ class usb_ocp_predictor extends uvm_object;
     if (require_dev1_ep0_overlap && device == 2) begin
       // A completed generation can still await its native monitor snapshot.
       // A new SETUP discards only the unfinished generation's candidates.
+      if (c.active && !c.status_acked)
+        `uvm_info("OCP_PEER_SETUP_REPLAY",$sformatf(
+          "peer=%0d/%0d prior_setup=%0d accepted_setup=%0d previous_completed_setup=%0d old_setup=%p new_setup=%p",
+          c.epoch,c.generation,c.status_setup_order,token.order,
+          c.previous_completed_setup_order,c.setup,data.bytes),UVM_LOW)
       if (!c.status_acked) c.peer_overlap_count = '{default:0};
       c.active = 0;
       fresh = usb_ocp_base_control::type_id::create("peer_control");
       fresh.epoch = c.epoch;
       fresh.generation = c.generation;
       fresh.configuration = c.configuration;
-      fresh.previous_setup_order = c.status_setup_order;
+      // An unfinished SETUP may be a retry in the same native transfer.
+      // Advance its correlation floor only past a STATUS-completed control.
+      fresh.previous_completed_setup_order = c.status_acked ?
+        c.status_setup_order : c.previous_completed_setup_order;
       control[device] = fresh;
       c = fresh;
     end

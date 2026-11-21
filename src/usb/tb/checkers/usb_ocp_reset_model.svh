@@ -513,8 +513,8 @@ class usb_ocp_reset_model extends uvm_object;
         arb_state = (value & caliptra_arb_mask) >> caliptra_arb_shift;
         if ((value & ~caliptra_arb_mask) !==
             (saved_register[name] & ~caliptra_arb_mask) ||
-            !(arb_state === 32'd4 ||
-              (cfg.stage == usb_ocp_reset_control::DATA && arb_state === 32'd3)))
+            !(arb_state === USB_OCP_ARB_STATUS ||
+              (cfg.stage == usb_ocp_reset_control::DATA && arb_state === USB_OCP_ARB_DATA)))
           `uvm_error("OCP_RESET_COMMAND_EFFECT", $sformatf(
             "Command live status actual=%08h initial=%08h state=%0d",
             value,saved_register[name],arb_state))

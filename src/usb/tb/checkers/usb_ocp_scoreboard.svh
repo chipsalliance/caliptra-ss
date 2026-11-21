@@ -579,7 +579,8 @@ class usb_ocp_scoreboard extends uvm_component;
       if (item.endpoint === 0 && c.status_acked === 1 &&
           c.address === item.address && c.setup === item.setup &&
           item.transfer_start_order < c.status_setup_order &&
-          (c.generation == 1 || item.transfer_start_order > c.previous_setup_order) &&
+          (c.previous_completed_setup_order == 0 ||
+           item.transfer_start_order > c.previous_completed_setup_order) &&
           c.status_complete_order < item.order) begin
         if (peer_index != -1)
           `uvm_fatal("OCP_CROSSCHECK", "Ambiguous completed peer generation")
