@@ -202,7 +202,7 @@ class spi_host_performance_vseq extends spi_host_smoke_vseq;
     cfg.seq_cfg.std_en  = 1;
     cfg.seq_cfg.dual_en = 1;
     cfg.seq_cfg.quad_en = 1;
-    super.start_spi_host_trans(num_trans);
+    super.start_spi_host_trans(num_transactions, wait_ready);
   endtask
 
   virtual task generate_transaction();

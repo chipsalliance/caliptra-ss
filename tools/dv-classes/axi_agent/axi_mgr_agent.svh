@@ -211,14 +211,18 @@ function void axi_mgr_agent::connect_phase(uvm_phase phase);
   m_cfg.read_data_vif.set_en_assert(m_cfg.en_assert);
 
   m_monitor_aw.set_vif(m_cfg.write_request_vif);
+  m_monitor_aw.set_cfg(m_cfg);
   m_monitor_aw.set_en_cov(m_cfg.en_cov);
   m_monitor_w.set_vif(m_cfg.write_data_vif);
   m_monitor_w.set_en_cov(m_cfg.en_cov);
   m_monitor_b.set_vif(m_cfg.write_response_vif);
+  m_monitor_b.set_cfg(m_cfg);
   m_monitor_b.set_en_cov(m_cfg.en_cov);
   m_monitor_ar.set_vif(m_cfg.read_request_vif);
+  m_monitor_ar.set_cfg(m_cfg);
   m_monitor_ar.set_en_cov(m_cfg.en_cov);
   m_monitor_r.set_vif(m_cfg.read_data_vif);
+  m_monitor_r.set_cfg(m_cfg);
   m_monitor_r.set_en_cov(m_cfg.en_cov);
 
   // If the agent is active, connect drivers to interfaces and sequencers

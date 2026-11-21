@@ -13,10 +13,6 @@ class spi_host_status_stall_vseq extends spi_host_tx_rx_vseq;
   `uvm_object_utils(spi_host_status_stall_vseq)
   `uvm_object_new
 
-  bit [7:0] rxqd;
-  spi_host_command_t command_q[$];
-  spi_segment_item segment_q[$];
-
   constraint spi_config_regs_latency_c {
     spi_config_regs.clkdiv inside {[0 : 1]};
     spi_config_regs.csnlead inside {[0 : 2]};
@@ -107,47 +103,5 @@ class spi_host_status_stall_vseq extends spi_host_tx_rx_vseq;
 
     `uvm_info(`gfn, "Finished 'spi_host_status_stall_vseq' successfully", UVM_LOW)
   endtask : body
-
-  // Drive all segments of the read transaction. Return when we run out of
-  // segments, or the RXQD indicates we are full.
-  // Drive segments of the read transaction until full/stalled or segments exhaust.
-  virtual task rd_trans(spi_transaction_item trans, bit wait_ready = 1'b1);
-    spi_segment_item segment;
-    spi_host_status_t status;
-
-    while (trans.segments.size() > 0) begin
-      csr_rd(.ptr(ral.status), .value(status), .backdoor(1));
-      if (status.rxstall || status.rxfull || status.rx_qd >= SPI_HOST_RX_DEPTH) begin
-        rxqd = SPI_HOST_RX_DEPTH;
-        break;
-      end
-      if (wait_ready && !status.ready) begin
-        csr_spinwait(.ptr(ral.status.ready), .exp_data(1'b1));
-      end
-      spi_host_atomic.get(1); begin : locked_fifo_access
-        segment = trans.segments.pop_back();
-        if (segment.command_reg.direction != RxOnly) begin
-          access_data_fifo(segment.spi_data, TxFifo);
-        end
-        program_command_reg(segment.command_reg);
-      end spi_host_atomic.put(1);
-
-      csr_rd(.ptr(ral.status.rxqd), .value(rxqd), .backdoor(1));
-      if (rxqd >= SPI_HOST_RX_DEPTH) break;
-    end
-  endtask : rd_trans
-
-  // Randomize the transaction item to allow us to create stalls.
-  virtual task generate_stall_transaction(bit readonly = 1'b1);
-    transaction_init();
-    if (readonly) begin
-      transaction.tx_only_weight = 0;
-      `DV_CHECK_RANDOMIZE_WITH_FATAL(transaction,
-         cmd == ReadStd;)
-    end else begin
-      `DV_CHECK_RANDOMIZE_WITH_FATAL(transaction,
-         cmd == WriteStd;)
-    end
-  endtask : generate_stall_transaction
 
 endclass : spi_host_status_stall_vseq

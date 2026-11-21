@@ -34,9 +34,6 @@ class spi_host_base_vseq extends dv_base_vseq #(
   // reactive sequences to run on spi_agent (configured as a Device)
   spi_device_cmd_rsp_seq m_spi_device_seq[SPI_HOST_NUM_CS];
 
-  // Used to control when csr_spinwaits are spinning
-  uvm_event start_stop_spinwait_ev = uvm_event_pool::get_global("start_stop_spinwait_ev");
-
   // constraints for simulation loops
   constraint num_trans_c {
     num_trans inside {[cfg.seq_cfg.host_spi_min_trans : cfg.seq_cfg.host_spi_max_trans]};
@@ -98,7 +95,6 @@ class spi_host_base_vseq extends dv_base_vseq #(
 
   function void post_randomize();
     super.post_randomize();
-    // We currently support 1 chip-select line only
 
     // We set the timeout to it's default value every time upon entry here.
     // This is because the sim may go through multiple resets and if we don't
@@ -141,106 +137,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
     super.pre_start();
   endtask : pre_start
 
-  // Like csr_spinwait, only the timeout can be stop by using an event.
-  // In addition, one needs to pass the clock cycle period.
-  // This can be used instead of csr_spinwait for moments in which the timeout needs to be
-  // controlled due to RTL conditions such as SW_rest or the module being disabled.
-  task automatic csr_spinwait_stoppable(
-    input   uvm_object ptr,
-    input   uvm_reg_data_t exp_data,
-    input   uvm_check_e check = default_csr_check,
-    input   uvm_path_e path = UVM_DEFAULT_PATH,
-    input   uvm_reg_map map = null,
-    input   uvm_reg_frontdoor user_ftdr = default_user_frontdoor,
-    input   uint spinwait_delay_ns = 100,
-    input   uint timeout_ns = default_spinwait_timeout_ns,
-    input   compare_op_e compare_op = CompareOpEq,
-    input   bit backdoor = 0,
-    input   uvm_verbosity verbosity = UVM_HIGH,
-    input   uint clk_cycle_period_ns,
-    input   string start_stop_ev_name = "start_stop_spinwait_ev"
-    );
-    static int     count;
-    count++;
-    `uvm_info($sformatf("%m()"),
-              $sformatf("- (call_count=%0d, backdoor=%0d, exp_data=%0d, ptr=%s)",
-                        count,backdoor,exp_data, ptr.get_name()), verbosity)
-    fork
-      begin : isolation_fork
-        fork
-          begin
-            csr_utils_pkg::csr_spinwait(.ptr(ptr),
-                                        .exp_data(exp_data),
-                                        .check(check),
-                                        .path(path),
-                                        .map(map),
-                                        .user_ftdr(user_ftdr),
-                                        .spinwait_delay_ns(spinwait_delay_ns),
-                                        // Timeout is 1000 longer than actual timeout so
-                                        // the stoppable timeout part of the fork below can
-                                        // block the count
-                                        .timeout_ns(timeout_ns*10000),
-                                        .compare_op(compare_op),
-                                        .backdoor(backdoor),
-                                        .verbosity(verbosity)
-                                        );
-          end
-          begin: timeout_block
-            stoppable_timeout(clk_cycle_period_ns, timeout_ns, start_stop_ev_name, exp_data,
-                              compare_op, ptr, count);
-          end : timeout_block
-        join_any
-        disable fork;
-      end : isolation_fork
-    join
-  endtask
-
-  // This task applies a timeout that can be stopped. It's used in situations where spi_host is
-  // disabled or when there is a SW reset
-  task stoppable_timeout(input uint clk_cycle_period_ns,
-                         input        uint timeout_ns,
-                         input string start_stop_ev_name,
-                         input        uvm_reg_data_t exp_data,
-                         input        compare_op_e compare_op,
-                         input        uvm_object ptr,
-                         input int    call_count
-                         );
-    int unsigned clk_cycles = 0;
-    csr_spinwait_ctrl_object obj;
-    uvm_event start_stop_spinwait_ev = uvm_event_pool::get_global(start_stop_ev_name);
-    csr_field_t csr_or_fld;
-
-    while ( (clk_cycles * clk_cycle_period_ns) <= timeout_ns) begin
-      clk_cycles++;
-      #(clk_cycle_period_ns * 1ns);
-      if (start_stop_spinwait_ev.is_on()) begin
-        uvm_object ev_obj;
-        // Event triggerred
-        ev_obj = start_stop_spinwait_ev.get_trigger_data();
-        if (!$cast(obj, ev_obj))
-          `uvm_fatal($sformatf("%m()"), "CAST FAILED")
-
-        if (obj.stop) begin
-          start_stop_spinwait_ev.wait_ptrigger_data(ev_obj);
-          `uvm_info($sformatf("%m"), "Event triggered to halt the timeout", UVM_DEBUG)
-          if (!$cast(obj, ev_obj))
-            `uvm_fatal($sformatf("%m()"), "CAST FAILED")
-          if(obj.stop)
-            `uvm_fatal($sformatf("%m"), "Event has already been triggered with stop=1")
-        end
-      end
-    end
-
-    csr_or_fld = decode_csr_or_field(ptr);
-    `uvm_fatal($sformatf("%m()"),
-               $sformatf({"timeout = %0dns %0s (addr=0x%0h,",
-                          " Comparison=%s, exp_data=0x%0h, call_count=%0d"} ,timeout_ns,
-                         ptr.get_full_name(), csr_or_fld.csr.get_address(),
-                         compare_op.name, exp_data, call_count))
-  endtask
-
-  // wrapping csr_spinwait over csr_spinwait_stoppable so we can stop the timeout
-  // count in circumstances like the RTL being disable due to spien or sw_rst.
+  // Wrap csr_utils_pkg::csr_spinwait using the dynamic clkdiv-scaled timeout in cfg.
   virtual task automatic csr_spinwait( input  uvm_object        ptr,
                                        input  uvm_reg_data_t    exp_data,
                                        input  uvm_check_e       check = default_csr_check,
@@ -253,11 +150,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
                                                                   cfg.csr_spinwait_timeout_ns,
                                        input  compare_op_e      compare_op = CompareOpEq,
                                        input  bit               backdoor = 0,
-                                       input  uvm_verbosity     verbosity = UVM_HIGH,
-                                       input  uint              clk_cycle_period_ns =
-                                                                  (cfg.clk_rst_vif.clk_period_ps
-                                                                  / 1000),
-                                       input  string start_stop_ev_name = "start_stop_spinwait_ev"
+                                       input  uvm_verbosity     verbosity = UVM_HIGH
                                       );
     csr_utils_pkg::csr_spinwait( .ptr(ptr), .exp_data(exp_data), .check(check),
                                  .path(path), .map(map), .user_ftdr(user_ftdr),
@@ -281,6 +174,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
   // Call this function to cleanup the above started reactive-sequences, such as if we
   // exit early, or are running sequences back-to-back.
   virtual task cleanup_reactive_seq();
+    if (p_sequencer.spi_sequencer_h == null) return;
     p_sequencer.spi_sequencer_h.stop_sequences();
     if (cfg.m_spi_agent_cfg.has_req_fifo) p_sequencer.spi_sequencer_h.req_analysis_fifo.flush();
     if (cfg.m_spi_agent_cfg.has_rsp_fifo) p_sequencer.spi_sequencer_h.rsp_analysis_fifo.flush();
@@ -342,31 +236,19 @@ class spi_host_base_vseq extends dv_base_vseq #(
     end
   endtask : spi_host_init
 
-  // In addition to un/setting sw_rst also triggers a uvm_event (and uvm_object)
-  // so any csr_spinwaits can be halted until the reset is over
+  // Assert CONTROL.SW_RST, wait for FIFOs to drain, then release SW_RST.
   virtual task program_spi_host_sw_reset(int drain_cycles = SPI_HOST_RX_DEPTH);
     uvm_reg_data_t control_reg;
-    csr_spinwait_ctrl_object spinwait_ctrl_obj;
-    spinwait_ctrl_obj = csr_spinwait_ctrl_object::type_id::create("spinwait_ctrl_obj");
     csr_utils_pkg::wait_no_outstanding_access();
     control_reg = ral.control.get_mirrored_value();
     control_reg[30] = 1'b1;
     csr_wr(.ptr(ral.control), .value(control_reg));
 
-    spinwait_ctrl_obj.stop = 1;
-    start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-    `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to SW_RST=1", UVM_DEBUG)
     // make sure data completely drained from fifo then release reset
     wait_for_fifos_empty(AllFifos);
     csr_rd(.ptr(ral.control), .value(control_reg));
     control_reg[30] = 1'b0; // SW reset field
     csr_wr(.ptr(ral.control), .value(control_reg));
-    spinwait_ctrl_obj.stop = 0;
-    start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-    `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to SW_RST=0", UVM_DEBUG)
-
-    start_stop_spinwait_ev.reset();
-    `uvm_info(`gfn, "Resetting 'start_stop_spinwait_ev'", UVM_DEBUG)
   endtask : program_spi_host_sw_reset
 
   virtual task program_spi_host_regs();
@@ -377,7 +259,6 @@ class spi_host_base_vseq extends dv_base_vseq #(
     csr_wr(.ptr(ral.error_enable), .value(error_enable));
     csr_wr(.ptr(ral.event_enable), .value(event_enable));
     csr_wr(.ptr(ral.intr_enable), .value(intr_enable));
-    // TODO(#18886)
     update_spi_agent_regs();
   endtask : program_spi_host_regs
 
@@ -574,8 +455,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
 
 
 
-  // TODO (#24198): incorporate into a tl_access task wrapper and use whenever the mask is 0x0,
-  // or non-3 byte strobes for TXFIFO
+  // Check and clear ERROR_STATUS.ACCESSINVAL after writing an invalid byte-enable mask.
   virtual task accessinval_error_check(bit [TL_DBW-1:0] mask, bit txfifo);
     int num_try = 2;
     bit accessinval_error;
@@ -638,7 +518,6 @@ class spi_host_base_vseq extends dv_base_vseq #(
     `DV_CHECK_NE_FATAL(fifo, AllFifos)
 
     // Check for free space in the fifo
-    // TODO(#18886) add interrupt handling if FIFO overflows
     if (fifo_avail_chk) wait_for_fifos_available(fifo);
 
     if (rw == WRITE) begin
@@ -832,8 +711,8 @@ class spi_host_base_vseq extends dv_base_vseq #(
 
       // Enable legal multi-cycle BREADY/RREADY backpressure so accepted AXI requests await
       // responses across reset without forcing any internal RTL or interface signals.
-      axi_response_accept_item::s_force_backpressure = 1'b1;
-      axi_response_accept_item::s_forced_delay       = 6;
+      cfg.m_axi_agent_cfg.force_rsp_backpressure = 1'b1;
+      cfg.m_axi_agent_cfg.forced_rsp_delay       = 6;
 
       // 1. Accepted AXI write to TXDATA interrupted by HARD reset while awaiting B response
       fork
@@ -910,7 +789,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
           ral.reset("HARD");
         end
       join
-      axi_response_accept_item::s_force_backpressure = 1'b0;
+      cfg.m_axi_agent_cfg.force_rsp_backpressure = 1'b0;
       `DV_CHECK_EQ(bus_accepted_overlap_cnt, 2,
                    "Expected both accepted AXI write (AW/W->B) and read (AR->R) bus transactions to overlap HARD reset")
       `DV_CHECK_EQ(ral_call_overlap_cnt, 1,

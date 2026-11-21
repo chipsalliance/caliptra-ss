@@ -112,12 +112,27 @@ task axi_sub_read_data_driver::drive_req(input bit aligned, output bit item_sent
 endtask
 
 task axi_sub_read_data_driver::set_data_from_req();
-  req.m_id   &= (32'b1 << m_vif.id_r_width) - 1;
-  req.m_data &= (1024'b1 << m_vif.data_width) - 1;
-  req.m_user &= (528'b1 << (m_vif.user_data_width + m_vif.user_resp_width)) - 1;
-  m_vif.sub_cb.rid   <= req.m_id;
-  m_vif.sub_cb.rdata <= req.m_data;
+  int unsigned user_width = m_vif.user_data_width + m_vif.user_resp_width;
+  if (m_vif.id_r_width < 32 && |(req.m_id >> m_vif.id_r_width)) begin
+    `uvm_error(get_full_name(),
+               $sformatf("Cannot represent req.m_id = 0x%0h. The interface ID_R_WIDTH is %0d.",
+                         req.m_id, m_vif.id_r_width))
+  end
+  if (m_vif.data_width < 1024 && |(req.m_data >> m_vif.data_width)) begin
+    `uvm_error(get_full_name(),
+               $sformatf("Cannot represent req.m_data = 0x%0h. The interface DATA_WIDTH is %0d.",
+                         req.m_data, m_vif.data_width))
+  end
+  if (user_width < 528 && |(req.m_user >> user_width)) begin
+    `uvm_error(get_full_name(),
+               $sformatf({"Cannot represent req.m_user = 0x%0h. ",
+                          "The interface USER_DATA_WIDTH + USER_RESP_WIDTH is %0d."},
+                         req.m_user, user_width))
+  end
+
+  m_vif.sub_cb.rid   <= (m_vif.id_r_width >= 32) ? req.m_id : (req.m_id & ((32'b1 << m_vif.id_r_width) - 1));
+  m_vif.sub_cb.rdata <= (m_vif.data_width >= 1024) ? req.m_data : (req.m_data & ((1024'b1 << m_vif.data_width) - 1));
   m_vif.sub_cb.rresp <= req.m_resp;
   m_vif.sub_cb.rlast <= req.m_last;
-  m_vif.sub_cb.ruser <= req.m_user;
+  m_vif.sub_cb.ruser <= (user_width >= 528) ? req.m_user : (req.m_user & ((528'b1 << user_width) - 1));
 endtask

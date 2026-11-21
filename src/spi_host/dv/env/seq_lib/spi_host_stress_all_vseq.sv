@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-// sw_reset test vseq
+// stress_all test vseq
 class spi_host_stress_all_vseq extends spi_host_tx_rx_vseq;
   `uvm_object_utils(spi_host_stress_all_vseq)
   `uvm_object_new

@@ -43,7 +43,6 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
     spi_host_command_t       cmd;
     uvm_status_e             st;
     uvm_reg_data_t           rdata;
-    csr_spinwait_ctrl_object spinwait_ctrl_obj = csr_spinwait_ctrl_object::type_id::create("spien_hold_ctrl_obj");
     int unsigned             prev_tx_cnt, prev_rx_cnt;
     bit [31:0]               exp_tx_word = 32'hA55A_C33C;
     bit [31:0]               exp_rx_word = 32'h6996_F00F;
@@ -92,8 +91,6 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
 
         // Deassert CONTROL.SPIEN = 0 mid-byte via frontdoor AXI write and snapshot pins immediately
         csr_wr(.ptr(ral.control), .value(32'h2000_007F)); // spien=0, output_en=1
-        spinwait_ctrl_obj.stop = 1;
-        start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
         cfg.clk_rst_vif.wait_clks(1);
 
         hold_sck   = cfg.spi_passthrough_vif.cio_sck_o;
@@ -117,9 +114,6 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
         // Re-enable CONTROL.SPIEN = 1, verify negative control detects the first resumed SCK toggle,
         // and verify lossless transfer completion
         csr_wr(.ptr(ral.control), .value(32'hA000_007F));
-        spinwait_ctrl_obj.stop = 0;
-        start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-        start_stop_spinwait_ev.reset();
 
         @(cfg.m_spi_agent_cfg.vif.sck);
         hold_catcher.match_pattern = "*SPIEN=0 pin-hold invariant violated*";
@@ -147,13 +141,11 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
 
   virtual task body();
     spi_host_status_t status;
-    csr_spinwait_ctrl_object spinwait_ctrl_obj;
 
     // 1. Deterministic active-overlap, continuous cycle-by-cycle pin hold, negative control & resume
     run_checked_spien_pause_hold_and_fault_control();
 
     // 2. Randomized multi-segment SPIEN=0/1 toggle stress
-    spinwait_ctrl_obj = csr_spinwait_ctrl_object::type_id::create("spinwait_ctrl_obj");
     fork start_agent_reactive_seqs(); join_none
     program_spi_host_regs();
     wait_ready_for_command();
@@ -174,15 +166,8 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
           cfg.clk_rst_vif.wait_clks($urandom_range(20, 2000));
 
           csr_wr(.ptr(ral.control.spien), .value(1'b0));
-          spinwait_ctrl_obj.stop = 1;
-          start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-          `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=0", UVM_DEBUG)
-
           cfg.clk_rst_vif.wait_clks($urandom_range(20, 2000));
           csr_wr(.ptr(ral.control.spien), .value(1'b1));
-          spinwait_ctrl_obj.stop = 0;
-          start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-          `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=1", UVM_DEBUG)
 
           csr_rd(.ptr(ral.status), .value(status), .backdoor(1));
         end while (status.active == 1);

@@ -18,6 +18,7 @@ class axi_mgr_read_fixed_vseq extends uvm_sequence#(uvm_sequence_item, axi_fixed
   // Sequencers for AR and R. Set these by calling set_sequencers before starting the sequence.
   local read_request_sequencer_t  m_read_request_sequencer;
   local read_data_sequencer_t     m_read_data_sequencer;
+  local axi_agent_cfg             m_cfg;
 
   // An item representing the single request that will be sent.
   rand axi_fixed_read_req_item m_fixed_req;
@@ -31,6 +32,9 @@ class axi_mgr_read_fixed_vseq extends uvm_sequence#(uvm_sequence_item, axi_fixed
   // Set sequencers for the AR and R channels
   extern function void set_sequencers(read_request_sequencer_t  read_request_sequencer,
                                       read_data_sequencer_t     read_data_sequencer);
+
+  // Set optional agent config (used for per-agent response-channel backpressure controls)
+  extern function void set_cfg(axi_agent_cfg cfg);
 endclass
 
 function axi_mgr_read_fixed_vseq::new(string name="");
@@ -84,6 +88,12 @@ task axi_mgr_read_fixed_vseq::body();
   // Create a sequence to receive a single read data transaction (R). (This might or might not match
   // our ID, but that doesn't matter: the point is that we need to send it as a token)
   r_seq = axi_mgr_read_data_seq::type_id::create("r_seq");
+  if (m_cfg != null && m_cfg.force_rsp_backpressure) begin
+    r_seq.m_use_fixed_ready_without_valid_pct = 1'b1;
+    r_seq.m_fixed_ready_without_valid_pct     = 0;
+    r_seq.m_use_fixed_valid_to_ready_delay    = 1'b1;
+    r_seq.m_fixed_valid_to_ready_delay        = m_cfg.forced_rsp_delay;
+  end
   if (!r_seq.randomize()) begin
     `uvm_fatal(get_full_name(), "Failed to randomize r_seq.")
   end
@@ -131,4 +141,8 @@ function void
 
   m_read_request_sequencer  = read_request_sequencer;
   m_read_data_sequencer     = read_data_sequencer;
+endfunction
+
+function void axi_mgr_read_fixed_vseq::set_cfg(axi_agent_cfg cfg);
+  m_cfg = cfg;
 endfunction

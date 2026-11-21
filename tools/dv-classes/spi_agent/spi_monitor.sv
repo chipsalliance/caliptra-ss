@@ -415,10 +415,12 @@ class spi_monitor extends dv_reactive_monitor #(
 
     // sample data
     for (int i = 0; i < size; i++) begin
+      logic [7:0] d;
       sample_and_check_byte(.num_lanes(1), .is_device_rsp(!item.write_command),
-                            .data(item.data[i]), .check_data_not_z(1));
+                            .data(d), .check_data_not_z(1));
+      item.data.push_back(d);
       `uvm_info(`gfn, $sformatf("collect %s data for TPM, idx %0d: 0x%0x",
-                              item.write_command ? "write" : "read", i, item.data[i]), UVM_MEDIUM)
+                              item.write_command ? "write" : "read", i, d), UVM_MEDIUM)
     end
   endtask
 

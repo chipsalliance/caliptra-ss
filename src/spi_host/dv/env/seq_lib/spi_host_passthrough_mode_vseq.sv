@@ -30,11 +30,16 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
         end else begin
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_sck_o, 1'b0)
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_sck_en_o, 1'b0)
-          `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_csb_o, 2'b11)
-          `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_csb_en_o, 2'b00)
+          `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_csb_o[SPI_HOST_NUM_CS-1:0], {SPI_HOST_NUM_CS{1'b1}})
+          `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_csb_en_o[SPI_HOST_NUM_CS-1:0], {SPI_HOST_NUM_CS{1'b0}})
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_sd_en_o, 4'b0)
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_sd_o, 4'b0)
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.os, 4'hf)
+        end
+        if (cfg.en_cov && (SPI_HOST_NUM_CS == 1) && (cov.passthrough_cg != null)) begin
+          cov.passthrough_cg.sample(cfg.spi_passthrough_vif.passthrough_en,
+                                    1'b0,
+                                    (|cfg.spi_passthrough_vif.is) || (|cfg.spi_passthrough_vif.s_en));
         end
       end
     end
@@ -81,6 +86,10 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
       cmd.csaat     = 1'b0;
       cmd.len       = 9'd3;
       program_command_reg(cmd);
+      if (cfg.en_cov && (SPI_HOST_NUM_CS == 1) && (cov.passthrough_cg != null)) begin
+        cov.passthrough_cg.sample(1'b0, 1'b1, 1'b0);
+        cov.passthrough_cg.sample(1'b0, 1'b1, 1'b1);
+      end
       csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
       csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
       ral.rxdata.read(status, 0, rdata);

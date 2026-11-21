@@ -15,7 +15,7 @@
   // Unique comportable IP identifier defined under KNOWN_CIP_IDS in the regtool.
   cip_id:             "27",
   design_spec:        "../doc",
-  dv_doc:             "../doc/dv",
+  dv_doc:             "../dv/README.md",
   hw_checklist:       "../doc/checklist",
   sw_checklist:       "/sw/device/lib/dif/dif_spi_host",
   revisions: [
@@ -566,8 +566,9 @@
       fields: [
         { bits: "5",
           name: "ACCESSINVAL",
-          desc: '''Indicates that TLUL attempted to write to TXDATA with no bytes enabled. Such
-                   'zero byte' writes are not supported.''',
+          desc: '''Indicates an unsupported byte-enable mask on a TLUL write to TXDATA (valid masks
+                   are 1-byte, contiguous 2-byte, or full 4-byte writes; zero-byte, 3-byte, and
+                   non-contiguous 2-byte masks are rejected).''',
           resval: "0x0"
           tags: [// Updated by the hw. Exclude from init and write-checks.
                  "excl:CsrAllTests:CsrExclCheck"]

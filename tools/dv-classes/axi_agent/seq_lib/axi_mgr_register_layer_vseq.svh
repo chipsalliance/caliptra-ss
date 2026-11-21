@@ -161,7 +161,7 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
 
   // Compute AXI byte-lane offset and transfer size mask
   byte_offset    = int'(item.m_rw.addr) & (bus_byte_width - 1);
-  strb_from_size = (128'd1 << (1 << axsize)) - 1;
+  strb_from_size = (axsize >= 7) ? '1 : ((128'd1 << (1 << axsize)) - 1);
 
   // Propagate item.m_rw.byte_en into the strobes so partial writes only assert
   // the selected byte lanes rather than always driving a full-word mask.
@@ -169,7 +169,7 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
     if ((128'(item.m_rw.byte_en) & ~strb_from_size) != '0 &&
         axsize < $clog2(bus_byte_width)) begin
       axsize         = $clog2(bus_byte_width);
-      strb_from_size = (128'd1 << (1 << axsize)) - 1;
+      strb_from_size = (axsize >= 7) ? '1 : ((128'd1 << (1 << axsize)) - 1);
     end
     unshifted_strb = (axsize <= $clog2(bus_byte_width)) ?
                      (strb_from_size & 128'(item.m_rw.byte_en)) :
@@ -192,10 +192,12 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
 
       read_vseq.set_sequencers(m_ar_sequencer, m_r_sequencer);
       read_vseq.set_read_response_router(m_read_response_router);
+      read_vseq.set_cfg(m_cfg);
 
       if (!read_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            m_fixed_req.m_lock == 1'b0;
             (local::id_width < 32) -> (m_fixed_req.m_id < (32'd1 << local::id_width));
             (local::user_req_width < 128) -> ((m_fixed_req.m_user >> local::user_req_width) == '0);
             (local::en_user_strb && local::user_req_width >= 22) -> (m_fixed_req.m_user[21:18] == local::byte_mask[3:0]);
@@ -236,10 +238,12 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
 
       write_vseq.set_sequencers(m_aw_sequencer, m_w_sequencer, m_b_sequencer);
       write_vseq.set_write_response_router(m_write_response_router);
+      write_vseq.set_cfg(m_cfg);
 
       if (!write_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            m_fixed_req.m_lock == 1'b0;
             (local::id_width < 32) -> (m_fixed_req.m_id < (32'd1 << local::id_width));
             (local::user_req_width < 128) -> ((m_fixed_req.m_user >> local::user_req_width) == '0);
 

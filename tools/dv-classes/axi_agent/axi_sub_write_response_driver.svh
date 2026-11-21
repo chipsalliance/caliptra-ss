@@ -110,9 +110,19 @@ task axi_sub_write_response_driver::drive_req(input bit aligned, output bit item
 endtask
 
 task axi_sub_write_response_driver::set_data_from_req();
-  req.m_id   &= (32'b1 << m_vif.id_w_width) - 1;
-  req.m_user &= (16'b1 << m_vif.user_resp_width) - 1;
-  m_vif.sub_cb.bid   <= req.m_id;
+  if (m_vif.id_w_width < 32 && |(req.m_id >> m_vif.id_w_width)) begin
+    `uvm_error(get_full_name(),
+               $sformatf("Cannot represent req.m_id = 0x%0h. The interface ID_W_WIDTH is %0d.",
+                         req.m_id, m_vif.id_w_width))
+  end
+  if (m_vif.user_resp_width < 16 && |(req.m_user >> m_vif.user_resp_width)) begin
+    `uvm_error(get_full_name(),
+               $sformatf({"Cannot represent req.m_user = 0x%0h. ",
+                          "The interface USER_RESP_WIDTH is %0d."},
+                         req.m_user, m_vif.user_resp_width))
+  end
+
+  m_vif.sub_cb.bid   <= (m_vif.id_w_width >= 32) ? req.m_id : (req.m_id & ((32'b1 << m_vif.id_w_width) - 1));
   m_vif.sub_cb.bresp <= req.m_resp;
-  m_vif.sub_cb.buser <= req.m_user;
+  m_vif.sub_cb.buser <= (m_vif.user_resp_width >= 16) ? req.m_user : (req.m_user & ((16'b1 << m_vif.user_resp_width) - 1));
 endtask

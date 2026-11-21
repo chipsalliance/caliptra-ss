@@ -13,6 +13,8 @@ package axi_agent_pkg;
     BurstWrap  = 2
   } burst_e;
 
+  `include "axi_agent_cfg.svh"
+
   `include "axi_txn_request_item.svh"
   `include "axi_read_data_item.svh"
 
@@ -91,8 +93,6 @@ package axi_agent_pkg;
   `include "axi_fixed_read_rsp_item.svh"
   `include "seq_lib/axi_mgr_read_fixed_vseq.svh"
   `include "seq_lib/axi_mgr_read_burst_vseq.svh"
-
-  `include "axi_agent_cfg.svh"
 
   `include "seq_lib/axi_mgr_register_layer_vseq.svh"
   `include "axi_mgr_agent.svh"

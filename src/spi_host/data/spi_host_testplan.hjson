@@ -536,8 +536,46 @@
     {
       name: intr_pins_cg
       desc: '''
-            Collect coverage on hardware interrupt pins intr_error_o and intr_spi_event_o in both
-            spi_host_cov_if and spi_host_env_cov.
+            Collect coverage on hardware interrupt pins intr_error_o and intr_spi_event_o in
+            spi_host_cov_if::intr_pins_cg (bound RTL pin covergroup) and
+            spi_host_env_cov::intr_pins_cg (UVM environment pin covergroup).
+            '''
+    }
+    {
+      name: axi_monitor_aw_cg
+      desc: '''
+            AXI4 AW-channel coverage in axi_agent_pkg::axi_monitor_aw_cg across burst type
+            (FIXED/INCR/WRAP), AxSIZE (1B/2B/4B for 32-bit bus), burst length (single/short/long),
+            AxLOCK (normal/exclusive), AWREADY stall latency, and legal burst x length crosses.
+            '''
+    }
+    {
+      name: axi_monitor_w_cg
+      desc: '''
+            AXI4 W-channel coverage in axi_agent_pkg::axi_monitor_w::w_cg across WLAST, WSTRB
+            (zero/full/partial), and WREADY stall latency.
+            '''
+    }
+    {
+      name: axi_monitor_b_cg
+      desc: '''
+            AXI4 B-channel coverage in axi_agent_pkg::axi_monitor_b_cg across BRESP (OKAY/SLVERR)
+            and BREADY stall latency.
+            '''
+    }
+    {
+      name: axi_monitor_ar_cg
+      desc: '''
+            AXI4 AR-channel coverage in axi_agent_pkg::axi_monitor_ar_cg across burst type
+            (FIXED/INCR/WRAP), AxSIZE (1B/2B/4B for 32-bit bus), burst length (single/short/long),
+            AxLOCK (normal/exclusive), ARREADY stall latency, and legal burst x length crosses.
+            '''
+    }
+    {
+      name: axi_monitor_r_cg
+      desc: '''
+            AXI4 R-channel coverage in axi_agent_pkg::axi_monitor_r_cg across RRESP (OKAY/SLVERR),
+            RLAST, and RREADY stall latency.
             '''
     }
   ]

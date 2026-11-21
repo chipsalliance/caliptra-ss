@@ -285,8 +285,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       @(negedge cfg.m_spi_agent_cfg.vif.csb[cs_idx]);
       start_time = $realtime();
       cur_cfg = active_cs_configopts[cs_idx];
-      half_period = (cur_cfg.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
-      exp_lead_ps = (cur_cfg.csnlead + 1) * half_period;
+      half_period = (u64_t'(cur_cfg.clkdiv) + 64'd1) * u64_t'(cfg.clk_rst_vif.clk_period_ps);
+      exp_lead_ps = (u64_t'(cur_cfg.csnlead) + 64'd1) * half_period;
 
       // Two-sided ConfigSwitch idle check (Comment #20): when configuration changes across
       // consecutive frames, verify both pre-switch idle (>= prev_cfg.csnidle) and post-switch
@@ -296,9 +296,9 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           !is_sw_rst_active() && cfg.clk_rst_vif.rst_n === 1'b1 &&
           cfg.spi_passthrough_vif.cio_csb_en_o[cs_idx] === 1'b1) begin
         bit cfg_changed = (cur_cfg != prev_frame_cfg);
-        longint unsigned pre_half_ps  = (prev_frame_cfg.clkdiv + 1) * cfg.clk_rst_vif.clk_period_ps;
-        longint unsigned exp_pre_ps   = (prev_frame_cfg.csnidle + 1) * pre_half_ps;
-        longint unsigned exp_post_ps  = (cur_cfg.csnidle + 1) * half_period;
+        longint unsigned pre_half_ps  = (u64_t'(prev_frame_cfg.clkdiv) + 64'd1) * u64_t'(cfg.clk_rst_vif.clk_period_ps);
+        longint unsigned exp_pre_ps   = (u64_t'(prev_frame_cfg.csnidle) + 64'd1) * pre_half_ps;
+        longint unsigned exp_post_ps  = (u64_t'(cur_cfg.csnidle) + 64'd1) * half_period;
         longint unsigned total_idle_ps = longint'((start_time - prev_frame_csb_rise_time) / 1ps);
         if (cfg_changed) begin
           if (total_idle_ps < (exp_pre_ps + exp_post_ps)) begin
@@ -376,7 +376,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
                                    (cfg.m_spi_agent_cfg.vif.sck === cur_cfg.cpol);
         saw_sck_idle_switch      = 1'b0;
         meas_trail_ps = longint'((trail_end_time - last_sck_time) / 1ps);
-        exp_trail_ps = (cur_cfg.csntrail + 1) * half_period;
+        exp_trail_ps = (u64_t'(cur_cfg.csntrail) + 64'd1) * half_period;
         if (cfg.en_scb && (cfg.force_spi_fsm_vif == null || cfg.force_spi_fsm_vif.fast_mode == 0) &&
             !is_sw_rst_active() && cfg.clk_rst_vif.rst_n === 1 &&
             cfg.spi_passthrough_vif.cio_csb_en_o[cs_idx] === 1'b1) begin
@@ -585,18 +585,32 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           end
           if (exp_rx_pending_seg_cnt > 0) exp_rx_pending_seg_cnt--;
         end
-        internal_exec_ref_time   = $realtime();
-        internal_exec_bound_ps   =
-          (u64_t'(n_bytes * 8) * 64'd2 +
-           u64_t'(exp_segment.configopts.csnlead + 2) +
-           u64_t'(exp_segment.configopts.csntrail + 2) +
-           u64_t'(exp_segment.configopts.csnidle + 3) + 64'd8) * half_ps +
-          (64'd24 * clk_ps);
+        begin
+          realtime now_t = $realtime();
+          longint unsigned prev_rem_ps = 0;
+          longint unsigned seg_bound_ps =
+            (u64_t'(n_bytes * 8) * 64'd2 +
+             u64_t'(exp_segment.configopts.csnlead + 2) +
+             u64_t'(exp_segment.configopts.csntrail + 2) +
+             u64_t'(exp_segment.configopts.csnidle + 3) + 64'd8) * half_ps +
+            (64'd24 * clk_ps);
+          if (internal_exec_ref_time > 0) begin
+            longint unsigned elapsed_ps = longint'((now_t - internal_exec_ref_time) / 1ps);
+            if (internal_exec_bound_ps > elapsed_ps) begin
+              prev_rem_ps = internal_exec_bound_ps - elapsed_ps;
+            end
+          end
+          internal_exec_ref_time = now_t;
+          internal_exec_bound_ps = prev_rem_ps + seg_bound_ps;
+        end
+        wait_idle_ref_time       = 0;
         last_csaat_seg_done_time = 0;
         checked_tx_seg_cnt += 1;
         cfg.scb_checked_tx_seg_cnt = checked_tx_seg_cnt;
         continue;
       end
+      internal_exec_ref_time = 0;
+      internal_exec_bound_ps = 0;
 
       if (exp_segment.command_reg.direction inside {RxOnly, Bidir}) begin
         cur_active_rx_seg        = exp_segment;
@@ -1078,7 +1092,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         // via enb_error). Firmware must issue CONTROL.SW_RST to flush the queue before clearing
         // ERROR_STATUS; track both valid and invalid queued descriptors in staged_cmd_q so CMDQD
         // and CMDBUSY reflect true u_cmd_queue occupancy.
-        if (cfg.en_scb && !cmd_busy) begin
+        if (cfg.en_scb && !cmd_busy && !spi_ctrl_reg.sw_rst) begin
           spi_segment_item wr_segment;
           `downcast(wr_segment, host_wr_segment.clone());
           wr_segment.is_cmd_inval = cmd_inval;
@@ -1245,8 +1259,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
             end
             if ((~value[2:0] & sw_error_bits[2:0]) != 3'b0) begin
               `uvm_error(`gfn, $sformatf(
-                "Missing expected ERROR_STATUS[2:0] bit during active transfer: actual=0x%02h predicted=0x%02h",
-                value[5:0], sw_error_bits))
+                "Missing expected ERROR_STATUS[2:0] bit during active transfer: actual=0x%0h predicted=0x%0h",
+                value[2:0], sw_error_bits[2:0]))
             end
           end
         end
@@ -1374,8 +1388,8 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
               if ((&cfg.m_spi_agent_cfg.vif.csb === 1'b1) && !prev_cmd_csaat &&
                   (wait_idle_ref_time > 0)) begin
                 longint unsigned wait_idle_bound_ps =
-                  (u64_t'(active_cs_configopts[idle_cs].csnidle) + 64'd3) *
-                  (u64_t'(active_cs_configopts[idle_cs].clkdiv) + 64'd1) * clk_ps +
+                  (u64_t'(prev_frame_cfg.csnidle) + 64'd3) *
+                  (u64_t'(prev_frame_cfg.clkdiv) + 64'd1) * clk_ps +
                   (64'd24 * clk_ps);
                 if ((($realtime() - wait_idle_ref_time) / 1ps) > wait_idle_bound_ps) begin
                   exp_idle_now = 1'b1;
@@ -1481,7 +1495,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       end
       predict_error_intr({!mask_ok, 3'b000, exp_full, 1'b0});
 
-      if (mask_ok && !exp_full) begin
+      if (mask_ok && !exp_full && !spi_ctrl_reg.sw_rst) begin
         tx_word_t w;
         if (byte_en[3:0] != 4'hf) any_subword_tx_in_q = 1'b1;
         foreach (bytes[i]) begin

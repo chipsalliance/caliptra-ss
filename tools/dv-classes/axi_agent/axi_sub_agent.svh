@@ -100,14 +100,18 @@ class axi_sub_agent extends uvm_agent;
     m_reset_monitor_r.set_vif(m_cfg.read_data_vif);
 
     m_monitor_aw.set_vif(m_cfg.write_request_vif);
+    m_monitor_aw.set_cfg(m_cfg);
     m_monitor_aw.set_en_cov(m_cfg.en_cov);
     m_monitor_w.set_vif(m_cfg.write_data_vif);
     m_monitor_w.set_en_cov(m_cfg.en_cov);
     m_monitor_b.set_vif(m_cfg.write_response_vif);
+    m_monitor_b.set_cfg(m_cfg);
     m_monitor_b.set_en_cov(m_cfg.en_cov);
     m_monitor_ar.set_vif(m_cfg.read_request_vif);
+    m_monitor_ar.set_cfg(m_cfg);
     m_monitor_ar.set_en_cov(m_cfg.en_cov);
     m_monitor_r.set_vif(m_cfg.read_data_vif);
+    m_monitor_r.set_cfg(m_cfg);
     m_monitor_r.set_en_cov(m_cfg.en_cov);
 
     if (get_is_active() == UVM_ACTIVE) begin

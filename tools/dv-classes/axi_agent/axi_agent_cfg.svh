@@ -16,6 +16,15 @@ class axi_agent_cfg extends uvm_object;
   // Encode byte_mask[3:0] into AxUSER[21:18] in register-layer sequences (default enabled for Caliptra)
   bit en_caliptra_user_strb = 1'b1;
 
+  // Per-agent response-channel backpressure controls (used by register-layer / fixed vseqs)
+  bit          force_rsp_backpressure = 1'b0;
+  int unsigned forced_rsp_delay       = 4;
+
+  // Per-agent monitor coverage capability knobs (defaults cover full AMBA AXI4 space)
+  int unsigned cov_max_axsize = 7;
+  bit          cov_en_exokay  = 1'b1;
+  bit          cov_en_decerr  = 1'b1;
+
   virtual axi_write_request_if  write_request_vif;
   virtual axi_write_data_if     write_data_vif;
   virtual axi_write_response_if write_response_vif;

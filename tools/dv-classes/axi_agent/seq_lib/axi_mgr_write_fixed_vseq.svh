@@ -19,6 +19,7 @@ class axi_mgr_write_fixed_vseq extends uvm_sequence#(uvm_sequence_item, axi_fixe
   local write_request_sequencer_t  m_write_request_sequencer;
   local write_data_sequencer_t     m_write_data_sequencer;
   local write_response_sequencer_t m_write_response_sequencer;
+  local axi_agent_cfg              m_cfg;
 
   // An item representing the single request that will be sent.
   rand axi_fixed_write_req_item m_fixed_req;
@@ -33,6 +34,9 @@ class axi_mgr_write_fixed_vseq extends uvm_sequence#(uvm_sequence_item, axi_fixe
   extern function void set_sequencers(write_request_sequencer_t  write_request_sequencer,
                                       write_data_sequencer_t     write_data_sequencer,
                                       write_response_sequencer_t write_response_sequencer);
+
+  // Set optional agent config (used for per-agent response-channel backpressure controls)
+  extern function void set_cfg(axi_agent_cfg cfg);
 endclass
 
 function axi_mgr_write_fixed_vseq::new(string name="");
@@ -98,6 +102,12 @@ task axi_mgr_write_fixed_vseq::body();
   // Create a sequence to receive a single write response (B). (This might or might not match our
   // ID, but that doesn't matter: the point is that we need to send it as a token)
   b_seq = axi_mgr_write_response_seq::type_id::create("b_seq");
+  if (m_cfg != null && m_cfg.force_rsp_backpressure) begin
+    b_seq.m_use_fixed_ready_without_valid_pct = 1'b1;
+    b_seq.m_fixed_ready_without_valid_pct     = 0;
+    b_seq.m_use_fixed_valid_to_ready_delay    = 1'b1;
+    b_seq.m_fixed_valid_to_ready_delay        = m_cfg.forced_rsp_delay;
+  end
   if (!b_seq.randomize()) begin
     `uvm_fatal(get_full_name(), "Failed to randomize b_seq.")
   end
@@ -150,4 +160,8 @@ function void
   m_write_request_sequencer  = write_request_sequencer;
   m_write_data_sequencer     = write_data_sequencer;
   m_write_response_sequencer = write_response_sequencer;
+endfunction
+
+function void axi_mgr_write_fixed_vseq::set_cfg(axi_agent_cfg cfg);
+  m_cfg = cfg;
 endfunction

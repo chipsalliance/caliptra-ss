@@ -20,8 +20,10 @@
 //       active !rst_ni reset disable) requires !passthrough_i.passthrough_en on every active clock
 //       edge; sub-cycle coverage pulses were removed per Comment #22.
 //     * sub2tlul.sv:91,94 (cur_txn direct valid_get_txn <-> valid_put_txn FSM transitions):
-//       [DESIGN-UNR] pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), forcing cur_txn back to
-//       no_txn upon AccessAck/AccessAckData before a new request can assert tl_o.a_valid.
+//       [TARGET-CFG] pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), and u_caliptra_ss_spi_host's
+//       tlul_adapter_reg / tlul_adapter_sram have >=1-cycle response latency (Pass=0), so tl_i.d_valid
+//       cannot assert in the same cycle as a new tl_o.a_valid; cur_txn therefore always returns to
+//       no_txn upon AccessAck/AccessAckData before the next request asserts tl_o.a_valid.
 //     * axi_addr.v:180 (`2'b11` 8-byte beat alignment arm):
 //       [TARGET-CFG] spi_host_axi fixes AxiDw=32 (DSZ=2, max legal AXI4 AxSIZE=3'b010 = 4 bytes).
 //   - Intentionally UNWAIVED entries:
@@ -151,24 +153,27 @@ Condition 7 "3660748963" "(rvalid_o && rready_i) 1 -1" (1 "01")
 //==================================================
 // 5. SYNC FIFOs (cmd_fifo, u_tx_fifo, u_rx_fifo)
 //==================================================
-// [DESIGN-UNR] In caliptra_prim_fifo_sync.sv:69-85, under_rst is a synchronous post-reset flop and
-// wready_o / rvalid_o already include ~gen_normal_fifo.under_rst as a factor, so:
-//   - On line 84 (rvalid_o = ~empty & ~under_rst): rst_ni==0 resets empty=1, and while under_rst==1
-//     wready_o is forced to 0 so no push can occur; hence (~empty=1, ~under_rst=0) is impossible.
+// [DESIGN-UNR / TARGET-CFG] In caliptra_prim_fifo_sync.sv:69-85, under_rst is a synchronous
+// post-reset flop and wready_o / rvalid_o already include ~gen_normal_fifo.under_rst as a factor:
+//   - On line 84 (rvalid_o = ~empty & ~under_rst): with Pass=1, empty = fifo_empty & ~wvalid_i.
+//     rst_ni==0 resets fifo_empty=1 (and wready_o=0 while under_rst==1 prevents any FIFO push);
+//     upstream TL-UL/SPI writers hold wvalid_i==0 while rst_ni==0 / during the single post-reset
+//     under_rst cycle, so empty remains 1 throughout under_rst==1 and (~empty=1, ~under_rst=0) is
+//     unreachable.
 //   - On lines 105-106: (wvalid_i & wready_o)==1 or (rvalid_o & rready_i)==1 structurally implies
 //     ~under_rst == 1 (row "110" is impossible, Comment #7).
 // In u_tx_fifo, tx_valid_checked = tx_valid & ~error_overflow = tx_valid & tx_ready, gating wvalid_i
 // with wready_o so row "101" (wvalid_i=1, wready_o=0) is also structurally impossible.
 CHECKSUM: "4004715651 3111044606"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_cmd_queue.cmd_fifo
-ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o already include ~under_rst"
+ANNOTATION: "[DESIGN-UNR] Pass=1 empty=fifo_empty&~wvalid_i stays 1 while under_rst=1 (upstream wvalid_i=0 under reset); wready_o/rvalid_o include ~under_rst"
 Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 
 CHECKSUM: "4004715651 3686475193"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_data_fifos.u_tx_fifo
-ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o include ~under_rst; tx_valid_checked gated by tx_ready"
+ANNOTATION: "[DESIGN-UNR] Pass=1 empty=fifo_empty&~wvalid_i stays 1 while under_rst=1 (upstream wvalid_i=0 under reset); wready_o/rvalid_o include ~under_rst; tx_valid_checked gated by tx_ready"
 Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "101")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
@@ -176,7 +181,7 @@ Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst)))
 
 CHECKSUM: "4004715651 2903083481"
 INSTANCE: tb.dut.u_caliptra_ss_spi_host.u_data_fifos.u_rx_fifo
-ANNOTATION: "[DESIGN-UNR] empty=1 throughout under_rst=1; wready_o/rvalid_o already include ~under_rst"
+ANNOTATION: "[DESIGN-UNR] Pass=1 empty=fifo_empty&~wvalid_i stays 1 while under_rst=1 (upstream wvalid_i=0 under reset); wready_o/rvalid_o include ~under_rst"
 Condition 2 "1709501387" "(((~gen_normal_fifo.empty)) & ((~gen_normal_fifo.under_rst))) 1 -1" (2 "10")
 Condition 3 "786039886" "(wvalid_i & wready_o & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
 Condition 4 "1324655787" "(rvalid_o & rready_i & ((~gen_normal_fifo.under_rst))) 1 -1" (3 "110")
@@ -308,29 +313,33 @@ Toggle tx_win_o.d_opcode [2:1] "logic tx_win_o.d_opcode[2:0]"
 //==================================================
 // Note: Complex sub2tlul combinational condition tables and all AXI_SUB_*_HSHAKE_ERR SVA assertions
 // remain intentionally UNWAIVED. Only strictly RTL-proven structural constants for spi_host_axi
-// (AxiIw=1, AxiDw=32 / DSZ=2, EX_EN=0) and provable [DESIGN-UNR] FSM/skidbuffer invariants follow.
+// (AxiIw=1, AxiDw=32 / DSZ=2, CALIPTRA_AXI_SUB_EX_EN undefined) and provable [DESIGN-UNR] /
+// [TARGET-CFG] FSM/skidbuffer invariants follow.
 
-// (a) [DESIGN-UNR] sub2tlul.sv:91,94: pending_txn gates tl_o.a_valid (`dv & ~pending_txn`),
-// forcing cur_txn back to no_txn on AccessAck/AccessAckData before a new request can assert a_valid.
+// (a) [TARGET-CFG] sub2tlul.sv:91,94: pending_txn gates tl_o.a_valid (`dv & ~pending_txn`), and
+// u_caliptra_ss_spi_host's tlul_adapter_reg / tlul_adapter_sram have >=1-cycle response latency
+// (Pass=0), so cur_txn always returns to no_txn on AccessAck/AccessAckData before a new request
+// can assert a_valid.
 CHECKSUM: "2553605572 984500570"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_sub2tlul
-ANNOTATION: "[DESIGN-UNR] pending_txn gates tl_o.a_valid, forcing cur_txn through no_txn between requests"
+ANNOTATION: "[TARGET-CFG] pending_txn gates tl_o.a_valid and spi_host adapters have >=1-cycle response latency (Pass=0), forcing cur_txn through no_txn"
 Fsm cur_txn "984500570"
 Transition valid_get_txn->valid_put_txn "1->2"
 Fsm cur_txn "984500570"
 Transition valid_put_txn->valid_get_txn "2->1"
 
-// (b) [TARGET-CFG] axi_sub_wr.sv:157 hardwires s_axi_if_ctx.lock = 1'b0 when CALIPTRA_AXI_SUB_EX_EN
-// is undefined (spi_host_axi.sv:54 sets EX_EN=0), so AXI_RESP_EXOKAY at lines 341-342 is unreachable.
+// (b) [TARGET-CFG] axi_sub_wr.sv:157 hardwires s_axi_if_ctx.lock = 1'b0 because the compile-time
+// macro CALIPTRA_AXI_SUB_EX_EN is undefined in this build, so AXI_RESP_EXOKAY at lines 341-342 is
+// unreachable.
 CHECKSUM: "1738911288 1896776429"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr
-ANNOTATION: "[TARGET-CFG] EX_EN=0 hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
+ANNOTATION: "[TARGET-CFG] CALIPTRA_AXI_SUB_EX_EN undefined hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
 Condition 17 "1180556428" "(txn_allow && txn_ctx.lock) 1 -1" (3 "11")
 Condition 18 "4215928670" "((txn_allow && txn_ctx.lock) ? AXI_RESP_EXOKAY : AXI_RESP_OKAY) 1 -1" (2 "1")
 
 CHECKSUM: "1738911288 936540671"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr
-ANNOTATION: "[TARGET-CFG] EX_EN=0 hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
+ANNOTATION: "[TARGET-CFG] CALIPTRA_AXI_SUB_EX_EN undefined hardwires s_axi_if_ctx.lock=1'b0 in axi_sub_wr.sv:157"
 Branch 0 "166815847" "(txn_allow && (txn_err || err))" (1) "(txn_allow && (txn_err || err)) 0,1"
 
 // (c) [TARGET-CFG] axi_addr.v:180 (2'b11 8-byte alignment arm): spi_host_axi fixes AxiDw=32 (DSZ=2),
@@ -387,10 +396,10 @@ INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_rsp_skd
 ANNOTATION: "[DESIGN-UNR] axi_sub_wr.sv:180 gates req_ready on rp_ready (o_ready), preventing i_valid&&!o_ready"
 Condition 1 "2827200384" "(i_valid && o_ready && o_valid && ((!i_ready))) 1 -1" (2 "1011")
 
-// (e) [TARGET-CFG] Structural port constants on u_axi2tlul_spi_host hierarchy (AxiIw=1, AxiDw=32, EX_EN=0):
+// (e) [TARGET-CFG] Structural port constants on u_axi2tlul_spi_host hierarchy (AxiIw=1, AxiDw=32, CALIPTRA_AXI_SUB_EX_EN undefined):
 //   - Same 11 TL-UL bus constants as Section 1 on axi2tlul / sub2tlul ports.
 //   - Word-aligned addr[1:0]=2'b00 on sub2tlul / axi_sub_arb; size[2]=1'b0 (AxiDw=32 -> max AxSIZE=2).
-//   - EX_EN=0 hardwires lock=0 (i_req_skd data[0]) and resp[0]=0 (i_rsp_skd & rd i_dp_skd data[1]);
+//   - Undefined CALIPTRA_AXI_SUB_EX_EN hardwires lock=0 (i_req_skd data[0]) and resp[0]=0 (i_rsp_skd & rd i_dp_skd data[1]);
 //     AxiDw=32 hardwires awsize[2]=0 (i_req_skd data[44]).
 INSTANCE: tb.dut.u_axi2tlul_spi_host
 ANNOTATION: "[TARGET-CFG] Structural TL-UL port constants for spi_host_axi (AxiIw=1, AxiDw=32)"
@@ -449,7 +458,7 @@ Toggle i_size [2] "logic i_size[2:0]"
 
 CHECKSUM: "2730301546 619868591"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_req_skd
-ANNOTATION: "[TARGET-CFG] EX_EN=0 ties awlock (bit 0)=0; AxiDw=32 ties awsize[2] (bit 44)=0"
+ANNOTATION: "[TARGET-CFG] CALIPTRA_AXI_SUB_EX_EN undefined ties awlock (bit 0)=0; AxiDw=32 ties awsize[2] (bit 44)=0"
 Toggle i_data [0] "logic i_data[78:0]"
 Toggle i_data [44] "logic i_data[78:0]"
 Toggle o_data [0] "logic o_data[78:0]"
@@ -457,12 +466,12 @@ Toggle o_data [44] "logic o_data[78:0]"
 
 CHECKSUM: "2730301546 1462248156"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_wr.i_rsp_skd
-ANNOTATION: "[TARGET-CFG] EX_EN=0 ties rp_resp[0] (bit 1, EXOKAY LSB)=0"
+ANNOTATION: "[TARGET-CFG] CALIPTRA_AXI_SUB_EX_EN undefined ties rp_resp[0] (bit 1, EXOKAY LSB)=0"
 Toggle i_data [1] "logic i_data[2:0]"
 Toggle o_data [1] "logic o_data[2:0]"
 
 CHECKSUM: "2730301546 1129095229"
 INSTANCE: tb.dut.u_axi2tlul_spi_host.i_axi_sub.i_axi_sub_rd.DATA_PIPELINE[0].i_dp_skd
-ANNOTATION: "[TARGET-CFG] EX_EN=0 ties dp_xfer_ctx[0].resp[0] (bit 1, EXOKAY LSB)=0"
+ANNOTATION: "[TARGET-CFG] CALIPTRA_AXI_SUB_EX_EN undefined ties dp_xfer_ctx[0].resp[0] (bit 1, EXOKAY LSB)=0"
 Toggle i_data [1] "logic i_data[67:0]"
 Toggle o_data [1] "logic o_data[67:0]"

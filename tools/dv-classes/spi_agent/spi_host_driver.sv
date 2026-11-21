@@ -127,7 +127,7 @@ class spi_host_driver extends spi_driver;
           cfg.wait_sck_edge(DrivingEdge, active_csb);
         end
       end
-      returned_data[i] = device_byte;
+      returned_data.push_back(device_byte);
     end
   endtask
 
@@ -223,6 +223,8 @@ class spi_host_driver extends spi_driver;
 
     cfg.vif.csb[active_csb] <= 1'b0;
     sck_pulses = cmd_bytes.size() * 8;
+    // for mode 1 and 3, get the leading edges out of the way
+    cfg.wait_sck_edge(LeadingEdge, active_csb);
     issue_data(.transfer_data(cmd_bytes), .returned_data(returned_bytes), .last_data(0));
 
     // polling TPM_START

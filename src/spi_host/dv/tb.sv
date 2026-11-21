@@ -118,7 +118,7 @@ module tb;
   assign r_if.rdata          = {{(1024-AXI_DW){1'b0}}, axi_bus_if.rdata};
   assign r_if.rresp          = {1'b0, axi_bus_if.rresp};
   assign r_if.rlast          = axi_bus_if.rlast;
-  assign r_if.ruser          = {{(528-AXI_UW){1'b0}}, axi_bus_if.ruser};
+  assign r_if.ruser          = {{(528-16){1'b0}}, axi_bus_if.ruser[15:0]};
 
   wire [3:0] sd;
   pullup (sd[0]);
@@ -304,7 +304,7 @@ module tb;
             clk, !rst_n)
     `ASSERT(S_En_A,   passthrough_i.passthrough_en -> passthrough_i.s_en == cio_sd_en_o, clk, !rst_n)
     `ASSERT(Sd_O_A,   passthrough_i.passthrough_en -> passthrough_i.s == cio_sd_o, clk, !rst_n)
+    `ASSERT(Sd_I_A,   passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
   end
-  `ASSERT(Sd_I_A, passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
 
 endmodule

@@ -16,7 +16,6 @@ class spi_device_dma_seq extends spi_base_seq;
   function new(string name="");
     super.new(name);
     data = spi_item::type_id::create("data");
-    data = new();
     `DV_CHECK_RANDOMIZE_WITH_FATAL(data,
                                    item_type == SpiTransNormal;
                                    // Size must be in sync with test dma_inline_hashing.c

@@ -410,8 +410,9 @@ addrmap spi_host {
         } CSIDINVAL[4:4] = 1'b0;
 
         field {
-            desc = "Indicates that TLUL attempted to write to TXDATA with no bytes
-            enabled. Such zero-byte writes are not supported.";
+            desc = "Indicates an unsupported byte-enable mask on a TLUL write to TXDATA
+            (valid masks are 1-byte, contiguous 2-byte, or full 4-byte writes; zero-byte,
+            3-byte, and non-contiguous 2-byte masks are rejected).";
             sw = rw; hw = rw; we; onwrite = woclr;
         } ACCESSINVAL[5:5] = 1'b0;
 

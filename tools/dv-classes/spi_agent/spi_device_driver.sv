@@ -70,18 +70,31 @@ class spi_device_driver extends spi_driver;
 
   virtual task send_rx_item(spi_item item, spi_item rsp);
     logic [3:0] sio_bits;
+    logic [7:0] tx_data[$] = item.data;
     bit         bits_q[$];
     int         max_tx_bits;
 
-    if (cfg.byte_order) cfg.swap_byte_order(item.data);
-    bits_q = {>> 1 {item.data}};
+    if (cfg.byte_order) cfg.swap_byte_order(tx_data);
+    bits_q = {>> 1 {tx_data}};
     max_tx_bits = cfg.get_sio_size();
 
     `uvm_info(`gfn, $sformatf("\n  dev_drv: send_rx_item, return %0d bits to dut",
                               bits_q.size()), UVM_DEBUG)
+    // For CPHA == 0 when SCK is at idle polarity (e.g., standalone transfer right after CSB
+    // assertion), drive the first bit/nibble before the first SamplingEdge; during a mid-frame
+    // reactive handoff (SCK still active before its trailing DrivingEdge), wait for DrivingEdge.
+    if (bits_q.size() > 0 && !cfg.sck_phase[active_csb] &&
+        (cfg.vif.sck === cfg.sck_polarity[active_csb])) begin
+      sio_bits = 'z;
+      for (int i = max_tx_bits - 1; i >= 0; i--) begin
+        sio_bits[i] = (bits_q.size() > 0) ? bits_q.pop_front() : 1'bz;
+      end
+      send_data_to_sio(cfg.spi_mode, sio_bits);
+    end
+
     // pop enough bits to drive all needed sio (MSB on highest active lane)
     while (bits_q.size() > 0) begin
-      if (bits_q.size() > 0) cfg.wait_sck_edge(DrivingEdge, active_csb);
+      cfg.wait_sck_edge(DrivingEdge, active_csb);
       sio_bits = 'z;
       for (int i = max_tx_bits - 1; i >= 0; i--) begin
         sio_bits[i] = (bits_q.size() > 0) ? bits_q.pop_front() : 1'bz;
@@ -91,6 +104,14 @@ class spi_device_driver extends spi_driver;
                                 bits_q.size(), sio_bits[0]), UVM_DEBUG)
 
     end
+    // Hold the final bit/nibble through its SamplingEdge, release sio_out on the subsequent
+    // DrivingEdge, and wait for CSB deassertion so drive_bus_to_highz() is never cut short.
+    if (tx_data.size() > 0) begin
+      cfg.wait_sck_edge(SamplingEdge, active_csb);
+      cfg.wait_sck_edge(DrivingEdge, active_csb);
+      cfg.vif.sio_out <= 'z;
+    end
+    wait (cfg.vif.csb[active_csb] === 1'b1);
     // TODO, ideally we should capture the data device receives and put in rsp.
   endtask : send_rx_item
 

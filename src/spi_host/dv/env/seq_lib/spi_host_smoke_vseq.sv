@@ -860,8 +860,8 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       for (int bp = 0; bp < 2; bp++) begin
         uvm_sequence_item rsp_item;
         axi_reg_op_item   unmapped_rsp;
-        axi_response_accept_item::s_force_backpressure = bit'(bp);
-        axi_response_accept_item::s_forced_delay       = 4;
+        cfg.m_axi_agent_cfg.force_rsp_backpressure = bit'(bp);
+        cfg.m_axi_agent_cfg.forced_rsp_delay       = 4;
 
         unmapped_op = axi_reg_op_item::type_id::create("unmapped_rd_op");
         unmapped_op.m_rw.kind    = UVM_READ;
@@ -889,7 +889,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         `DV_CHECK_EQ(unmapped_rsp.m_rw.status, UVM_NOT_OK,
                      $sformatf("Expected SLVERR on bus write to unmapped address 0x3c (bp=%0d)", bp))
       end
-      axi_response_accept_item::s_force_backpressure = 1'b0;
+      cfg.m_axi_agent_cfg.force_rsp_backpressure = 1'b0;
 
       // 12b-burst. Exercise production u_axi2tlul_spi_host gasket across narrow AxSIZE (1B, 2B),
       // AXI4 FIXED / INCR / WRAP bursts (short & long), concurrent R/W arbitration, and AW/W stalls.
@@ -1255,8 +1255,6 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       int unsigned bp_delays[2] = '{2, 9};
       foreach (bp_delays[b_idx]) begin
         int unsigned pipe_lens[4] = '{0, 1, 0, 0};
-        axi_response_accept_item::s_force_backpressure = 1'b1;
-        axi_response_accept_item::s_forced_delay       = bp_delays[b_idx];
         fork
           begin
             foreach (pipe_lens[k]) begin
@@ -1290,13 +1288,16 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
           begin
             foreach (pipe_lens[k]) begin
               axi_mgr_write_response_seq b_s = axi_mgr_write_response_seq::type_id::create($sformatf("b_p_%0d_%0d", b_idx, k));
+              b_s.m_use_fixed_ready_without_valid_pct = 1'b1;
+              b_s.m_fixed_ready_without_valid_pct     = 0;
+              b_s.m_use_fixed_valid_to_ready_delay    = 1'b1;
+              b_s.m_fixed_valid_to_ready_delay        = bp_delays[b_idx];
               `DV_CHECK_RANDOMIZE_FATAL(b_s)
               b_s.start(agt.get_write_response_sequencer());
             end
           end
         join
       end
-      axi_response_accept_item::s_force_backpressure = 1'b0;
     end
 
     // 5. Pipelined AR requests behind short (len=2 -> 3 beats, ~2-cycle stall) and long

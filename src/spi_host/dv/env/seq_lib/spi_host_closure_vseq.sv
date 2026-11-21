@@ -409,8 +409,8 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
     for (int bp = 0; bp < 2; bp++) begin
       uvm_sequence_item rsp_base;
       axi_reg_op_item   win_op, win_rsp;
-      axi_response_accept_item::s_force_backpressure = bit'(bp);
-      axi_response_accept_item::s_forced_delay       = 4;
+      cfg.m_axi_agent_cfg.force_rsp_backpressure = bit'(bp);
+      cfg.m_axi_agent_cfg.forced_rsp_delay       = 4;
 
       // (a) Wrong-direction write to read-only RXDATA window (0x24) -> must return SLVERR
       win_op = axi_reg_op_item::type_id::create("rxdata_illegal_wr");
@@ -440,7 +440,7 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
       `DV_CHECK_EQ(win_rsp.m_rw.status, UVM_NOT_OK,
                    $sformatf("Expected SLVERR on wrong-direction read from TXDATA (bp=%0d)", bp))
     end
-    axi_response_accept_item::s_force_backpressure = 1'b0;
+    cfg.m_axi_agent_cfg.force_rsp_backpressure = 1'b0;
 
     // Verify ERROR_STATUS remained 0 and both RXQD==1 and TXQD==1 were preserved intact
     csr_rd_check(.ptr(ral.error_status), .compare_value(32'h0));
@@ -545,10 +545,10 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
         `DV_CHECK_NE(rdata, 32'h0000_0000,
                      $sformatf("Reactive responder returned all-zero payload (CS%0d, %s)",
                                cs, rd_modes[m_i].name()))
-        exp_rdata = {m_spi_device_seq[0].last_rsp_item.data[3],
-                     m_spi_device_seq[0].last_rsp_item.data[2],
+        exp_rdata = {m_spi_device_seq[0].last_rsp_item.data[0],
                      m_spi_device_seq[0].last_rsp_item.data[1],
-                     m_spi_device_seq[0].last_rsp_item.data[0]};
+                     m_spi_device_seq[0].last_rsp_item.data[2],
+                     m_spi_device_seq[0].last_rsp_item.data[3]};
         `DV_CHECK_EQ(rdata, exp_rdata,
                      $sformatf("Reactive responder RXDATA mismatch against driven payload (CS%0d, %s)",
                                cs, rd_modes[m_i].name()))
@@ -643,6 +643,52 @@ class spi_host_closure_vseq extends spi_host_smoke_vseq;
                      (i == 3) ? axi_write_response_item::BRespSlverr :
                                 axi_write_response_item::BRespOkay)
       end
+    end
+
+    // 5a-ex. AMBA-legal aligned single-beat exclusive AR + AW pair (AxLOCK = 1):
+    // spi_host_axi does not implement an exclusive monitor (CALIPTRA_AXI_SUB_EX_EN undefined),
+    // so both exclusive accesses must legally return OKAY (never EXOKAY).
+    begin
+      axi_mgr_read_burst_vseq  rd_ex = axi_mgr_read_burst_vseq::type_id::create("rd_ex_lock");
+      axi_mgr_write_burst_vseq wr_ex = axi_mgr_write_burst_vseq::type_id::create("wr_ex_lock");
+      rd_ex.set_sequencers(agt.get_read_request_sequencer(), agt.get_read_data_sequencer());
+      rd_ex.set_read_response_router(agt.get_read_response_router());
+      rd_ex.m_req.m_id     = 0;
+      rd_ex.m_req.m_addr   = 32'h0000_0014;
+      rd_ex.m_req.m_region = 0;
+      rd_ex.m_req.m_len    = 0;
+      rd_ex.m_req.m_size   = 3'd2;
+      rd_ex.m_req.m_burst  = BurstIncr;
+      rd_ex.m_req.m_lock   = 1'b1;
+      rd_ex.m_req.m_cache  = 4'b0000;
+      rd_ex.m_req.m_prot   = 3'b000;
+      rd_ex.m_req.m_qos    = 4'b0000;
+      rd_ex.m_req.m_user   = (128'hf << 18);
+      rd_ex.start(null);
+      `DV_CHECK_EQ(rd_ex.m_read_data_items.size(), 1)
+      `DV_CHECK_EQ(rd_ex.m_read_data_items[0].m_resp, axi_read_data_item::RRespOkay,
+                   "Exclusive AR read to non-exclusive spi_host_axi must return OKAY (never EXOKAY)")
+
+      wr_ex.set_sequencers(agt.get_write_request_sequencer(),
+                           agt.get_write_data_sequencer(),
+                           agt.get_write_response_sequencer());
+      wr_ex.set_write_response_router(agt.get_write_response_router());
+      wr_ex.m_req.m_id     = 0;
+      wr_ex.m_req.m_addr   = 32'h0000_0014;
+      wr_ex.m_req.m_region = 0;
+      wr_ex.m_req.m_len    = 0;
+      wr_ex.m_req.m_size   = 3'd2;
+      wr_ex.m_req.m_burst  = BurstIncr;
+      wr_ex.m_req.m_lock   = 1'b1;
+      wr_ex.m_req.m_cache  = 4'b0000;
+      wr_ex.m_req.m_prot   = 3'b000;
+      wr_ex.m_req.m_qos    = 4'b0000;
+      wr_ex.m_req.m_user   = (128'hf << 18);
+      wr_ex.m_fixed_strb   = 128'hf;
+      wr_ex.start(null);
+      `DV_CHECK_NE(wr_ex.rsp.m_write_response, null)
+      `DV_CHECK_EQ(wr_ex.rsp.m_write_response.m_resp, axi_write_response_item::BRespOkay,
+                   "Exclusive AW write to non-exclusive spi_host_axi must return OKAY (never EXOKAY)")
     end
 
     // 5b. Maximum-length 256-beat (AxLEN = 8'hFF) AXI4 INCR read & write bursts + 1-beat/2-beat follow-ups

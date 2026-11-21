@@ -28,12 +28,14 @@ class spi_agent extends dv_reactive_agent #(
     end else begin
       `uvm_info(`gfn, "spi agent is configure in Host mode", UVM_HIGH)
     end
-    cfg.has_req_fifo = 1;
+    cfg.has_req_fifo = cfg.is_active;
   endfunction : build_phase
 
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-    monitor.host_analysis_port.connect(sequencer.host_mon_analysis_imp);
+    if (cfg.is_active) begin
+      monitor.host_analysis_port.connect(sequencer.host_mon_analysis_imp);
+    end
   endfunction
 
 endclass

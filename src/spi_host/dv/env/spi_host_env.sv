@@ -13,11 +13,8 @@ class spi_host_env extends dv_base_env #(
 
   spi_agent m_spi_agent;
   axi_mgr_agent m_axi_agent;
-  virtual spi_passthrough_if spi_passthrough_vif;
 
   function void build_phase(uvm_phase phase);
-    int clk_core_freq_mhz;
-
     super.build_phase(phase);
     // create components
     m_axi_agent = axi_mgr_agent::type_id::create("m_axi_agent", this);
@@ -40,6 +37,9 @@ class spi_host_env extends dv_base_env #(
     cfg.m_axi_agent_cfg.en_assert             = 1'b1;
     cfg.m_axi_agent_cfg.reg_layer_id_width    = 1;
     cfg.m_axi_agent_cfg.en_caliptra_user_strb = 1'b1;
+    cfg.m_axi_agent_cfg.cov_max_axsize        = 2;    // 32-bit data bus (max 4 bytes/beat)
+    cfg.m_axi_agent_cfg.cov_en_exokay         = 1'b0; // spi_host_axi has no exclusive monitor
+    cfg.m_axi_agent_cfg.cov_en_decerr         = 1'b0; // point-to-point subordinate (no DECERR)
     uvm_config_db#(axi_agent_cfg)::set(this, "m_axi_agent*", "cfg", cfg.m_axi_agent_cfg);
     // create components
     m_spi_agent = spi_agent::type_id::create("m_spi_agent", this);
@@ -62,13 +62,12 @@ class spi_host_env extends dv_base_env #(
     if (!uvm_config_db#(virtual spi_host_fsm_if)::get(this, "", "fast_prescaler_bound_if",
                                                       cfg.force_spi_fsm_vif))
       `uvm_fatal(`gfn, "failed to get fast_prescaler_bound_if from uvm_config_db")
- endfunction : build_phase
+  endfunction : build_phase
 
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     if (cfg.is_active) begin
       virtual_sequencer.axi_agent_h = m_axi_agent;
-      axi_reg_adapter::m_subword_target_addr = SPI_HOST_TXDATA_OFFSET;
       cfg.ral.set_base_addr(0, .randomize_base_addr(0));
       cfg.ral.default_map.set_sequencer(m_axi_agent.get_register_layering_sequencer(),
                                         m_axi_agent.get_layered_reg_adapter());

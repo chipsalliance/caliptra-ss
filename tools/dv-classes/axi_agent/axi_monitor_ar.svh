@@ -4,55 +4,64 @@
 
 // A transaction and coverage monitor for axi_read_request_if (the AXI AR channel)
 
+covergroup axi_monitor_ar_cg(int unsigned max_axsize) with function sample(axi_txn_request_item txn, int unsigned stall_cycles);
+  option.per_instance = 1;
+  cp_burst: coverpoint txn.m_burst {
+    bins fixed = {BurstFixed};
+    bins incr  = {BurstIncr};
+    bins wrap  = {BurstWrap};
+  }
+  cp_size: coverpoint txn.m_size {
+    bins size[] = {[0:7]} with (item <= max_axsize);
+  }
+  cp_len: coverpoint txn.m_len {
+    bins single     = {0};
+    bins short_brst = {[1:15]};
+    bins long_brst  = {[16:255]};
+  }
+  cp_lock: coverpoint txn.m_lock;
+  cp_stall: coverpoint stall_cycles {
+    bins zero_wait  = {0};
+    bins short_wait = {[1:4]};
+    bins long_wait  = {[5:$]};
+  }
+  cx_burst_len: cross cp_burst, cp_len {
+    ignore_bins illegal_wrap  = binsof(cp_burst.wrap)  && (binsof(cp_len.single) || binsof(cp_len.long_brst));
+    ignore_bins illegal_fixed = binsof(cp_burst.fixed) && binsof(cp_len.long_brst);
+  }
+endgroup
+
 class axi_monitor_ar extends uvm_monitor;
   `uvm_component_utils(axi_monitor_ar)
 
   uvm_analysis_port #(axi_txn_request_item) m_analysis_port;
 
   local virtual axi_read_request_if m_vif;
+  local axi_agent_cfg m_cfg;
   local bit m_en_cov = 1'b1;
   local int unsigned m_stall_cycles;
 
-  covergroup ar_cg with function sample(axi_txn_request_item item, int unsigned stall_cycles);
-    option.per_instance = 1;
-    cp_burst: coverpoint item.m_burst {
-      bins fixed = {BurstFixed};
-      bins incr  = {BurstIncr};
-      bins wrap  = {BurstWrap};
-    }
-    cp_size: coverpoint item.m_size {
-      bins size_1b = {0};
-      bins size_2b = {1};
-      bins size_4b = {2};
-      ignore_bins size_gt_32b = {[3:7]};
-    }
-    cp_len: coverpoint item.m_len {
-      bins single     = {0};
-      bins short_brst = {[1:15]};
-      bins long_brst  = {[16:255]};
-    }
-    cp_lock: coverpoint item.m_lock;
-    cp_stall: coverpoint stall_cycles {
-      bins zero_wait  = {0};
-      bins short_wait = {[1:4]};
-      bins long_wait  = {[5:$]};
-    }
-    cx_burst_len: cross cp_burst, cp_len {
-      ignore_bins illegal_wrap  = binsof(cp_burst.wrap)  && (binsof(cp_len.single) || binsof(cp_len.long_brst));
-      ignore_bins illegal_fixed = binsof(cp_burst.fixed) && binsof(cp_len.long_brst);
-    }
-  endgroup
+  axi_monitor_ar_cg ar_cg;
 
   extern function new(string name, uvm_component parent);
+  extern function void start_of_simulation_phase(uvm_phase phase);
   extern task run_phase(uvm_phase phase);
   extern function void set_vif(virtual axi_read_request_if vif);
   extern function void set_en_cov(bit en_cov);
+  extern function void set_cfg(axi_agent_cfg cfg);
 endclass
 
 function axi_monitor_ar::new(string name, uvm_component parent);
   super.new(name, parent);
   m_analysis_port = new("m_analysis_port", this);
-  ar_cg = new();
+endfunction
+
+function void axi_monitor_ar::start_of_simulation_phase(uvm_phase phase);
+  super.start_of_simulation_phase(phase);
+  if (m_en_cov && ar_cg == null) begin
+    int unsigned max_axsize = (m_cfg != null) ? m_cfg.cov_max_axsize : 7;
+    ar_cg = new(max_axsize);
+  end
 endfunction
 
 function void axi_monitor_ar::set_vif(virtual axi_read_request_if vif);
@@ -61,6 +70,10 @@ endfunction
 
 function void axi_monitor_ar::set_en_cov(bit en_cov);
   m_en_cov = en_cov;
+endfunction
+
+function void axi_monitor_ar::set_cfg(axi_agent_cfg cfg);
+  m_cfg = cfg;
 endfunction
 
 task axi_monitor_ar::run_phase(uvm_phase phase);
@@ -88,7 +101,7 @@ task axi_monitor_ar::run_phase(uvm_phase phase);
         item.m_prot   = m_vif.mon_cb.arprot;
         item.m_qos    = m_vif.mon_cb.arqos;
         item.m_user   = m_vif.mon_cb.aruser;
-        if (m_en_cov) ar_cg.sample(item, m_stall_cycles);
+        if (m_en_cov && ar_cg != null) ar_cg.sample(item, m_stall_cycles);
         m_analysis_port.write(item);
         m_stall_cycles = 0;
       end else begin
