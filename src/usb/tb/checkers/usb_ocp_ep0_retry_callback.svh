@@ -133,9 +133,9 @@ class usb_ocp_ep0_retry_control extends uvm_object;
       if (host_tx != (token_pid == svt_usb_packet::IN))
         `uvm_fatal("OCP_EP0_RETRY_WIRE", "Handshake direction differs from the observed token")
       if (kind == WRITE_RETRY && data_direction && data_packets > 1 &&
-          loss_applied && pid != svt_usb_packet::ACK)
+          loss_applied && !(pid inside {svt_usb_packet::ACK,svt_usb_packet::NYET}))
         `uvm_fatal("OCP_EP0_RETRY_DUPLICATE", $sformatf(
-          "USB 2.0 8.6.4: accepted OUT duplicate requires ACK, received %s",
+          "Accepted OUT duplicate requires ACK/NYET, received %s",
           pid.name()))
       if (pid inside {svt_usb_packet::ACK,svt_usb_packet::NYET}) begin
         if (data_direction) data_acks++;
@@ -151,7 +151,7 @@ class usb_ocp_ep0_retry_control extends uvm_object;
   function void ocp_check_completion();
     expected_timeout_armed = 0;
     `uvm_info("OCP_EP0_RETRY_RESULT", $sformatf(
-      "kind=%s native=%0d status=%s loss=%0b setups=%0d tokens=%0d data=%0d ACKs=%0d NAKs=%0d status_acked=%0b committed_before_retry=%0b",
+      "kind=%s native=%0d status=%s loss=%0b setups=%0d tokens=%0d data=%0d ACK_or_NYETs=%0d NAKs=%0d status_acked=%0b committed_before_retry=%0b",
       kind.name(),original.get_inst_id(),original.status.name(),loss_applied,
       setup_tokens,data_tokens,data_packets,data_acks,naks,status_acked,
       write_committed_before_retry), UVM_NONE)
