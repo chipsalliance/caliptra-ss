@@ -44,6 +44,9 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
   longint unsigned retry_data_order;
   realtime release_at;
   longint unsigned retry_order;
+  realtime retry_at;
+  realtime published_empty_at;
+  bit published_empty_seen;
   longint unsigned native_order;
   int unsigned accepted_before_event;
   usb_ocp_event data_before_event;
@@ -127,7 +130,8 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
             "Unknown or empty FIFO EPN image variant", UVM_NONE, `__FILE__, `__LINE__);
         2: begin
           negatives++;
-          if (negatives > 1 || !(value inside {"full","blocked","overlap","release"}))
+          if (negatives > 1 || !(value inside {"full","blocked","overlap","release",
+                                             "admission","admission_boundary","empty"}))
             uvm_pkg::uvm_report_fatal("OCP_FIFO_EPN_GUARD",
               "Select one valid FIFO EPN rejection operand", UVM_NONE, `__FILE__, `__LINE__);
           mode = value;
@@ -147,7 +151,9 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
 
   function bit ocp_check_canary(string gate);
     if (canary_mode != gate) return 0;
-    if (canary_applied || !experiment_armed || dma_released || epn == null)
+    if (canary_applied || !experiment_armed ||
+        dma_released != (gate inside {"admission","admission_boundary","empty"}) ||
+        epn == null)
       `uvm_fatal("OCP_FIFO_EPN_GUARD", "Rejection operand lacks unique owned held experiment")
     canary_applied = 1;
     `uvm_info("OCP_FIFO_EPN_CANARY",$sformatf(
@@ -368,6 +374,7 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
           `uvm_fatal("OCP_FIFO_EPN_RETRY", "Next bytes do not belong to naturally retried original blocked request")
         retry_accepted = 1;
         retry_order = item.order;
+        retry_at = item.observed_at;
         retry_data_order = data_before_event.order;
       end
     end
@@ -443,18 +450,50 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
     // Do not impose callback-order causality: real AXI completion may follow
     // the retry ACK/native callback. Neither alone grants retry/drain credit.
     if (!retry_joined && retry_accepted && retry_native && first_dma_order != 0 &&
-        model.returned_bytes >= 64 && model.compared_bytes >= 64 &&
+        model.returned_bytes >= model.fifo_depth_words*4 &&
+        model.compared_bytes >= model.fifo_depth_words*4 &&
         deferred_axi.size() == 0) begin
-      if (first_dma_address_floor > retry_data_order)
-        `uvm_fatal("OCP_FIFO_EPN_RETRY", "Original request accepted DATA before real DMA address admission")
+      ocp_check_retry_admission(first_dma_address_floor);
+      ocp_check_retry_empty(published_empty_seen,published_empty_at);
+      if (ocp_check_canary("admission")) ocp_check_retry_admission(retry_order+1);
+      if (ocp_check_canary("admission_boundary")) ocp_check_retry_admission(retry_order);
+      if (ocp_check_canary("empty")) ocp_check_retry_empty(0,retry_at+1ns);
       retry_joined = 1;
       `uvm_info("OCP_FIFO_EPN_RETRY",$sformatf(
-        "Original epoch=%0d generation=%0d retried=%0d DATA=%0d native=%0d DMA_address_floor=%0d first_DMA=%0d accepted=%0d returned=%0d compared=%0d",
+        "Original epoch=%0d generation=%0d retried=%0d DATA=%0d native=%0d DMA_address_floor=%0d first_DMA=%0d accepted=%0d returned=%0d compared=%0d empty_at=%0t retry_at=%0t",
         blocked_epoch,blocked_generation,retry_order,retry_data_order,native_order,
         first_dma_address_floor,first_dma_order,
-        model.accepted_bytes,model.returned_bytes,model.compared_bytes),UVM_NONE)
+        model.accepted_bytes,model.returned_bytes,model.compared_bytes,
+        published_empty_at,retry_at),UVM_NONE)
     end
   endfunction
+
+  function void ocp_check_retry_admission(longint unsigned admission_floor);
+    if (admission_floor > retry_order)
+      `uvm_fatal("OCP_FIFO_EPN_RETRY", "Original request accepted DATA before real DMA address admission")
+  endfunction
+
+  function void ocp_check_retry_empty(bit empty_seen, realtime empty_at);
+    if (!empty_seen || empty_at > retry_at)
+      `uvm_fatal("OCP_FIFO_EPN_RETRY", "Original request accepted DATA before published batch became empty")
+  endfunction
+
+  task run_phase(uvm_phase phase);
+    fork
+      super.run_phase(phase);
+      begin
+        wait (dma_released);
+        if (ocp_cfg.recovery_vif.payload_available !== 1'b1)
+          `uvm_fatal("OCP_FIFO_EPN_DMA", "Released full batch lacks actual publication")
+        wait (ocp_cfg.recovery_vif.payload_available !== 1'b1);
+        if (ocp_cfg.recovery_vif.payload_available !== 1'b0)
+          `uvm_fatal("OCP_FIFO_EPN_DMA", "Published batch readiness became unknown")
+        // Capture at the architectural transition, not delayed AXI consumption.
+        published_empty_at = $realtime;
+        published_empty_seen = 1;
+      end
+    join
+  endtask
 
   task ocp_check_proof_barrier(bit retry_proof = 0);
     bit ready;
@@ -510,7 +549,8 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
   endfunction
 
   virtual function void ocp_check_replacements();
-    if (canary_mode != "")
+    if (canary_mode != "" &&
+        !(canary_mode == "admission_boundary" && canary_applied))
       `uvm_fatal("OCP_FIFO_EPN_GUARD", "Selected rejection control reached final checks without rejection")
     if (!experiment_armed || !full_prefix_seen || !full_status_seen || !blocked_seen ||
         !overlap_joined || !proof_consumed || !dma_released || !retry_joined ||

@@ -21,6 +21,26 @@ class usb_ocp_base_test extends usb_base_test;
   endfunction
 
   function void build_phase(uvm_phase phase);
+    uvm_cmdline_processor cli;
+    string args[$];
+    int l2_faults = 0;
+    int hub_faults = 0;
+    cli = uvm_cmdline_processor::get_inst();
+    cli.get_args(args);
+    foreach (args[i]) begin
+      if (uvm_is_match("+usb_ocp_l2_fault*",args[i])) begin
+        l2_faults++;
+        if (get_type_name() != "usb_ocp_suspend_resume_test" || l2_faults != 1 ||
+            !(args[i] inside {"+usb_ocp_l2_fault=dsus","+usb_ocp_l2_fault=response"}))
+          `uvm_fatal("OCP_L2_NEGATIVE", "Select one owned DSUS/response comparison control")
+      end
+      if (uvm_is_match("+usb_ocp_fs_hub_fault*",args[i])) begin
+        hub_faults++;
+        if (get_type_name() != "usb_ocp_dev1_epn_fs_overlap_test" || hub_faults != 1 ||
+            args[i] != "+usb_ocp_fs_hub_fault=missing_interface")
+          `uvm_fatal("OCP_FS_GUARD", "Missing-interface comparison control requires the FS EPN test")
+      end
+    end
     // Reject private FIFO selectors on other OCP tests before any actors.
     void'(usb_ocp_fifo_backpressure_epn_checker::ocp_check_control_args(
       get_type_name() == "usb_ocp_fifo_backpressure_epn_test"));

@@ -710,8 +710,8 @@ class usb_ocp_reset_reinit_host_seq extends usb_ocp_base_host_seq;
     end else ocp_do_check_reset_event();
   endtask
 
-  // OCP 9.2: byte 1 == 1 explicitly resets both FIFO indices. Discovery does
-  // not itself authorize deletion of old accepted bytes.
+  // OCP 9.2: explicitly reset both indices and program zero image size.
+  // Local reset loss was independently reconciled before MCU ownership.
   task ocp_do_check_fresh_fifo_reset();
     bytes_t data;
     int unsigned spaces;
