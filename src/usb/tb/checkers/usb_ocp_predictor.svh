@@ -63,12 +63,15 @@ class usb_ocp_predictor extends uvm_object;
   logic [31:0] device_connect_mask[2];
   string recovery_register[logic [63:0]];
 
-  // Recovery domain: never cleared by ocp_cancel_usb_epoch().
+  // Recovery domain: USB transfer cancellation alone never clears this ledger.
   logic [7:0] fifo_expected[$];
   logic [7:0] fifo_actual[$];
   int unsigned accepted_bytes;
   int unsigned returned_bytes;
   int unsigned compared_bytes;
+  // Archived local-reset loss is not a DMA return or a byte comparison.
+  int unsigned reset_discarded_bytes;
+  bit local_reset_accounted;
   logic [31:0] image_words;
   logic [7:0] selected_cms;
   logic [23:0] recovery_ctrl;
@@ -135,6 +138,8 @@ class usb_ocp_predictor extends uvm_object;
     accepted_bytes = 0;
     returned_bytes = 0;
     compared_bytes = 0;
+    reset_discarded_bytes = 0;
+    local_reset_accounted = 0;
     image_words = 0;
     selected_cms = 0;
     recovery_ctrl = 0;
@@ -264,6 +269,23 @@ class usb_ocp_predictor extends uvm_object;
       token = null;
       candidate = null;
     end
+  endfunction
+
+  // Streaming boot integration spec 3.2: local reset empties CMS. The reset
+  // owner calls only after actual accepted AXI retirement and archives the old
+  // counters first. Start an empty FIFO epoch without manufacturing pop credit.
+  function void ocp_check_local_reset_discard();
+    if (!reset_commit_at_status || local_reset_accounted ||
+        fifo_actual.size() != 0 || returned_bytes > accepted_bytes ||
+        compared_bytes != returned_bytes ||
+        fifo_expected.size() != accepted_bytes-returned_bytes)
+      `uvm_fatal("OCP_RESET_DISCARD", "Local reset lacks a unique reconciled old FIFO ledger")
+    reset_discarded_bytes = fifo_expected.size();
+    fifo_expected.delete();
+    accepted_bytes = 0;
+    returned_bytes = 0;
+    compared_bytes = 0;
+    local_reset_accounted = 1;
   endfunction
 
   function usb_ocp_base_epn_model ocp_get_epn(int device);
@@ -458,7 +480,8 @@ class usb_ocp_predictor extends uvm_object;
               !(c.data[1] inside {8'h00,8'h01}))
             `uvm_fatal("OCP_FIFO", "Malformed FIFO control/reset at STATUS")
           if (c.data[1] === 1) begin
-            // Only an observed explicit reset can retire old recovery bytes.
+            // Local-reset loss is archived separately. Explicit region reset
+            // still requires every byte in the current FIFO epoch reconciled.
             if (fifo_actual.size() != 0 || fifo_expected.size() != 0 ||
                 returned_bytes != accepted_bytes || compared_bytes != accepted_bytes)
               `uvm_fatal("OCP_RESET_AXI", "Explicit FIFO reset precedes complete accepted-old-byte reconciliation")
