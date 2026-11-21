@@ -53,6 +53,7 @@ class usb_ocp_base_epn_model extends uvm_object;
   longint unsigned last_iso_token[2];
   bit iso_token_seen[2];
   longint unsigned interrupt_next_poll[2];
+  bit interrupt_poll_seen[2];
   bit interrupt_nak_seen[2];
   bit sof_seen;
   bit frame_edge_seen;
@@ -72,6 +73,7 @@ class usb_ocp_base_epn_model extends uvm_object;
     retired = '{default:0};
     iso_token_seen = '{default:0};
     interrupt_nak_seen = '{default:0};
+    interrupt_poll_seen = '{default:0};
   endfunction
 
   function svt_usb_transfer::transfer_type_enum ocp_get_transfer_type(int dir);
@@ -174,6 +176,10 @@ class usb_ocp_base_epn_model extends uvm_object;
     // The acceptance order itself is assigned by the caller below for ACK.
     accepted_sof[dir][phase] = token.sof_serial;
     accepted_generation[dir][phase] = c.generation;
+    if (ep.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+      interrupt_next_poll[dir] = token.sof_serial + discovery.ocp_get_period(ep);
+      interrupt_poll_seen[dir] = 1;
+    end
     previous[dir] = data.bytes;
     accepted[dir]++;
   endfunction
@@ -251,9 +257,17 @@ class usb_ocp_base_epn_model extends uvm_object;
       if (item.host_tx !== 0 || (incoming && candidate != null))
         `uvm_fatal("OCP_EPN_PACKET", "Invalid NAK responder/context")
       if (ep.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+        // Defer post-service classification until the response so an old-toggle
+        // transmission-error retry is not mistaken for a new poll (USB2 5.7.5).
+        if (interrupt_poll_seen[token_direction] &&
+            token.sof_serial < interrupt_next_poll[token_direction] &&
+            (candidate == null ||
+             (candidate.pid == svt_usb_packet::DATA1) === next_toggle[token_direction]))
+          `uvm_fatal("OCP_EPN_INTERVAL", "Interrupt poll before the next successful-service opportunity")
         interrupt_next_poll[token_direction] =
           token.sof_serial + discovery.ocp_get_period(ep);
         interrupt_nak_seen[token_direction] = 1;
+        interrupt_poll_seen[token_direction] = 1;
       end
       candidate = null;
       token = null;
