@@ -22,21 +22,27 @@
 #define FLOW004_MANIFEST_MAGIC 0x34464E4Du
 #define FLOW004_MCU_PASS 0x34534150u
 #define FLOW004_MAX_WORDS 1024u
-#define FLOW004_HEADER_BYTES 16u
+#define FLOW004_FORMAT_VERSION 1u
+#define FLOW004_DIGEST_WORDS 12u
+#define FLOW004_HEADER_BYTES 64u
 #define FLOW004_POLL_LIMIT 200000u
 
 typedef struct {
     uint32_t magic;
     uint32_t stage;
     uint32_t payload_bytes;
-    uint32_t checksum;
+    uint32_t format_version;
+    uint32_t digest[FLOW004_DIGEST_WORDS];
 } flow004_header_t;
+
+_Static_assert(sizeof(flow004_header_t) == FLOW004_HEADER_BYTES,
+               "FLOW004 header size must match the generated artifact format");
 
 typedef struct {
     uint32_t magic;
     uint32_t mcu_destination;
     uint32_t mcu_payload_bytes;
-    uint32_t mcu_checksum;
+    uint32_t mcu_digest[FLOW004_DIGEST_WORDS];
 } flow004_manifest_t;
 
 typedef struct {
@@ -44,14 +50,5 @@ typedef struct {
     void (*receive_stage)(uint32_t stage);
     void (*complete)(void);
 } flow004_services_t;
-
-static inline uint32_t flow004_checksum(const uint8_t *bytes, uint32_t count)
-{
-    uint32_t hash = 2166136261u;
-    for (uint32_t i = 0u; i < count; ++i) {
-        hash = (hash ^ bytes[i]) * 16777619u;
-    }
-    return hash;
-}
 
 #endif

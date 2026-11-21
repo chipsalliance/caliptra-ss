@@ -17,11 +17,28 @@ firmware publishes final recovery success.
 
 These are **executable DV/test-ROM artifacts**, not production Caliptra firmware,
 production signed SoC manifests, or a production-ROM authentication test.
-The test-owned little-endian artifact header contains four DWORDs: magic
-`0x344f4c46`, stage index, payload byte length, and FNV-1a checksum. The checksum
-detects transport/content corruption; it is **not cryptographic authentication**.
+The test-owned 64-byte artifact header contains sixteen little-endian DWORDs:
+magic `0x344f4c46`, stage index, payload byte length, format version `1`, and
+twelve SHA-384 digest words in accelerator register order (most-significant
+word first). The host build script uses Python `hashlib` to generate the expected
+digest. Caliptra reads the received payload back from MCU SRAM and streams it
+through its SHA accelerator using the existing `soc_ifc` SHA-384 mode/execute
+helpers. All twelve hardware digest words must match before activation is
+accepted. SHA input words are packed big-endian to match the shared driver's
+ENDIAN_TOGGLE setting.
+
+After copying and checking the downloaded core payload, the loader locks ICCM
+before execution. This finalizes the automatic ICCM write-snoop measurement;
+hardware retains the shared SHA accelerator through the PCR extension sequence
+and then releases it for the subsequent manifest and MCU payload hashes.
+Firmware SHA-lock acquisition is bounded and fails explicitly if unavailable.
+
 The manifest contains magic `0x34464e4d`, MCU SRAM destination, MCU payload length,
-and MCU payload checksum. It controls and checks the actual MCU handoff.
+and twelve expected MCU SHA-384 digest words in the same word order. It controls
+and checks the actual MCU handoff. The MCU entry is linked at SRAM base plus the
+64-byte header. Digest verification detects content corruption but is **not
+signature authentication**: the transferred test header and manifest are not
+trusted or signed production artifacts.
 Payloads are DWORD-aligned and padded to at least 512 bytes, so each stage
 exercises multiple FIFO batches. No transferred executable is preloaded.
 
@@ -32,7 +49,7 @@ exercises multiple FIFO batches. No transferred executable is preloaded.
   seeded random legal chunking without modifying executable artifacts.
 - No added inter-stage idle delay; host status/activation checks and device
   readiness still synchronize stage boundaries.
-- Per-stage size, complete-image checksum, EMPTY, pending, booting, image index,
+- Per-stage size, complete-payload hardware SHA-384, EMPTY, pending, booting, image index,
   FIFO reset, and activation-clear checks.
 - Generation-qualified host/firmware acknowledgements hold transient booting
   status observable; they do not substitute for downloaded code execution.
@@ -44,7 +61,30 @@ test must not be reported as production-ROM or signed-artifact coverage.
 
 ## Validation
 
-VCS package 382, seed 1, run `20261120.174057`: **TESTCASE PASSED**,
+The corrected SHA-384 revision passed on upstream `6fed5199`, seed 1,
+run `20261121.190301`: **TESTCASE PASSED**, metadata returncode 0. All three
+576-byte artifacts completed with nine chunks each. Hardware SHA-384 verified
+every payload, the downloaded ICCM code requested the following stages, the
+manifest bound the MCU payload, and the downloaded MCU SRAM executable sent
+its fresh pass mailbox. Final recovery success, MCU STOP/halt and AXI drain
+completed at 4,111,670 ns.
+
+UVM reported one existing PROT_CAP Push C-image/INDIRECT_CTRL warning
+(`caps=0x1691`), zero errors and zero fatals. Simulation wall time was
+6,465 seconds. The run used the previously compiled testbench with rebuilt
+firmware (`-sb`); no waves or coverage were enabled. Fixed chunking is validated;
+optional random chunking, internal coverage deltas and production authentication
+are not claimed.
+
+The first SHA-384 run (`20261121.010310`) passed stage 0's hardware digest
+and downloaded-code entry, but stalled before stage 1's SHA-lock acquisition
+and hit the global timeout. Firmware instrumentation confirmed that stage 1
+FIFO DMA and SRAM readback completed. The loader had left the automatic ICCM
+measurement unfinished. ICCM locking was added and the corrected run above
+validated accelerator reuse for both subsequent stages. Diagnostic run
+`20261121.175036` was stopped after locating the lock wait; it is not a pass.
+
+Previous FNV-1a baseline: VCS package 382, seed 1, run `20261120.174057`: **TESTCASE PASSED**,
 metadata return code 0. All three 528-byte stages completed with nine chunks
 per stage, including downloaded ICCM execution, manifest binding, fresh
 activations, and the downloaded MCU SRAM executable's pass mailbox.
@@ -53,8 +93,8 @@ fatals. Simulation wall time was 6,183 seconds; run output occupied 23 MB
 without waves or coverage. This validates fixed chunking only, not the optional
 random-chunk mode or production authentication.
 
-The passing run used upstream base `e262d35a` plus the FIFO_006 branch changes.
+That older passing run used upstream base `e262d35a` plus the FIFO_006 branch changes.
 For independent review, this testcase was subsequently isolated onto upstream
 `c08d38ff`, retaining only the shared opt-out for mandatory backpressure
 observation (enabled by default for existing tests). The isolated branch and
-the newer upstream USB submodule pin have not been resimulated.
+the newer upstream USB submodule pin were not resimulated before that PR revision.

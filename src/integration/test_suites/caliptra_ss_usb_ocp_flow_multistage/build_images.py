@@ -15,6 +15,7 @@
 
 """Build USB-transferred executable DV artifacts; never preload their ELFs."""
 
+import hashlib
 import os
 from pathlib import Path
 import struct
@@ -23,13 +24,12 @@ import subprocess
 
 MAGIC = 0x344F4C46
 MANIFEST_MAGIC = 0x34464E4D
+FORMAT_VERSION = 1
+HEADER_BYTES = 64
 
 
-def checksum(payload):
-    value = 2166136261
-    for byte in payload:
-        value = ((value ^ byte) * 16777619) & 0xFFFFFFFF
-    return value
+def digest_words(payload):
+    return struct.unpack(">12I", hashlib.sha384(payload).digest())
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
     ).stdout.strip()
     mcu_base = int(address.strip("()"), 0)
     payloads = []
-    for name, base in (("core", 0x40000000), ("mcu", mcu_base + 16)):
+    for name, base in (("core", 0x40000000), ("mcu", mcu_base + HEADER_BYTES)):
         script = Path(f"flow004_{name}.ld")
         script.write_text(
             "OUTPUT_ARCH(riscv)\nENTRY(image_entry)\nSECTIONS {\n"
@@ -77,18 +77,18 @@ def main():
         payloads.append(payload)
 
     core, mcu = payloads
-    manifest = struct.pack("<4I", MANIFEST_MAGIC, mcu_base, len(mcu),
-                           checksum(mcu)).ljust(512, b"\0")
+    manifest = struct.pack("<15I", MANIFEST_MAGIC, mcu_base, len(mcu),
+                           *digest_words(mcu)).ljust(512, b"\0")
     for stage, payload in enumerate((core, manifest, mcu)):
-        image = struct.pack("<4I", MAGIC, stage, len(payload),
-                            checksum(payload)) + payload
+        image = struct.pack("<16I", MAGIC, stage, len(payload), FORMAT_VERSION,
+                            *digest_words(payload)) + payload
         if len(image) > 4096:
             raise ValueError(f"stage {stage} exceeds the 4-KiB execution region")
         Path(f"flow004_stage{stage}.hex").write_text(
             "".join(f"{byte:02x}\n" for byte in image), encoding="ascii"
         )
         print(f"FLOW004 stage={stage} bytes={len(image)} "
-              f"checksum={checksum(payload):08x}")
+              f"sha384={hashlib.sha384(payload).hexdigest()}")
 
 
 if __name__ == "__main__":

@@ -67,14 +67,67 @@ static void wait_command(uint8_t expected, uint16_t generation)
     fail("host observation handshake timed out");
 }
 
+static void verify_sha384(const uint8_t *payload, uint32_t bytes,
+                          const uint32_t *expected)
+{
+    uint32_t poll;
+
+    for (poll = 0u; poll < FLOW004_POLL_LIMIT; ++poll) {
+        if ((lsu_read_32(CLP_SHA512_ACC_CSR_LOCK) &
+             SHA512_ACC_CSR_LOCK_LOCK_MASK) == 0u) {
+            break;
+        }
+        delay();
+    }
+    if (poll == FLOW004_POLL_LIMIT) {
+        fail("SHA-384 accelerator lock acquisition timed out");
+    }
+    VPRINTF(LOW, "FLOW004: SHA-384 lock acquired, streaming %u bytes\n", bytes);
+    soc_ifc_sha_accel_wr_mode(SHA_STREAM_384);
+    lsu_write_32(CLP_SHA512_ACC_CSR_DLEN, bytes);
+    // The shared driver selects ENDIAN_TOGGLE; DATAIN takes big-endian words.
+    for (uint32_t i = 0u; i < bytes; i += 4u) {
+        uint32_t word = ((uint32_t)payload[i] << 24) |
+                        ((uint32_t)payload[i + 1u] << 16) |
+                        ((uint32_t)payload[i + 2u] << 8) |
+                        (uint32_t)payload[i + 3u];
+        lsu_write_32(CLP_SHA512_ACC_CSR_DATAIN, word);
+    }
+    soc_ifc_sha_accel_execute();
+    VPRINTF(LOW, "FLOW004: SHA-384 execution requested\n");
+    for (poll = 0u; poll < FLOW004_POLL_LIMIT; ++poll) {
+        if (lsu_read_32(CLP_SHA512_ACC_CSR_STATUS) &
+            SHA512_ACC_CSR_STATUS_VALID_MASK) {
+            break;
+        }
+        delay();
+    }
+    if (poll == FLOW004_POLL_LIMIT) {
+        soc_ifc_sha_accel_clr_lock();
+        fail("SHA-384 accelerator timed out");
+    }
+    for (uint32_t i = 0u; i < FLOW004_DIGEST_WORDS; ++i) {
+        uint32_t actual = lsu_read_32(CLP_SHA512_ACC_CSR_DIGEST_0 + 4u * i);
+        if (actual != expected[i]) {
+            VPRINTF(FATAL, "FLOW004: SHA-384 digest[%u] got=%08x expected=%08x\n",
+                    i, actual, expected[i]);
+            soc_ifc_sha_accel_clr_lock();
+            fail("complete image SHA-384 digest mismatch");
+        }
+    }
+    soc_ifc_sha_accel_clr_lock();
+}
+
 static void receive_stage(uint32_t stage)
 {
     uint32_t words, pages;
+    uint32_t payload_word = FLOW004_HEADER_BYTES / 4u;
     uint8_t *payload = (uint8_t *)image + FLOW004_HEADER_BYTES;
 
     if (stage != next_stage || stage > 2u) {
         fail("downloaded runtime requested stages out of order");
     }
+    VPRINTF(LOW, "FLOW004: stage %u receiver entered\n", stage);
     publish(stage == 0u ? 3u : 5u, 1u, (uint8_t)stage);
     cptra_usb_ocp_recovery_signal_state_generation(
         CPTRA_USB_OCP_FW_STATE_PATH_READY, (uint8_t)stage,
@@ -93,25 +146,33 @@ static void receive_stage(uint32_t stage)
                MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW) + 1u) * 4096u) {
         fail("image exceeds discovered execution region");
     }
+    VPRINTF(LOW, "FLOW004: stage %u draining %u bytes to SRAM\n", stage, words * 4u);
     if (cptra_usb_ocp_recovery_stream_fifo_to_axi(
-            SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, words * 4u, 64u) ||
-        cptra_usb_ocp_recovery_read_axi_payload(
-            SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, image, words * 4u)) {
-        fail("image DMA/verification read failed");
+            SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, words * 4u, 64u)) {
+        fail("image FIFO-to-SRAM DMA failed");
     }
+    VPRINTF(LOW, "FLOW004: stage %u DMA complete, reading SRAM\n", stage);
+    if (cptra_usb_ocp_recovery_read_axi_payload(
+            SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, image, words * 4u)) {
+        fail("image SRAM verification read failed");
+    }
+    VPRINTF(LOW, "FLOW004: stage %u SRAM read complete, verifying SHA-384\n", stage);
     if (image[0] != FLOW004_MAGIC || image[1] != stage ||
         image[2] != words * 4u - FLOW004_HEADER_BYTES ||
-        flow004_checksum(payload, image[2]) != image[3]) {
-        fail("complete image integrity/identity check failed");
+        image[3] != FLOW004_FORMAT_VERSION) {
+        fail("image header/identity check failed");
     }
+    verify_sha384(payload, image[2], &image[4]);
     if (stage == 1u) {
         if (image[2] < sizeof(manifest)) {
             fail("truncated test manifest");
         }
-        manifest.magic = image[4];
-        manifest.mcu_destination = image[5];
-        manifest.mcu_payload_bytes = image[6];
-        manifest.mcu_checksum = image[7];
+        manifest.magic = image[payload_word];
+        manifest.mcu_destination = image[payload_word + 1u];
+        manifest.mcu_payload_bytes = image[payload_word + 2u];
+        for (uint32_t i = 0u; i < FLOW004_DIGEST_WORDS; ++i) {
+            manifest.mcu_digest[i] = image[payload_word + 3u + i];
+        }
         if (manifest.magic != FLOW004_MANIFEST_MAGIC ||
             manifest.mcu_destination != SOC_MCI_TOP_MCU_SRAM_BASE_ADDR ||
             manifest.mcu_payload_bytes == 0u ||
@@ -119,12 +180,17 @@ static void receive_stage(uint32_t stage)
             fail("invalid test manifest");
         }
     }
-    if (stage == 2u &&
-        (manifest.mcu_payload_bytes != image[2] ||
-         manifest.mcu_checksum != image[3])) {
-        fail("MCU image does not match the previously received manifest");
+    if (stage == 2u) {
+        if (manifest.mcu_payload_bytes != image[2]) {
+            fail("MCU image size does not match the previously received manifest");
+        }
+        for (uint32_t i = 0u; i < FLOW004_DIGEST_WORDS; ++i) {
+            if (manifest.mcu_digest[i] != image[4u + i]) {
+                fail("MCU digest does not match the previously received manifest");
+            }
+        }
     }
-    VPRINTF(LOW, "FLOW004: stage %u verified %u bytes in MCU SRAM\n",
+    VPRINTF(LOW, "FLOW004: stage %u SHA-384 verified %u bytes in MCU SRAM\n",
             stage, words * 4u);
     publish(4u, 1u, (uint8_t)stage);
     cptra_usb_ocp_recovery_signal_state_generation(
@@ -188,6 +254,7 @@ void main(void)
     volatile uint32_t *iccm = (volatile uint32_t *)RV_ICCM_SADR;
     uint32_t poll;
 
+    soc_ifc_sha_accel_clr_lock();
     soc_ifc_set_flow_status_field(
         SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
     for (poll = 0u; poll < FLOW004_POLL_LIMIT; ++poll) {
@@ -208,6 +275,8 @@ void main(void)
             fail("downloaded ICCM image readback mismatch");
         }
     }
+    // Finalize the ICCM write-snoop measurement so hardware releases SHA.
+    soc_ifc_set_iccm_lock();
     __asm__ volatile ("fence.i" ::: "memory");
     VPRINTF(LOW, "FLOW004: entering USB-downloaded Caliptra ICCM image\n");
     entry(&services);

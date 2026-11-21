@@ -23,6 +23,8 @@ class caliptra_ss_usb_ocp_flow_multistage_sequence
 
     localparam time STAGE_TIMEOUT = 20ms;
     localparam bit [31:0] ARTIFACT_MAGIC = 32'h344F4C46;
+    localparam int unsigned ARTIFACT_HEADER_BYTES = 64;
+    localparam bit [31:0] ARTIFACT_FORMAT_VERSION = 1;
 
     covergroup multistage_cg with function sample(
         int unsigned stage, bit random_chunks);
@@ -67,12 +69,13 @@ class caliptra_ss_usb_ocp_flow_multistage_sequence
             end
         end
         $fclose(fd);
-        if ((image_bytes.size() <= 16) || (image_bytes.size() > 4096) ||
+        if ((image_bytes.size() <= ARTIFACT_HEADER_BYTES) || (image_bytes.size() > 4096) ||
             ((image_bytes.size() % 4) != 0))
             `uvm_fatal("OCP_FLOW_004", {"Invalid artifact size in ", path})
         if ((ocp_get_le32(image_bytes, 0) != ARTIFACT_MAGIC) ||
             (ocp_get_le32(image_bytes, 4) != stage) ||
-            (ocp_get_le32(image_bytes, 8) != image_bytes.size() - 16))
+            (ocp_get_le32(image_bytes, 8) != image_bytes.size() - ARTIFACT_HEADER_BYTES) ||
+            (ocp_get_le32(image_bytes, 12) != ARTIFACT_FORMAT_VERSION))
             `uvm_fatal("OCP_FLOW_004", {"Invalid artifact header in ", path})
         image_dwords = image_bytes.size() / 4;
     endtask
