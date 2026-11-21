@@ -1,0 +1,582 @@
+// Copyright 2026 Google LLC (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "spi_host"
+  import_testplans: ["../../../third_party/caliptra-rtl/tools/dvsim/testplans/csr_testplan.hjson",
+                     "../../../third_party/caliptra-rtl/tools/dvsim/testplans/intr_test_testplan.hjson",
+                     "spi_host_sec_cm_testplan.hjson"],
+  testpoints: [
+    {
+      name: smoke
+      desc: '''
+            Concise SPI_HOST smoke test + dedicated directed closure test verifying core host transfers,
+            maximum-length 512-byte (LEN = 511) streaming, AXI/TL-UL register & FIFO-window error paths,
+            reactive peripheral responder operation across CS0/CS1 and Standard/Dual/Quad, and scoreboard
+            negative self-checks.
+
+            Stimulus:
+              - Enable spi_host_axi and execute dual-CS multi-segment Page Program (0x02) and Quad Output
+                Fast Read (0x6B) transfers across CS0 and CS1 in concise spi_host_smoke
+              - In dedicated spi_host_closure, exercise 512-byte (LEN = 511) TxOnly, RxOnly, and Bidir
+                transfers with live TX refill (>73 words) and RX drain (>64 words), all 8 valid TXDATA
+                byte-enable masks (incl. 4'b0110), partial-word (1, 2, 3, 5, 9B) transfers, AXI4 narrow,
+                upper-address (AxADDR[31:7]), and maximum 256-beat (AxLEN = 8'hFF) gasket bursts,
+                sub-word CSR wr_err, unmapped addrmiss (with backpressure), wrong-direction RXDATA write /
+                TXDATA read SLVERR + FIFO preservation, and TL-UL cmd_intg + data_intg SECDED fault
+                injection (note: reg_we_err is a structurally unreachable one-hot decode fault and is
+                UNR-waived rather than dynamically claimed here)
+
+            Checking:
+              - Ensure transactions are transmitted/received accurately with scoreboard TX/RX and 4-state
+                active-lane floating-Z checks (plus TX/RX/Z/zero-RX/AXI-ID negative controls)
+              - Ensure AXI OKAY/SLVERR responses, intg_error_o latching on both cmd_intg and data_intg
+                faults, and preserved FIFO words/depths behave per specification
+            '''
+      stage: V1
+      tests: ["spi_host_smoke", "spi_host_closure"]
+    }
+    {
+      name: dual_cs
+      desc: '''
+            Verify Dual Chip Select (SPI_HOST_NUM_CS = 2) independent configuration, physical CS routing,
+            pipelined mid-command single-bit CPOL/CPHA updates, and CSAAT=1 cross-CS switching.
+
+            Stimulus:
+              - Configure distinct timing parameters in CONFIGOPTS_0 (CS0) and CONFIGOPTS_1 (CS1)
+              - Perform Page Program (0x02) and Quad Output Fast Read (0x6B) via CSID = 0 and CSID = 1
+                at the same page address with distinct payloads, then re-read CS0 without reprogramming
+              - Switch active CSID (CS0 <-> CS1) while CSAAT = 1 (from parked IdleCSBActive and pipelined
+                in-flight across CPOL/CPHA/CSNLEAD/CSNTRAIL variations; per confirmed firmware contract,
+                same-CS CONFIGOPTS[cs] updates require closing the open transaction with CSAAT = 0 first)
+              - Apply single-bit mid-command CPOL-only and CPHA-only CONFIGOPTS_1 updates while an older
+                CS1 command is shifting to verify accepted-command SVA timing and scoreboard snapshotting
+              - Inject deliberate CS1 mode/lead/trail/idle faults and physical wrong-CS routing fault
+              - Trigger out-of-range CSID = 2 to verify both (Step 6a) canonical SW_RST + W1C queue-flush
+                recovery and (Step 6b) W1C-only unhalted execution of the retained clamped-CS0 descriptor
+
+            Checking:
+              - Ensure CS0 and CS1 transactions route independently to their selected chip select (and
+                simultaneous csb == 2'b00 is rejected)
+              - Ensure IdleCSBActive/InternalClk -> WaitTrail -> CSBSwitch FSM and physical CSB transitions
+                occur on CSID switch
+              - Ensure wrong-CS routing, mode, and timing fault controls are caught by the scoreboard
+            '''
+      stage: V2
+      tests: ["spi_host_dual_cs"]
+    }
+    {
+      name: performance
+      desc: '''
+            Verify maximum serial bandwidth and back-to-back streaming without artificial delays or stalls.
+
+            Stimulus:
+              - Program CONFIGOPTS timing fields to minimum values (CLKDIV = 0, CSNLEAD/TRAIL/IDLE = 0)
+              - Eliminate inter-transaction and RX-polling delays (0 ns)
+              - Stream chained back-to-back Quad (256B = 2,048 bits) and full-duplex Bidir (64B) transfers
+                as well as back-to-back multi-mode transactions
+
+            Checking:
+              - Verify zero TXSTALL/RXSTALL throughout streaming
+              - Verify inter-SCK gap across CSAAT=1 segment boundaries <= 4 core clocks (no bubbles)
+              - Verify achieved Quad serial throughput >= 85% of theoretical 2.0 bits/clk peak alongside
+                full scoreboard TX/RX payload verification
+            '''
+      stage: V2
+      tests: ["spi_host_performance"]
+    }
+    {
+      name: error_event_intr
+      desc: '''
+            Verify isolated and combined error/event status and interrupt behavior across ERROR_ENABLE
+            and EVENT_ENABLE masks.
+
+            Stimulus:
+              - Execute a directed one-hot EVENT_ENABLE isolation pass across all 6 sources (RXFULL,
+                TXEMPTY, RXWM, TXWM, READY, IDLE), verifying assertion, disable-masking while active,
+                and condition-clear deassertion, followed by randomized multi-source combinations
+              - Trigger csidinval (CSID >= NumCS), cmdinval (Dual/Quad + Bidir and reserved SPEED = 2'b11
+                RsvdSpd across all 4 directions), cmdbusy (exceeding CmdDepth = 8), accessinval (all 8
+                invalid byte masks), TX overflow (at 74th word past 73-word packer+FIFO depth), and RX
+                underflow across isolated enabled and masked ERROR_ENABLE settings, verifying both
+                interrupt-only masking (intr_error_o == 0 while SPIEN=1 core halts on ERROR_STATUS != 0)
+                and RXWM greater-than-or-equal (>=) watermark boundary behavior (below, equal, above)
+
+            Checking:
+              - Ensure rejected commands keep CSB/SCK/SD_EN quiescent and report the expected sticky
+                ERROR_STATUS and gated intr_error_o state
+              - Ensure each isolated event/error route asserts when enabled, masks cleanly to 0 when
+                disabled while active, and recovers via W1C / checked Bidir transfers
+            '''
+      stage: V2
+      tests: ["spi_host_overflow_underflow", "spi_host_error_cmd", "spi_host_event"]
+    }
+    {
+      name: clock_rate
+      desc: '''
+            Stimulus:
+              - Sweep lower and mid-range 16-bit CLKDIV settings across active transfers on CS0 and CS1
+
+            Checking:
+              - Verify scoreboard-checked TX/RX operation across swept SPI clock dividers
+            '''
+      stage: V2
+      tests: ["spi_host_speed"]
+    }
+    {
+      name: speed
+      desc: '''
+            Stimulus:
+              - Exercise Standard (1-lane), Dual (2-lane), and Quad (4-lane) transfers and transitions
+
+            Checking:
+              - Verify all legal speeds and multi-segment speed transitions pass scoreboard checks
+            '''
+      stage: V2
+      tests: ["spi_host_speed", "spi_host_closure"]
+    }
+    {
+      name: chip_select_timing
+      desc: '''
+            Stimulus:
+              - Sweep CSNIDLE, CSNLEAD, and CSNTRAIL across 0..15 (including completed boundary = 15
+                transfers across CS0 and CS1) and verify two-sided ConfigSwitch idle intervals
+                (WaitIdle + CSBSwitch) and all-CSB-high CPOL switch placement
+
+            Checking:
+              - Verify completed TX/RX transfers and per-CS lead/trail/two-sided-idle timing bounds,
+                plus early-transition and missing-CPOL-switch negative controls
+            '''
+      stage: V2
+      tests: ["spi_host_speed"]
+    }
+    {
+      name: upper_range_clkdiv
+      desc: '''
+            Verify SPI host correctness and physical SCK half-periods at upper-range and maximum
+            16-bit clock dividers completely unforced (fast_mode = 0).
+
+            Stimulus:
+              - Execute unforced (fast_mode = 0) Bidir (TX + RX) and Quad transfers across CS0 and CS1
+                at CLKDIV = 16'h0100 (257 core clocks/half-SCK), intermediate upper-byte dividers
+                (16'h4000..16'hE000), and maximum CLKDIV = 16'hFFFF (65,536 core clocks/half-SCK),
+                plus divider/TX/RX negative fault controls
+
+            Checking:
+              - Measure and verify exact physical SCK half-periods (257 and 65,536 core clocks) and
+                scoreboard TX/RX payload integrity without any internal prescaler forcing
+            '''
+      stage: V2
+      tests: ["spi_host_upper_range_clkdiv"]
+    }
+    {
+      name: sw_reset
+      desc: '''
+            Verify mid-transaction software reset (CONTROL.SW_RST) pin, FIFO, RXDATA, and CSR
+            retention contracts as well as FSM state-to-Idle transitions and recovery.
+
+            Stimulus:
+              - Deterministically overlap active mid-byte transfers (CPOL = 0 and CPOL = 1) with
+                frontdoor CONTROL.SW_RST = 1 writes, plus randomized SCK-edge and passive FSM-state
+                (WaitLead, CSBSwitch, WaitTrail, WaitIdle, InternalClkHigh) SW_RST triggers
+
+            Checking:
+              - Verify active overlap prior to SW_RST and immediate return of CSB to '1, SCK to idle
+                CPOL, and SD_EN to '0 while SW_RST == 1 (plus a deliberate pin-violation fault control)
+              - Verify TXEMPTY/RXEMPTY/CMDQD=0, empty RXDATA read (0x0 + UNDERFLOW), retention of all
+                non-reset CSRs (CONFIGOPTS_0/1, CSID, INTR/ERROR/EVENT_ENABLE, watermarks), and
+                post-SW_RST Bidir recovery
+            '''
+      stage: V2
+      tests: ["spi_host_sw_reset"]
+    }
+    {
+      name: passthrough_mode
+      desc: '''
+            Verify passthrough tie-off / isolation behavior for the Caliptra-SS NumCS = 2 target
+            configuration (where gen_passthrough_ignore structurally disables active passthrough
+            muxing per PassthroughNumCSCompat_A).
+
+            Stimulus:
+              - Toggle non-enable passthrough inputs while holding passthrough_en == 0 for NumCS = 2,
+                followed by normal scoreboard-checked Bidir SPI host traffic
+
+            Checking:
+              - Verify SPI host outputs ignore passthrough data/clock/CS inputs under NumCS = 2 and
+                normal host transfers operate cleanly afterward
+            '''
+      stage: V2
+      tests: ["spi_host_passthrough_mode"]
+    }
+    {
+      name: cpol_cpha
+      desc: '''
+            Stimulus:
+              - Sweep all 4 (CPOL, CPHA) SPI modes across CS0 and CS1
+
+            Checking:
+              - Verify launch/sample polarity, SVA whole-cycle data/enable stability, and scoreboard
+                TX/RX payload comparisons across Modes 0, 1, 2, and 3
+            '''
+      stage: V2
+      tests: ["spi_host_speed"]
+    }
+    {
+      name: full_cycle
+      desc: '''
+            Stimulus:
+              - Drive a controlled delayed-MISO transition after the nominal half-cycle SCK edge and
+                before the full-cycle trailing SCK edge under both FULLCYC = 0 and FULLCYC = 1 (with
+                CPHA = 0 across CPOL = 0 and CPOL = 1) on CS0 and CS1, plus DUT-poked and scoreboard
+                negative controls (FULLCYC = 1 is supported when CPHA = 0 per specification)
+
+            Checking:
+              - Verify FULLCYC = 0 captures the nominal half-cycle byte while FULLCYC = 1 captures the
+                delayed full-cycle byte, and confirm negative controls detect ignored FULLCYC
+            '''
+      stage: V2
+      tests: ["spi_host_speed"]
+    }
+    {
+      name: duplex
+      desc: '''
+            Stimulus:
+              - Exercise full-duplex Bidir (Standard mode) and half-duplex TxOnly/RxOnly transfers,
+                including 512-byte maximum-length segments
+
+            Checking:
+              - Verify simultaneous TX and RX byte integrity in Standard full-duplex mode
+            '''
+      stage: V2
+      tests: ["spi_host_smoke", "spi_host_closure"]
+    }
+    {
+      name: tx_rx_only
+      desc: '''
+            Stimulus:
+              - Exercise TxOnly and RxOnly transfers across Standard, Dual, and Quad modes
+
+            Checking:
+              - Verify TxOnly does not populate RXDATA and RxOnly does not drain TXDATA
+            '''
+      stage: V2
+      tests: ["spi_host_smoke", "spi_host_closure"]
+    }
+    {
+      name: stress_all
+      desc: '''
+            Verify back-to-back context switching across concise functional sequences with optional resets.
+
+            Stimulus:
+              - Randomly sequence spi_host_smoke_vseq, spi_host_speed_vseq, and
+                spi_host_performance_vseq with randomized inter-sequence resets
+
+            Checking:
+              - Ensure all transfers and scoreboard checks pass across sequence switches and resets
+            '''
+      stage: V2
+      tests: ["spi_host_stress_all"]
+    }
+    {
+      name: spien
+      desc: '''
+            Verify mid-transaction CONTROL.SPIEN = 0 suspension, continuous pin-hold invariants, and
+            lossless resume on CONTROL.SPIEN = 1.
+
+            Stimulus:
+              - Deterministically clear CONTROL.SPIEN = 0 mid-byte while CSB == 0 and ACTIVE == 1,
+                sample SCK/CSB/SD/SD_EN on every core clock across the pause window, inject a
+                pin-toggle fault control, re-enable SPIEN = 1, and follow with randomized multi-toggle
+                SPIEN stress
+
+            Checking:
+              - Verify continuous cycle-by-clock pin stability throughout SPIEN == 0, fault detection
+                on the negative control, and lossless TX/RX payload completion upon SPIEN = 1
+            '''
+      stage: V2
+      tests: ["spi_host_spien"]
+    }
+    {
+      name: stall
+      desc: '''
+            Stimulus:
+              - Request 66-word (264-byte) read transfer exceeding 64-word RX FIFO + 1-word ByteMerge
+                capacity (65 words) to trigger STATUS.RXSTALL, then drain RXDATA to completion
+              - Issue write command on empty TX FIFO to trigger STATUS.TXSTALL, then supply TXDATA
+
+            Checking:
+              - Ensure RXSTALL and TXSTALL assert at exact architectural boundaries and recover cleanly
+            '''
+      stage: V2
+      tests: ["spi_host_status_stall"]
+    }
+    {
+      name: Idlecsbactive
+      desc: '''
+            Stimulus:
+              - Park in IdleCSBActive with CSAAT = 1 across CPHA = 0/1, then continue on same CS,
+                switch CSID (IdleCSBActive -> WaitTrail -> CSBSwitch), or abort via SW_RST
+
+            Checking:
+              - Verify CSB holds low while parked in IdleCSBActive and releases cleanly on CSAAT = 0,
+                CSID switch, or SW_RST
+            '''
+      stage: V2
+      tests: ["spi_host_idlecsbactive"]
+    }
+    {
+      name: data_fifo_status
+      desc: '''
+            Verify independent scoreboard prediction and boundary checking of STATUS flags and queue
+            depths (CMDQD = 0..8, TXQD = 0..73 incl. ByteSelect stage, RXQD = 0..64, BYTEORDER = 1,
+            and TX/RX watermarks across 0..255).
+
+            Stimulus:
+              - Exercise full/empty/watermark boundaries (0, 1, depth-1, depth, depth+1, 0x7F, 255)
+                and wrong-direction RXDATA write / TXDATA read window accesses
+
+            Checking:
+              - Ensure STATUS flags and depths match independent scoreboard predictions without any
+                internal DUT HDL-read oracle dependency
+            '''
+      stage: V2
+      tests: ["spi_host_closure", "spi_host_overflow_underflow"]
+    }
+    {
+      name: winbond
+      desc: '''
+            Verify SPI Host against both (1) the synthetic mixed-lane patched spiflash BFM and
+            (2) strict Winbond W25Q01JV / W25Q128JV Rev B datasheet framing across CS0 and CS1.
+
+            Stimulus:
+              - Execute synthetic mixed-lane multi-segment datapath transfers against spiflash
+              - Execute strict W25Q01JV datasheet sequences: negative WEL=0 Page Program rejection,
+                Write Enable (0x06), Read/Write Status Registers (0x05 / 0x35 / 0x31 for WEL, BUSY,
+                and QE=1), Page Program (0x02 with 1-lane 24-bit MSB-first address), and Quad Output
+                Fast Read (0x6B with 1-lane 24-bit MSB-first address + 8 dummy SCK clocks + 4-lane
+                Quad data)
+
+            Checking:
+              - Verify strict protocol enforcement (1-lane address, WEL/BUSY/QE, 8 dummy clocks) and
+                end-to-end readback + scoreboard TX/RX integrity across CS0 and CS1
+            '''
+      stage: V2
+      tests: ["spi_host_flash"]
+    }
+    {
+      name: same_csr_outstanding
+      desc: '''
+            Verify back-to-back pipelined accesses to the same CSR register without pipeline hazards.
+
+            Stimulus:
+              - Issue multiple back-to-back non-blocking reads and writes to the same CSR register
+
+            Checking:
+              - Ensure all outstanding bus responses return in order without dropped tokens or deadlocks
+            '''
+      stage: V1
+      tests: ["spi_host_same_csr_outstanding"]
+    }
+  ]
+  covergroups: [
+    {
+      name: tx_fifo_overflow_cg
+      desc: '''
+            Collect coverage verifying writes to TXDATA while STATUS.TXFULL == 1 (TXQD == 73).
+            '''
+    }
+    {
+      name: rx_fifo_underflow_cg
+      desc: '''
+            Collect coverage verifying reads from RXDATA while STATUS.RXEMPTY == 1.
+            '''
+    }
+    {
+      name: config_opts_cg
+      desc: '''
+            Operational timing coverage sampled on completed, scoreboard-checked segments across
+            CPOL x CPHA, FULLCYC, CSNLEAD/CSNTRAIL/CSNIDLE (0..15), and CLKDIV (0..0xFFFF).
+            '''
+    }
+    {
+      name: unaligned_data_cg
+      desc: '''
+            Collect coverage across all 16 4-bit TXDATA byte-enable masks (8 valid + 8 invalid).
+            '''
+    }
+    {
+      name: duplex_cg
+      desc: '''
+            Completed-transfer coverage across RxOnly, TxOnly, and Bidir directions.
+            '''
+    }
+    {
+      name: control_cg
+      desc: '''
+            Collect coverage on CONTROL writes including TX_WATERMARK (0, 1, .., 73, 74..254, 255),
+            RX_WATERMARK (0, 1, .., 64, 0x7F, above-depth, 255), SPIEN, OUTPUT_EN, and SW_RST x ACTIVE.
+            '''
+    }
+    {
+      name: status_cg
+      desc: '''
+            Collect coverage on STATUS reads including CMDQD (0..8), RXQD (0..64), packer-inclusive
+            TXQD (0..73), BYTEORDER (1), and all status/stall/watermark flags.
+            '''
+    }
+    {
+      name: csid_cg
+      desc: '''
+            Collect coverage across valid chip-select IDs (CS0 and CS1).
+            '''
+    }
+    {
+      name: command_cg
+      desc: '''
+            Completed legal-transfer coverage across Direction, Mode (Standard/Dual/Quad), CSAAT,
+            9-bit LEN (0..511), and legal Direction x Mode and CSAAT x Mode crosses.
+            '''
+    }
+    {
+      name: command_segment_cg
+      desc: '''
+            Completed legal-segment transition and cross coverage across CSAAT, Speed (Standard/Dual/Quad)
+            and Speed-to-Speed transitions, Direction and Direction-to-Direction transitions, LEN
+            boundary bins (0, 1, 2..510, 511), and legal Speed x Direction x CSAAT triples.
+            '''
+    }
+    {
+      name: invalid_cmd_outcome_cg
+      desc: '''
+            Dedicated negative-command outcome coverage (kept separate from legal transfer crosses)
+            for verified ERROR_STATUS outcomes on RsvdSpd (SPEED = 3 across all 4 directions),
+            Dual + Bidir, Quad + Bidir, CSID >= NumCS, and CMDBUSY across ERROR_ENABLE = {0, 1}.
+            '''
+    }
+    {
+      name: error_en_cg
+      desc: '''
+            Collect coverage across all 5 maskable ERROR_ENABLE bits.
+            '''
+    }
+    {
+      name: error_status_cg
+      desc: '''
+            Collect coverage across all 6 ERROR_STATUS bits crossed with ERROR_ENABLE.
+            '''
+    }
+    {
+      name: event_en_cg
+      desc: '''
+            Collect coverage across all 6 EVENT_ENABLE bits.
+            '''
+    }
+    {
+      name: intr_test_cg
+      desc: '''
+            Collect coverage on INTR_TEST writes crossed with INTR_ENABLE and expected INTR_STATE
+            across SpiHostError and SpiHostEvent (spi_host_env_cov::intr_test_cg).
+            '''
+    }
+    {
+      name: intr_cg
+      desc: '''
+            Collect coverage on INTR_STATE reads crossed with INTR_ENABLE across both interrupts.
+            '''
+    }
+    {
+      name: different_ch_settings_cg
+      desc: '''
+            Completed-transfer coverage across multiple chip selects (CS0, CS1) crossed with
+            CPOL, CPHA, FULLCYC, and CLKDIV ranges.
+            '''
+    }
+    {
+      name: num_segment_cg
+      desc: '''
+            Completed-transfer coverage of single/few/many CSAAT-chained segments crossed with
+            whether extra unconsumed words remain in the TX FIFO.
+            '''
+    }
+    {
+      name: segment_speed_cg
+      desc: '''
+            Completed-transfer coverage of segment-to-segment speed transitions across Standard,
+            Dual, and Quad modes.
+            '''
+    }
+    {
+      name: passthrough_cg
+      desc: '''
+            Single-CS (NumCS == 1) passthrough coverage group; intentionally unconstructed
+            (weight = 0) for the Caliptra-SS NumCS = 2 target where passthrough muxing is
+            structurally disabled via gen_passthrough_ignore.
+            '''
+    }
+    {
+      name: sck_pin_cg
+      desc: '''
+            Collect coverage on cio_sck_o value, cio_sck_en_o enable, and their cross product.
+            '''
+    }
+    {
+      name: csb_pin_cg
+      desc: '''
+            Per-chip-select pin coverage across all NumCS instances (CS0 and CS1), crossing
+            cio_csb_o[cs] and cio_csb_en_o[cs].
+            '''
+    }
+    {
+      name: sd_en_width_cg
+      desc: '''
+            Collect coverage on cio_sd_en_o output-enable bus widths across disabled (4'b0000),
+            standard (4'b0001), dual (4'b0011), and quad (4'b1111) transfer modes.
+            '''
+    }
+    {
+      name: intr_pins_cg
+      desc: '''
+            Collect coverage on hardware interrupt pins intr_error_o and intr_spi_event_o in
+            spi_host_cov_if::intr_pins_cg (bound RTL pin covergroup) and
+            spi_host_env_cov::intr_pins_cg (UVM environment pin covergroup).
+            '''
+    }
+    {
+      name: axi_monitor_aw_cg
+      desc: '''
+            AXI4 AW-channel coverage in axi_agent_pkg::axi_monitor_aw_cg across burst type
+            (FIXED/INCR/WRAP), AxSIZE (1B/2B/4B for 32-bit bus), burst length (single/short/long),
+            AxLOCK (normal/exclusive), AWREADY stall latency, and legal burst x length crosses.
+            '''
+    }
+    {
+      name: axi_monitor_w_cg
+      desc: '''
+            AXI4 W-channel coverage in axi_agent_pkg::axi_monitor_w::w_cg across WLAST, WSTRB
+            (zero/full/partial), and WREADY stall latency.
+            '''
+    }
+    {
+      name: axi_monitor_b_cg
+      desc: '''
+            AXI4 B-channel coverage in axi_agent_pkg::axi_monitor_b_cg across BRESP (OKAY/SLVERR)
+            and BREADY stall latency.
+            '''
+    }
+    {
+      name: axi_monitor_ar_cg
+      desc: '''
+            AXI4 AR-channel coverage in axi_agent_pkg::axi_monitor_ar_cg across burst type
+            (FIXED/INCR/WRAP), AxSIZE (1B/2B/4B for 32-bit bus), burst length (single/short/long),
+            AxLOCK (normal/exclusive), ARREADY stall latency, and legal burst x length crosses.
+            '''
+    }
+    {
+      name: axi_monitor_r_cg
+      desc: '''
+            AXI4 R-channel coverage in axi_agent_pkg::axi_monitor_r_cg across RRESP (OKAY/SLVERR),
+            RLAST, and RREADY stall latency.
+            '''
+    }
+  ]
+}

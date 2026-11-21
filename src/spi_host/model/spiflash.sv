@@ -506,7 +506,7 @@ program spiflash #(
     if (dummy_cycle != 0) dummy(dummy_cycle);
 
     // fetch from storage and return
-    while (address <= FlashSize) begin
+    while (address < FlashSize) begin
       // Check if exists, if not fill with random data
       if (!storage.exists(address)) storage[address] = $urandom_range(255,0);
       return_byte(storage[address++], io_mode);

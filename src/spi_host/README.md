@@ -21,7 +21,7 @@ This document specifies SPI_HOST hardware IP (HWIP) functionality.
    - SPI SCK line typically toggles at 1/2 the core clock frequency
    - An additional clock rate divider exists to reduce the frequency if needed
 - Support for all SPI polarity and phases (CPOL, CPHA)
-   - Additional support for "Full-cycle" SPI transactions, wherein data can be read a full SPI Clock cycle after the active edge (as opposed to one half cycle as is typical for SPI interfaces)
+   - Additional support for "Full-cycle" SPI transactions (supported when `CPHA = 0`), wherein data can be read a full SPI Clock cycle after the active edge (as opposed to one half cycle as is typical for SPI interfaces)
 - Single Transfer Rate (STR) only (i.e. data received on multiple lines, but only on one clock edge)
    - *No support* for Dual Transfer Rate (DTR)
 - Automatic control of chip select lines
