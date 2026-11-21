@@ -49,6 +49,7 @@ class usb_vip_cfg_builder extends uvm_object;
     configure_topology();
     configure_endpoints(cfg);
     configure_timers();
+    configure_lpm_timers(cfg);
     configure_tracing();
     configure_coverage();
     validate_vip_cfgs();
@@ -167,6 +168,46 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.twths = vip_ps(10us);
     host_cfg.tinactivity = vip_ps(300us);
     device_phy_cfg.tinactivity = vip_ps(300us);
+  endfunction
+
+  // Apply the selected LPM policy to both peers after the common scaled preset.
+  protected virtual function void configure_lpm_timers(usb_env_cfg cfg);
+    case (cfg.lpm_timing_policy)
+      usb_env_cfg::USB_LPM_TIMING_DEFAULT: begin end
+      usb_env_cfg::USB_LPM_TIMING_LEGACY_HIRD1: begin
+        restore_legacy_lpm_timers(host_cfg);
+        restore_legacy_lpm_timers(device_phy_cfg);
+      end
+      default: `uvm_fatal("USB_CFG", $sformatf("Unsupported LPM timing policy %0d", cfg.lpm_timing_policy))
+    endcase
+  endfunction
+
+  // Restore drive and checker limits together; no capability or authorization change.
+  // USB 2.0 LPM ECN section 4.9, Table 4-6; SVT configuration tl1* members.
+  protected virtual function void restore_legacy_lpm_timers(svt_usb_configuration cfg);
+    // The BOS fixture advertises legacy LPM, and host resume sends HIRD=1.
+    // SVT's configuration reference requires programming the ECN drive explicitly.
+    cfg.select_lpm_errata_mode = 1'b0;
+    cfg.tl1hubdrvresume1 = vip_ps(125us);
+    cfg.tl1hubdrvresume1_min = vip_ps(124us);
+    cfg.tl1hubdrvresume1_max = vip_ps(126us);
+    cfg.tl1tokenretry = vip_ps(8us);
+    cfg.tl1tokenretry_min = vip_ps(8us);
+    cfg.tl1residency = vip_ps(50us);
+    cfg.tl1residency_min = vip_ps(50us);
+    cfg.tl1residency_max = vip_ps(55us);
+    cfg.tl1devdrvresume = vip_ps(50us);
+    cfg.tl1devdrvresume_min = vip_ps(50us);
+    cfg.tl1hubreflect = vip_ps(30us);
+    cfg.tl1hubreflect_min = vip_ps(30us);
+    cfg.tl1hubreflect_max = vip_ps(48us);
+    cfg.tl1hubdrvresume2 = vip_ps(60us);
+    cfg.tl1hubdrvresume2_min = vip_ps(60us);
+    cfg.tl1hubdrvresume2_max = vip_ps(990us);
+    cfg.tl1exitdevrecovery = vip_ps(10us);
+    cfg.tl1exitdevrecovery_min = vip_ps(10us);
+    `uvm_info("USB_L1_CFG", $sformatf("Legacy LPM HIRD=1 policy: host drive/check bounds=%0.0f/%0.0f/%0.0f ps",
+      cfg.tl1hubdrvresume1, cfg.tl1hubdrvresume1_min, cfg.tl1hubdrvresume1_max), UVM_LOW)
   endfunction
 
   // Retain protocol-through-PHY traces on both sides for live USB debug.

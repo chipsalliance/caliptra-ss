@@ -40,10 +40,33 @@ class caliptra_ss_usb_ocp_stall_base_sequence
     // USB 2.0 Section 5.5.3: high-speed control endpoints use 64-byte packets.
     localparam int unsigned HS_CONTROL_PACKET_BYTES = 64;
     localparam int unsigned NEGATIVE_NAK_RETRY_LIMIT = 4;
+    // Private firmware-service contract: cptra_usb_ocp_interrupted_transfer.c.
+    localparam logic [7:0] FW_READ_FIFO_BYTE = 8'h05;
+    localparam logic [7:0] FW_READ_BATCH_ABORTED = 8'h06;
+    localparam time FW_SERVICE_BOUND = 200us;
 
     function new(string name = "caliptra_ss_usb_ocp_stall_base_sequence");
         super.new(name);
     endfunction
+
+    protected task ocp_stall_execute_fw_command(
+        input logic [7:0] opcode, input logic [7:0] expected_state,
+        output logic [7:0] data, input string label,
+        input string report_id = "OCP_ABORT_FW");
+        bit acknowledged;
+        semantics_vif.issue_fw_command(opcode, path_generation);
+        semantics_vif.wait_for_fw_state_generation_bounded(
+            expected_state, path_generation, FW_SERVICE_BOUND,
+            acknowledged);
+        data = semantics_vif.get_fw_data();
+        semantics_vif.clear_fw_command();
+        if (!acknowledged)
+            `uvm_fatal(report_id,
+                $sformatf("%s command=0x%02h generation=%0d was not acknowledged.",
+                    label, opcode, path_generation))
+        path_generation++;
+        if (path_generation == 0) path_generation++;
+    endtask
 
     protected task ocp_stall_do_initialize_and_check_transport();
         bit [7:0] cms_count;
@@ -300,7 +323,9 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         end
     endtask
 
-    protected task ocp_stall_do_configure_and_check_fifo(input int unsigned image_dwords, input string label);
+    protected task ocp_stall_do_configure_and_check_fifo(
+        input int unsigned image_dwords, input string label,
+        input bit reserve_ring_slot = 1'b1);
         bit [7:0] status_bytes[$];
         ocp_do_fifo_ctrl_write(0, 1'b1, image_dwords, label);
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, {label, "_CAPS"});
@@ -310,7 +335,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             ocp_get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0),
             ocp_get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0),
             usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_packet_size,
-            1'b1, wMaxWrTransferSize, image_dwords);
+            reserve_ring_slot, wMaxWrTransferSize, image_dwords);
         fifo_model_configured = 1'b1;
         fifo_scoreboard.enable_packet_fifo_checking();
         if (!fifo_packet_model.indices_match(

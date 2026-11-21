@@ -33,9 +33,8 @@
 //   0x11 FW_DEVICE_RESET_STORED  - CPUif write RESET_CTRL=1 stored, readback OK
 //   0x12 FW_DEVICE_RESET_CLEARED - CPUif write RESET_CTRL=0 verified
 //   0x13 FIFO_NONEMPTY_SEEN      - RA programmed image size and FIFO nonempty
-//   0x14 USB_FIFO_RESET_OBSERVED - RA USB RESET: indices match, empty, zero
-//                                  data = CALIPTRA_STATUS[0] (REGION_RESET bit)
-//   0x15 FW_FIFO_RESET_OBSERVED  - CPUif RESET: indices match, empty
+//   0x14 USB_FIFO_RESET_OBSERVED - RA RESET empty; REGION_RESET W1C checked
+//   0x15 FW_FIFO_RESET_OBSERVED  - CPUif RESET empty; REGION_RESET set again
 //
 // MCU completion is released only after UVM finishes its final readbacks
 // and completes the generation-qualified FLOW_COMPLETE handshake.
@@ -86,9 +85,19 @@ enum printf_verbosity verbosity_g = LOW;
 
 // INDIRECT_FIFO_STATUS_0 EMPTY flag (bit 0).
 #define W1DC_IFS_EMPTY_MASK 0x00000001u
+// OCP Recovery v1.1 Sec 9.2: INDIRECT_FIFO_STATUS is 20 bytes.
+#define W1DC_FIFO_STATUS_DWORDS 5u
 
-// CALIPTRA_STATUS REGION_RESET bit (bit 0).
+// Public vendor contract: CALIPTRA_STATUS.REGION_RESET is bit 0, W1C.
+// Explicit INDIRECT_FIFO_CTRL.RESET sets it; reads/zero writes preserve it.
 #define W1DC_CALIPTRA_STATUS_REGION_RESET_MASK 0x00000001u
+// Compare reset history and unrelated sticky fields, not hardware-owned live
+// POST_SYNC_ARB_STATE. Generated masks only identify the public field positions.
+#define W1DC_CALIPTRA_STATUS_STABLE_MASK \
+    (W1DC_CALIPTRA_STATUS_REGION_RESET_MASK | \
+     RECOVERY_CALIPTRA_STATUS_OVERFLOW_MASK | \
+     RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK | \
+     RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK)
 #define W1DC_PROT_ERROR_MASK 0x0000FF00u
 #define W1DC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 #define W1DC_FIFO_CAP_MASK \
@@ -96,6 +105,73 @@ enum printf_verbosity verbosity_g = LOW;
 
 // Maximum polling iterations.
 #define W1DC_POLL_LIMIT 200000u
+
+static void w1dc_fail(const char *message)
+{
+    VPRINTF(ERROR, "CPTRA: %s\n", message);
+    SEND_STDOUT_CTRL(0x1);
+    while (1) {}
+}
+
+static void w1dc_check_no_batch_abort(void)
+{
+    uint8_t aborted = 0u;
+
+    if ((cptra_usb_ocp_recovery_read_batch_aborted(&aborted) != 0u) ||
+        (aborted != 0u)) {
+        w1dc_fail("unexpected BATCH_ABORTED without a batch-abort notification");
+    }
+}
+
+static uint32_t w1dc_poll_region_reset(void)
+{
+    uint32_t status = 0u;
+
+    // Observe the actual event, including the permitted registered flush delay.
+    for (uint32_t poll = 0u; poll < W1DC_POLL_LIMIT; ++poll) {
+        if ((cptra_usb_ocp_recovery_read_caliptra_status(&status) == 0u) &&
+            ((status & W1DC_CALIPTRA_STATUS_REGION_RESET_MASK) != 0u)) {
+            return status;
+        }
+    }
+    w1dc_fail("explicit FIFO reset did not set REGION_RESET");
+    return 0u;
+}
+
+static void w1dc_write_and_check_caliptra_status(uint32_t value,
+                                                uint32_t expected)
+{
+    uint32_t status = 0u;
+
+    if ((cptra_usb_ocp_recovery_write_dword(
+            SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS, value) != 0u) ||
+        (cptra_usb_ocp_recovery_read_caliptra_status(&status) != 0u) ||
+        (((status ^ expected) & W1DC_CALIPTRA_STATUS_STABLE_MASK) != 0u)) {
+        VPRINTF(ERROR, "CPTRA: CALIPTRA_STATUS write=0x%08x read=0x%08x expected=0x%08x\n",
+                value, status, expected);
+        w1dc_fail("REGION_RESET W1C or unrelated status preservation failed");
+    }
+}
+
+static void w1dc_check_region_reset_clear(uint32_t before)
+{
+    uint32_t status = 0u;
+
+    // Repeated reads must not consume explicit-reset history.
+    if ((cptra_usb_ocp_recovery_read_caliptra_status(&status) != 0u) ||
+        (((status ^ before) & W1DC_CALIPTRA_STATUS_STABLE_MASK) != 0u)) {
+        w1dc_fail("CALIPTRA_STATUS read changed reset history");
+    }
+    w1dc_write_and_check_caliptra_status(0u, before);
+    // A word with only the W1C data bit zero preserves it and unrelated sticky
+    // fields. Live arbiter state may change independently of any CPUif write.
+    // DMA DWORD writes do not exercise a disabled byte strobe.
+    w1dc_write_and_check_caliptra_status(
+        ~W1DC_CALIPTRA_STATUS_REGION_RESET_MASK, before);
+    w1dc_write_and_check_caliptra_status(
+        W1DC_CALIPTRA_STATUS_REGION_RESET_MASK,
+        before & ~W1DC_CALIPTRA_STATUS_REGION_RESET_MASK);
+}
 
 static void w1dc_complete_after_uvm_checks(void)
 {
@@ -369,6 +445,8 @@ void main(void)
     }
 
     VPRINTF(LOW, "CPTRA: FIFO nonempty observed\n");
+    // Transport initialization includes physical reset, but no batch abort.
+    w1dc_check_no_batch_abort();
     cptra_usb_ocp_recovery_signal_state(
         W1DC_FW_STATE_FIFO_NONEMPTY_SEEN, 0u);
 
@@ -396,18 +474,16 @@ void main(void)
                 ifc_val);
     }
 
-    // Read CALIPTRA_STATUS as a diagnostic; it is independent of OCP RESET.
-    caliptra_sts = 0u;
-    (void)cptra_usb_ocp_recovery_read_caliptra_status(&caliptra_sts);
+    caliptra_sts = w1dc_poll_region_reset();
+    w1dc_check_no_batch_abort();
+    w1dc_check_region_reset_clear(caliptra_sts);
     VPRINTF(LOW,
-            "CPTRA: USB FIFO reset observed W=%u R=%u caliptra_status=0x%08x\n",
+            "CPTRA: USB FIFO reset/W1C verified W=%u R=%u prior_status=0x%08x\n",
             wi, ri, caliptra_sts);
 
     cptra_usb_ocp_recovery_signal_state(
         W1DC_FW_STATE_USB_FIFO_RESET_OBSERVED,
-        (uint8_t)((caliptra_sts &
-                   W1DC_CALIPTRA_STATUS_REGION_RESET_MASK) |
-                  (usb_reset_stuck ? 0x02u : 0x00u)));
+        usb_reset_stuck ? 0x02u : 0x00u);
 
     // -----------------------------------------------------------------
     // FIFO firmware-reset phase.
@@ -470,8 +546,9 @@ void main(void)
                 ifc_val);
     }
 
-    caliptra_sts = 0u;
-    (void)cptra_usb_ocp_recovery_read_caliptra_status(&caliptra_sts);
+    // The first event was cleared: this must be a fresh explicit-reset event.
+    caliptra_sts = w1dc_poll_region_reset();
+    w1dc_check_no_batch_abort();
     VPRINTF(LOW,
             "CPTRA: FW FIFO reset observed W=%u R=%u caliptra_status=0x%08x\n",
             wi, ri, caliptra_sts);
@@ -487,8 +564,32 @@ void main(void)
         while (1) {}
     }
     {
+        uint32_t before_status[W1DC_FIFO_STATUS_DWORDS] = {0u};
+        uint32_t after_status = 0u;
         uint32_t data0 = 0u;
         uint32_t data1 = 0u;
+
+        // UVM has finished the distinct refill and waits for POST_RESET_DRAIN.
+        // No FIFO consumer runs until the W1C/index checks have completed.
+        for (uint32_t word = 0u; word < W1DC_FIFO_STATUS_DWORDS; ++word) {
+            if (cptra_usb_ocp_recovery_read_dword_retry(
+                    SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0 +
+                        word * sizeof(uint32_t),
+                    &before_status[word]) != 0u) {
+                w1dc_fail("FIFO status snapshot before nonempty W1C failed");
+            }
+        }
+        caliptra_sts = w1dc_poll_region_reset();
+        w1dc_check_region_reset_clear(caliptra_sts);
+        for (uint32_t word = 0u; word < W1DC_FIFO_STATUS_DWORDS; ++word) {
+            if ((cptra_usb_ocp_recovery_read_dword_retry(
+                    SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0 +
+                        word * sizeof(uint32_t),
+                    &after_status) != 0u) ||
+                (after_status != before_status[word])) {
+                w1dc_fail("nonempty REGION_RESET W1C changed FIFO status/indices");
+            }
+        }
         if (cptra_usb_ocp_recovery_read_dword_retry(
                 SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &data0) != 0u
@@ -507,7 +608,7 @@ void main(void)
     cptra_usb_ocp_recovery_signal_state(
         W1DC_FW_STATE_POST_RESET_DRAIN, 0u);
     VPRINTF(LOW,
-            "CPTRA: post-reset distinct payload drained without stale data\n");
+            "CPTRA: nonempty W1C preserved status/indices and exact distinct payload\n");
 
     w1dc_complete_after_uvm_checks();
 }

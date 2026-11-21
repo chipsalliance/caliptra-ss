@@ -45,7 +45,9 @@ class usb_l1_host_resume_seq extends usb_resume_recovery_seq;
   // Enumerate, check L1 entry/exit, then prove endpoint traffic recovers.
   virtual task body();
     usb_init_seq init_sequence;
+    usb_lpm_capability_host_seq discovery;
     usb_l1_host_resume_host_seq suspend_host_sequence;
+    int unsigned request_count;
     uvm_event dut_l1_observed;
     logic [31:0] device_command_status;
     logic [31:0] lpm_suspend_mask;
@@ -53,15 +55,33 @@ class usb_l1_host_resume_seq extends usb_resume_recovery_seq;
     completed = 1'b0;
     `uvm_info("USB_L1_SEQ", "Starting L1 host-resume scenario; running enumeration first", UVM_LOW)
     init_sequence = usb_init_seq::type_id::create("init_sequence");
+    init_sequence.lpm_supported = 1'b1;
     init_sequence.start(m_sequencer, this);
     if (!init_sequence.completed) begin
       `uvm_fatal("USB_L1_SEQ", "Enumeration did not complete")
     end
 
+    `uvm_info("USB_L1_SEQ", "Discovering the advertised LPM mode before configuring native host resume", UVM_LOW)
+    discovery = usb_lpm_capability_host_seq::type_id::create("discovery");
+    discovery.control_endpoint = get_endpoint(0, USB_DIRECTION_OUT);
+    discovery.device_address = p_sequencer.cfg.device_address;
+    discovery.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
+    request_count = init_sequence.serviced_request_count + usb_lpm_capability_host_seq::DISCOVERY_REQUEST_COUNT;
+    fork
+      discovery.start(p_sequencer.host_sequencer);
+      init_sequence.service_ep0(request_count);
+    join
+    if (!(discovery.completed === 1'b1) || !(discovery.legacy_lpm_mode === 1'b1) ||
+        !(init_sequence.serviced_request_count === request_count)) begin
+      `uvm_fatal("USB_L1_SEQ", "HS host resume requires completed on-wire discovery of legacy LPM; BESL is not claimed")
+    end
+    `uvm_info("USB_L1_SEQ", "Legacy LPM discovered on wire; proceeding with the existing HIRD1 native policy", UVM_LOW)
+
     lpm_suspend_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUS);
     dut_l1_observed = new("dut_l1_observed");
     suspend_host_sequence = usb_l1_host_resume_host_seq::type_id::create("suspend_host_sequence");
     suspend_host_sequence.dut_l1_observed = dut_l1_observed;
+    suspend_host_sequence.legacy_lpm_confirmed = discovery.legacy_lpm_mode;
     suspend_host_sequence.device_address = p_sequencer.cfg.device_address;
     suspend_host_sequence.link_state_timeout = suspend_timeout;
 

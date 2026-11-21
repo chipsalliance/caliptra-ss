@@ -93,8 +93,54 @@ targets:
     directories:
       - $COMPILE_ROOT/coverage
     files:
+      # USB compound functional coverage. The package must precede the observers
+      # that import it; the bind and probe must follow the observers they
+      # instantiate. Everything here is inert unless USB_FCOV is defined.
+      - $COMPILE_ROOT/coverage/usb_cov_pkg.sv
+      - $COMPILE_ROOT/coverage/usb_addr_cov.sv
+      - $COMPILE_ROOT/coverage/usb_power_cov.sv
+      - $COMPILE_ROOT/coverage/usb_hub_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_link_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_enum_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_ep_cov.sv
+      - $COMPILE_ROOT/coverage/usb_dev_irq_cov.sv
+      - $COMPILE_ROOT/coverage/usb_compound_cov.sv
       - $COMPILE_ROOT/coverage/usb_cov_if.sv
+      # usb_cov_bind.sv binds by MODULE TYPE to ip_xxx_3511_hs_mem_compound_wrapper
+      # and usb_compound_ahb_decoder, both of which are instantiated here. It is
+      # compiled only via this target (not usb_coverage) so that it is not
+      # pulled in a second time when caliptra_ss_top_tb_coverage also requires
+      # usb_coverage, which would redeclare the module.
       - $COMPILE_ROOT/coverage/usb_cov_bind.sv
+      - $COMPILE_ROOT/coverage/usb_ocp_cov_if.sv
+      - $COMPILE_ROOT/coverage/usb_ocp_cov_bind.sv
+---
+provides: [usb_ocp_post_sync_arb_tb]
+schema_version: 3.1.0
+requires:
+  - 3rd_party_frameworks::uvm
+  - lib_usb_compound
+targets:
+  tb:
+    directories:
+      # The reused verification constants package includes address metadata.
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
+    files:
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit_if.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/caliptra_ss_usb_ocp_rx_drain_unit.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_test_pkg.sv
+      - $COMPILE_ROOT/tb/unit/ocp_post_sync_arb/usb_ocp_post_sync_arb_tb.sv
+    tops: [usb_ocp_post_sync_arb_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-sverilog -full64'
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'
+      elab:
+        - '-suppress=SIMU-RESOLUTION,DRTZ'
 ---
 provides: [usb_top_tb]
 schema_version: 2.4.0
@@ -123,6 +169,7 @@ targets:
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
+      - $COMPILE_ROOT/tb/usb_ocp_recovery_if.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv

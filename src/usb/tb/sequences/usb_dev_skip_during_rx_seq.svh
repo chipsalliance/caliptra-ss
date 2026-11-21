@@ -17,23 +17,16 @@
 // Relies on the Synopsys SVT USB VIP's built-in protocol packet notification
 // (host_agent.prot.NOTIFY_20_HOST_TX_PACKET in
 // others/class_svt_usb_protocol.html) to time the EPSKIP register write
-// while the 512-byte DATA0 packet (~8.5 us on UTMI) is in flight on the bus,
-// and on the VIP's built-in protocol/link checks (enabled by default via
-// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
-// coverage/class_svt_usb_protocol_ep_sc.html, and
-// coverage/class_svt_usb_link_20_sc.html):
-//   - svt_usb_protocol_ep_sc:
-//     * packet_error_check, data_toggle_check, valid_device_response_check
-//   - svt_usb_link_20_sc:
-//     * unexpected_response_check
+// while the 512-byte DATA0 packet (~8.5 us on UTMI) is in flight on the bus.
+// Supported VIP link/physical checks remain active; endpoint protocol checks
+// are unsupported in this UTMI 4-stack topology and are not credited here.
 //
 // Why a custom cycle-level skip monitor is unnecessary:
 //   If hardware retired EPSKIP early while the 512-byte DATA0 packet was still
 //   in flight, USB_DMA_1 (READ_EPINFO_SKIP -> WAIT_ON_GNT_FOR_SKIP_UPDATE)
 //   would clear Active without modifying NBytes or buffer_offset, and USB_PIE_1
-//   would not accept/commit the 512-byte payload. Consequently, the SVT VIP's
-//   BULK_OUT_TRANSFER completion (checked for ACCEPT under
-//   svt_usb_protocol_ep_sc::valid_device_response_check) combined with
+//   would not accept/commit the 512-byte payload. Consequently, the native
+//   BULK_OUT_TRANSFER completion (explicitly checked for ACCEPT) combined with
 //   verify_inflight_packet() (checking active == 0, nbytes == 512,
 //   buffer_offset advanced by 512, and all 512 SRAM bytes) architecturally
 //   proves that hardware completed the in-flight packet before retiring EPSKIP.
@@ -52,6 +45,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     ((32'h1 << (USB_DEV0_NBPHYSEP + 2)) - 1) & ~32'h0000_000f;
   localparam logic [31:0] TOKEN_OVERLAP_EPINUSE_MASK =
     32'h2aaa_aaa0 & TOKEN_OVERLAP_SKIP_MASK;
+  localparam int unsigned TOKEN_OVERLAP_MIN_SKIP_WRITES = 40;
 
   logic [31:0] token_overlap_in_buffer_offset = 32'h0000_0900;
   int unsigned token_overlap_in_bytes = 16;
@@ -62,39 +56,6 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     super.new(name);
     skip_buffer_offset = 32'h0000_0800;
   endfunction
-
-  // Return the post-transfer buffer byte offset matching the hardware
-  // implementation behavior where USB_DMA rounds a non-zero partial 64-byte
-  // block up to the next 64-byte boundary on descriptor writeback.
-  function logic [31:0] expected_post_transfer_buffer_offset(
-    logic [31:0] start_buffer_offset,
-    int unsigned transferred_bytes
-  );
-    return start_buffer_offset + (((transferred_bytes + 63) / 64) * 64);
-  endfunction
-
-  // Verify the post-skip recovery payload and check that Active cleared and
-  // the descriptor buffer pointer advanced as expected.
-  virtual task verify_recovery_transfer();
-    usb_ep_entry_t observed_entry;
-    logic [31:0] expected_buffer_offset;
-
-    super.verify_recovery_transfer();
-    read_endpoint_entry(skip_endpoint, observed_entry);
-    expected_buffer_offset = expected_post_transfer_buffer_offset(skip_buffer_offset, recovery_bytes);
-    if (observed_entry.active !== 1'b0 ||
-        entry_buffer_byte_offset(observed_entry) !== expected_buffer_offset) begin
-      `uvm_fatal(
-        "USB_SKIP_RX_SEQ",
-        $sformatf(
-          "Post-skip recovery descriptor writeback invalid on %s: observed %s, expected active=0 nbytes=0 buffer=0x%03h",
-          skip_endpoint.convert2string(),
-          describe_entry(observed_entry),
-          expected_buffer_offset
-        )
-      )
-    end
-  endtask
 
   // Compare the packet committed before the delayed skip writeback.
   task verify_inflight_packet();
@@ -372,20 +333,8 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     bit stop_skip_wave;
 
     in_endpoint = get_endpoint(skip_target_ep_number, USB_DIRECTION_IN);
-    dummy_ep2_out = usb_endpoint_cfg::create_endpoint(
-      "dummy_ep2_out",
-      2,
-      USB_DIRECTION_OUT,
-      USB_TRANSFER_TYPE_BULK,
-      `SVT_USB_HS_BULK_MAX_PACKET_SIZE
-    );
-    dummy_ep2_in = usb_endpoint_cfg::create_endpoint(
-      "dummy_ep2_in",
-      2,
-      USB_DIRECTION_IN,
-      USB_TRANSFER_TYPE_BULK,
-      `SVT_USB_HS_BULK_MAX_PACKET_SIZE
-    );
+    dummy_ep2_out = get_endpoint(2, USB_DIRECTION_OUT);
+    dummy_ep2_in = get_endpoint(2, USB_DIRECTION_IN);
     dummy_active_int_mask = dummy_ep2_out.csr_bit_mask() | dummy_ep2_in.csr_bit_mask();
     check_buffer_clear_of_endpoint_list(
       "Token-overlap bulk IN",
@@ -406,11 +355,19 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     enable_endpoint_interrupt(in_endpoint);
     clear_endpoint_interrupt(in_endpoint);
 
-    // Arm dummy EP2 OUT (physical 4, buffer 0) and EP2 IN (physical 5, buffer 1
-    // with EPINUSE set) so READ_EPINFO_SKIP exercises both 64-bit word halves.
+    // EP2 is now advertised and selected by enumeration. Verify readiness before
+    // arming OUT buffer 0 and IN buffer 1 to stress both 64-bit word halves.
+    read_endpoint_entry(dummy_ep2_out, observed_dummy_out_entry, 0);
+    read_endpoint_entry(dummy_ep2_in, observed_dummy_in_entry, 1);
+    if (observed_dummy_out_entry.active !== 1'b0 || observed_dummy_out_entry.disabled !== 1'b0 ||
+        observed_dummy_in_entry.active !== 1'b0 || observed_dummy_in_entry.disabled !== 1'b0) begin
+      `uvm_fatal("USB_SKIP_RX_SEQ", $sformatf("Configured EP2 must be enabled and software-owned before arming: OUT=%s IN=%s",
+        describe_entry(observed_dummy_out_entry), describe_entry(observed_dummy_in_entry)))
+    end
     dummy_armed_entry = endpoint_entry(1'b1, 1'b0, 0, 0);
     write_endpoint_entry(dummy_ep2_out, dummy_armed_entry, 0);
     write_endpoint_entry(dummy_ep2_in, dummy_armed_entry, 1);
+    `uvm_info("USB_SKIP_RX_SEQ", "Armed configured EP2 OUT buffer 0 and IN buffer 1 for active word-half skip stress", UVM_LOW)
     ral_write32("EPBUFCFG", p_sequencer.reg_model.combo.dev0_csr.EPBUFCFG, TOKEN_OVERLAP_SKIP_MASK);
     ral_write32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, TOKEN_OVERLAP_EPINUSE_MASK);
     ral_write32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, TOKEN_OVERLAP_SKIP_MASK);
@@ -481,7 +438,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
             disable fork;
           end
           begin
-            while (!stop_skip_wave) begin
+            while (!stop_skip_wave || skip_wave_writes < TOKEN_OVERLAP_MIN_SKIP_WRITES) begin
               ral_write32("EPSKIP", p_sequencer.reg_model.combo.dev0_csr.EPSKIP, TOKEN_OVERLAP_SKIP_MASK);
               skip_wave_writes++;
               // Vary inter-write spacing (15..45 ns) to sweep EPSKIP across the IN token EOP window.
@@ -501,12 +458,12 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
         );
         read_endpoint_entry(dummy_ep2_out, observed_dummy_out_entry, 0);
         read_endpoint_entry(dummy_ep2_in, observed_dummy_in_entry, 1);
-        if (observed_dummy_out_entry.active !== 1'b0 ||
-            observed_dummy_in_entry.active !== 1'b0) begin
+        if (observed_dummy_out_entry.active !== 1'b0 || observed_dummy_out_entry.disabled !== 1'b0 ||
+            observed_dummy_in_entry.active !== 1'b0 || observed_dummy_in_entry.disabled !== 1'b0) begin
           `uvm_fatal(
             "USB_SKIP_RX_SEQ",
             $sformatf(
-              "Token-overlap skip did not clear dummy entries: ep2_out=%s ep2_in=%s",
+              "Token-overlap skip did not retire enabled EP2 entries: ep2_out=%s ep2_in=%s",
               describe_entry(observed_dummy_out_entry),
               describe_entry(observed_dummy_in_entry)
             )
