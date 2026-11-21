@@ -113,6 +113,24 @@ package usb_tb_pkg;
   localparam time USB_DEFAULT_CONTROL_TRANSFER_TIMEOUT = 100us;
   localparam time USB_DEFAULT_TEST_TIMEOUT = 1ms;
 
+  // Candidate external-DUT resume budget shared by configuration and stimulus.
+  // Accelerated functional timing only, not a nominal USB timing oracle.
+  localparam time USB_ACCELERATED_HOST_RESUME_BUDGET = 4ms;
+
+  // Accelerated FS policy, not hardware timer minima or nominal timing signoff.
+  localparam time USB_FS_FRAME_PERIOD = 1ms;
+  localparam time USB_FS_RESET_DURATION = 1500us;
+  localparam time USB_FS_LINK_TIMEOUT = 3 * USB_FS_FRAME_PERIOD;
+  // Allow one frame per SETUP/DATA/STATUS phase plus one completion frame.
+  localparam time USB_FS_CONTROL_TRANSFER_TIMEOUT = 4 * USB_FS_FRAME_PERIOD;
+  // One frame of native scheduling plus one packet/completion frame.
+  localparam time USB_FS_TRANSFER_TIMEOUT = 2 * USB_FS_FRAME_PERIOD;
+  // Two data packets and possible terminating ZLP, plus completion margin.
+  localparam time USB_FS_BULK_PAIR_TIMEOUT = 4 * USB_FS_FRAME_PERIOD;
+  localparam time USB_FS_PERIODIC_TRANSFER_TIMEOUT = 3 * USB_FS_FRAME_PERIOD;
+  localparam time USB_FS_L1_CYCLE_TIMEOUT = 4 * USB_FS_FRAME_PERIOD;
+  localparam time USB_FS_L2_HOST_CYCLE_TIMEOUT = 12 * USB_FS_FRAME_PERIOD;
+
   // Address the host assigns with SET_ADDRESS during enumeration.
   localparam bit [6:0] USB_DEFAULT_DEVICE_ADDRESS = 7'd1;
 
@@ -137,6 +155,9 @@ package usb_tb_pkg;
     USB_DIRECTION_OUT,
     USB_DIRECTION_IN
   } usb_direction_e;
+
+  // Direct-device USB 2.0 bus selection; UTMI PHY capability is independent.
+  typedef enum int { USB_SPEED_HIGH, USB_SPEED_FULL } usb_speed_e;
 
   // USB 2.0 transfer type (endpoint descriptor bmAttributes "Transfer Type").
   // Distinct from the DEV0 endpoint-list "Endpoint Type" (T) bit, which
@@ -247,11 +268,14 @@ package usb_tb_pkg;
   `include "sequences/usb_l2_host_resume_seq.svh"
   `include "sequences/usb_l1_host_resume_host_seq.svh"
   `include "sequences/usb_l1_host_resume_seq.svh"
-  `include "sequences/usb_double_buffer_bulk_seq.svh"
   `include "sequences/usb_bulk_ping_seq.svh"
   `include "sequences/usb_high_bandwidth_iso_host_seq.svh"
   `include "sequences/usb_high_bandwidth_iso_seq.svh"
   `include "sequences/usb_high_bandwidth_interrupt_seq.svh"
+  `include "sequences/usb_packet_buffer_seq.svh"
+  `include "sequences/usb_double_buffer_bulk_seq.svh"
+  `include "sequences/usb_periodic_host_seq.svh"
+  `include "sequences/usb_periodic_seq.svh"
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "sequences/usb_dev_skip_during_rx_seq.svh"
@@ -260,6 +284,15 @@ package usb_tb_pkg;
   `include "sequences/usb_l1_remote_wake_seq.svh"
   `include "sequences/usb_l2_remote_wake_host_seq.svh"
   `include "sequences/usb_l2_remote_wake_seq.svh"
+  `include "sequences/usb_host_resume_host_seq.svh"
+  `include "sequences/usb_host_resume_seq.svh"
+
+  // Whole-test guards use the shared scenarios' request counts, not fixed waits.
+  localparam time USB_FS_ENUMERATION_BUDGET = USB_FS_LINK_TIMEOUT +
+    usb_init_host_seq::ENUMERATION_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT + USB_FS_FRAME_PERIOD;
+  localparam time USB_FS_LPM_DISCOVERY_BUDGET = usb_lpm_capability_host_seq::DISCOVERY_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT;
+  localparam time USB_FS_WAKE_PERMISSION_BUDGET = usb_remote_wake_enable_host_seq::AUTHORIZATION_REQUEST_COUNT * USB_FS_CONTROL_TRANSFER_TIMEOUT;
+
   `include "tests/usb_base_test.svh"
   `include "tests/usb_axi_read_backpressure_test.svh"
   `include "tests/usb_axi_write_backpressure_test.svh"
@@ -275,7 +308,6 @@ package usb_tb_pkg;
   `include "tests/usb_bad_pid_test.svh"
   `include "tests/usb_l2_host_resume_test.svh"
   `include "tests/usb_l1_host_resume_test.svh"
-  `include "tests/usb_double_buffer_bulk_test.svh"
   `include "tests/usb_bulk_ping_test.svh"
   `include "tests/usb_high_bandwidth_iso_test.svh"
   `include "tests/usb_high_bandwidth_interrupt_test.svh"
@@ -283,6 +315,8 @@ package usb_tb_pkg;
   `include "tests/usb_dev_skip_during_rx_test.svh"
   `include "tests/usb_l1_remote_wake_test.svh"
   `include "tests/usb_l2_remote_wake_test.svh"
+  `include "tests/usb_double_buffer_bulk_test.svh"
+  `include "tests/usb_periodic_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
   // OCP-only architecture. Overrides are installed by usb_ocp_base_test,
   // never during package loading or generic environment construction.

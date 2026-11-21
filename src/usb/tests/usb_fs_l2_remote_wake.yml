@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_fs_l2_remote_wake
+plusargs:
+  - '+UVM_TESTNAME=usb_l2_remote_wake_test'
+  - '+usb_speed=FS'

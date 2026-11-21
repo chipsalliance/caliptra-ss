@@ -39,6 +39,8 @@ class usb_l1_remote_wake_seq extends usb_resume_recovery_seq;
     int unsigned request_count;
 
     completed = 1'b0;
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL && resume_timeout < USB_FS_L1_CYCLE_TIMEOUT) resume_timeout = USB_FS_L1_CYCLE_TIMEOUT;
+    `uvm_info("USB_L1_REMOTE", $sformatf("L1 entry/origin/post-wake SOF bound=%0t", resume_timeout), UVM_LOW)
     init_sequence = usb_init_seq::type_id::create("init_sequence");
     init_sequence.lpm_supported = 1'b1;
     `uvm_info("USB_L1_REMOTE", "Enumerating an LPM-capable device and discovering its BOS capabilities", UVM_LOW)
@@ -97,7 +99,7 @@ class usb_l1_remote_wake_seq extends usb_resume_recovery_seq;
       `uvm_fatal("USB_L1_REMOTE", "Device address changed across L1 remote wake")
     end
     #(DEVICE_RECOVERY);
-    recovery_timeout = resume_timeout;
+    recovery_timeout = p_sequencer.cfg.speed == USB_SPEED_FULL ? USB_FS_TRANSFER_TIMEOUT : resume_timeout;
     run_recovery_transfer("Post-device-L1-remote-wake bulk OUT");
     completed = 1'b1;
     `uvm_info("USB_L1_REMOTE", "Device-initiated L1 wake preserved the address and recovered bulk traffic", UVM_LOW)

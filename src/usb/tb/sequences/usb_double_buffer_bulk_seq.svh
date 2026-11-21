@@ -21,11 +21,13 @@
 // Host helpers validate routed responses, completion and payload; this sequence
 // checks descriptor writeback and buffer contents. The native IN result records
 // the terminating ZLP when aligned_transfer_ends_with_zero_length is enabled.
-class usb_double_buffer_bulk_seq extends usb_base_seq;
+class usb_double_buffer_bulk_seq extends usb_packet_buffer_seq;
   `uvm_object_utils(usb_double_buffer_bulk_seq)
 
   localparam int unsigned BUFFER_SELECT_1 = 1;
   localparam int unsigned RESPONSE_STRESS_BYTES = 16;
+  localparam int unsigned BUFFER_POINTER_BYTES = 64;
+  localparam int unsigned SHORT_PACKET_BYTES = 13;
 
   int unsigned bytes_per_buffer = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
   logic [31:0] out_buffer_0 = 32'h0000_0200;
@@ -82,11 +84,12 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     expected_entry_0 = armed_entry_0;
     expected_entry_0.active = 1'b0;
     expected_entry_0.nbytes = 0;
-    expected_entry_0.buffer_offset += bytes_per_buffer >> 6;
+    // Integration Guide 4.2.3 pp47-48: round packet-pointer advance to 64-byte units.
+    expected_entry_0.buffer_offset += (bytes_per_buffer + BUFFER_POINTER_BYTES - 1) / BUFFER_POINTER_BYTES;
     expected_entry_1 = armed_entry_1;
     expected_entry_1.active = 1'b0;
     expected_entry_1.nbytes = 0;
-    expected_entry_1.buffer_offset += bytes_per_buffer >> 6;
+    expected_entry_1.buffer_offset += (bytes_per_buffer + BUFFER_POINTER_BYTES - 1) / BUFFER_POINTER_BYTES;
     check_endpoint_entry_writeback(
         endpoint,
         expected_entry_0,
@@ -275,7 +278,84 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
                         out_host_sequence.routed_response_count, in_host_sequence.routed_response_count), UVM_LOW)
   endtask
 
-  // Enumerate, exchange two packets per direction, then run optional response stress.
+  // Exchange a full/short pair using existing native transfers and packet checks.
+  task run_full_short_pair(usb_endpoint_cfg endpoint);
+    usb_bulk_out_host_seq out_host_sequence;
+    usb_bulk_in_host_seq in_host_sequence;
+    usb_ep_entry_t entry_0;
+    usb_ep_entry_t entry_1;
+    logic [31:0] buffer_0;
+    logic [31:0] buffer_1;
+    logic [31:0] epinuse;
+    logic [7:0] payload_base;
+    logic [7:0] second_packet_base;
+    bit in_direction;
+    string label;
+
+    in_direction = endpoint.direction === USB_DIRECTION_IN;
+    buffer_0 = in_direction ? in_buffer_0 : out_buffer_0;
+    buffer_1 = in_direction ? in_buffer_1 : out_buffer_1;
+    payload_base = in_direction ? in_payload_base : out_payload_base;
+    second_packet_base = stream_payload_byte(payload_base, bytes_per_buffer);
+    label = $sformatf("Full/%0d bulk %s", SHORT_PACKET_BYTES, in_direction ? "IN" : "OUT");
+    if (SHORT_PACKET_BYTES >= bytes_per_buffer) `uvm_fatal("USB_DOUBLE_BUFFER", "Short packet must be smaller than the full buffer")
+    `uvm_info("USB_DOUBLE_BUFFER", $sformatf("Starting %s: full_bytes=%0d total_bytes=%0d timeout=%0t",
+      label, bytes_per_buffer, bytes_per_buffer + SHORT_PACKET_BYTES, transfer_timeout), UVM_LOW)
+    read_endpoint_entry(endpoint, entry_0);
+    read_endpoint_entry(endpoint, entry_1, BUFFER_SELECT_1);
+    if (!(entry_0.active === 1'b0) || !(entry_1.active === 1'b0) ||
+        !(entry_0.disabled === 1'b0) || !(entry_1.disabled === 1'b0)) begin
+      `uvm_fatal("USB_DOUBLE_BUFFER", $sformatf("%s requires enabled software-owned buffers before reuse: buffer0=%s buffer1=%s",
+        label, describe_entry(entry_0), describe_entry(entry_1)))
+    end
+    // Both prior directions are idle before changing the next-buffer selection.
+    ral_write32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, 32'h0);
+    prepare_packet_buffer(buffer_0, bytes_per_buffer, bytes_per_buffer, payload_base, in_direction);
+    prepare_packet_buffer(buffer_1, bytes_per_buffer, SHORT_PACKET_BYTES, second_packet_base, in_direction);
+    clear_endpoint_interrupt(endpoint);
+    arm_endpoint(endpoint, bytes_per_buffer, buffer_0, entry_0);
+    // OUT retains capacity above the short payload to check residual retirement.
+    arm_endpoint(endpoint, in_direction ? SHORT_PACKET_BYTES : bytes_per_buffer, buffer_1, entry_1, BUFFER_SELECT_1);
+    if (in_direction) begin
+      in_host_sequence = usb_bulk_in_host_seq::type_id::create("short_in_host_sequence");
+      in_host_sequence.target_endpoint = endpoint;
+      in_host_sequence.payload_byte_count = bytes_per_buffer + SHORT_PACKET_BYTES;
+      in_host_sequence.payload_base = payload_base;
+      in_host_sequence.payload_packet_bytes = bytes_per_buffer;
+      in_host_sequence.payload_packet_stride = packet_tag_stride;
+      in_host_sequence.device_address = p_sequencer.cfg.device_address;
+      in_host_sequence.bulk_transfer_timeout = transfer_timeout;
+      in_host_sequence.transfer_label = label;
+      in_host_sequence.expect_zero_length_termination = 1'b0;
+      in_host_sequence.start(p_sequencer.host_sequencer);
+      if (!(in_host_sequence.completed === 1'b1)) `uvm_fatal("USB_DOUBLE_BUFFER", {label, " returned incomplete"})
+    end else begin
+      out_host_sequence = usb_bulk_out_host_seq::type_id::create("short_out_host_sequence");
+      out_host_sequence.target_endpoint = endpoint;
+      out_host_sequence.payload_byte_count = bytes_per_buffer + SHORT_PACKET_BYTES;
+      out_host_sequence.payload_base = payload_base;
+      out_host_sequence.payload_packet_bytes = bytes_per_buffer;
+      out_host_sequence.payload_packet_stride = packet_tag_stride;
+      out_host_sequence.device_address = p_sequencer.cfg.device_address;
+      out_host_sequence.bulk_transfer_timeout = transfer_timeout;
+      out_host_sequence.transfer_label = label;
+      out_host_sequence.start(p_sequencer.host_sequencer);
+      if (!(out_host_sequence.completed === 1'b1)) `uvm_fatal("USB_DOUBLE_BUFFER", {label, " returned incomplete"})
+    end
+    wait_for_endpoint_interrupt(endpoint, transfer_timeout);
+    check_packet_retired(endpoint, entry_0, bytes_per_buffer, transfer_timeout, {label, " full buffer"});
+    check_packet_retired(endpoint, entry_1, SHORT_PACKET_BYTES, transfer_timeout, {label, " short buffer"}, BUFFER_SELECT_1);
+    check_packet_buffer(buffer_0, bytes_per_buffer, bytes_per_buffer, payload_base, in_direction, {label, " full buffer"});
+    check_packet_buffer(buffer_1, bytes_per_buffer, SHORT_PACKET_BYTES, second_packet_base, in_direction, {label, " short buffer"});
+    ral_read32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, epinuse);
+    if (!((epinuse & endpoint.csr_bit_mask()) === 32'b0)) begin
+      `uvm_fatal("USB_DOUBLE_BUFFER", $sformatf("%s did not return to buffer 0 after two packets: EPINUSE=0x%08h", label, epinuse))
+    end
+    `uvm_info("USB_DOUBLE_BUFFER", $sformatf("%s complete: both buffers/guards/selection verified, short residual=%0d",
+      label, in_direction ? 0 : bytes_per_buffer - SHORT_PACKET_BYTES), UVM_LOW)
+  endtask
+
+  // Enumerate, retain full/full/ZLP, add FS full/short pairs, then optional response stress.
   virtual task body();
     usb_init_seq init_sequence;
     usb_bulk_out_host_seq out_host_sequence;
@@ -300,6 +380,12 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
 
     out_endpoint = get_endpoint(1, USB_DIRECTION_OUT);
     in_endpoint = get_endpoint(1, USB_DIRECTION_IN);
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) begin
+      bytes_per_buffer = out_endpoint.max_packet_size;
+      if (transfer_timeout < USB_FS_BULK_PAIR_TIMEOUT) transfer_timeout = USB_FS_BULK_PAIR_TIMEOUT;
+      `uvm_info("USB_DOUBLE_BUFFER", $sformatf("FS double-buffer profile: bytes=%0d transfer/retirement bound=%0t",
+        bytes_per_buffer, transfer_timeout), UVM_LOW)
+    end
     if (out_endpoint.max_packet_size != bytes_per_buffer ||
         in_endpoint.max_packet_size != bytes_per_buffer) begin
       `uvm_fatal("USB_DOUBLE_BUFFER", "EP1 IN and OUT maximum packet sizes must match bytes_per_buffer")
@@ -328,6 +414,7 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     out_host_sequence.payload_packet_stride = packet_tag_stride;
     out_host_sequence.device_address = p_sequencer.cfg.device_address;
     out_host_sequence.transfer_label = "Double-buffer bulk OUT";
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) out_host_sequence.bulk_transfer_timeout = transfer_timeout;
     out_host_sequence.start(p_sequencer.host_sequencer);
     if (!out_host_sequence.completed) begin
       `uvm_fatal("USB_DOUBLE_BUFFER", "Double-buffer bulk OUT returned incomplete")
@@ -366,6 +453,7 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     in_host_sequence.device_address = p_sequencer.cfg.device_address;
     in_host_sequence.transfer_label = "Double-buffer bulk IN";
     in_host_sequence.expect_zero_length_termination = 1'b1;
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) in_host_sequence.bulk_transfer_timeout = transfer_timeout;
     fork
       begin
         in_host_sequence.start(p_sequencer.host_sequencer);
@@ -407,6 +495,10 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
       )
     end
     ral_write32("EPINUSE", p_sequencer.reg_model.combo.dev0_csr.EPINUSE, 32'h0);
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) begin
+      run_full_short_pair(out_endpoint);
+      run_full_short_pair(in_endpoint);
+    end
     ral_write32("EPBUFCFG", p_sequencer.reg_model.combo.dev0_csr.EPBUFCFG, 32'h0);
 
     if (response_stress_count != 0) begin
