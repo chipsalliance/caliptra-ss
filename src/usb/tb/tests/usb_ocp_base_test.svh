@@ -32,7 +32,8 @@ class usb_ocp_base_test extends usb_base_test;
       if (uvm_is_match("+usb_ocp_peer_setup_retry*",args[i])) begin
         setup_retries++;
         if (get_type_name() != "usb_ocp_dev1_ep0_overlap_test" || setup_retries != 1 ||
-            args[i] != "+usb_ocp_peer_setup_retry")
+            !(args[i] inside {"+usb_ocp_peer_setup_retry",
+                              "+usb_ocp_peer_setup_retry=immediate"}))
           `uvm_fatal("OCP_SETUP_RETRY_GUARD", "Select one peer SETUP retry on the dev1 EP0 test")
       end
       if (uvm_is_match("+usb_ocp_l2_fault*",args[i])) begin

@@ -18,6 +18,7 @@ class usb_ocp_peer_setup_retry_callback extends svt_usb_protocol_20_host_rx_pid_
   bit configured;
   bit checked;
   bit pending_setup;
+  bit immediate_retry;
   logic [6:0] address;
   int unsigned setup_tokens;
   int unsigned rejected_acks;
@@ -31,7 +32,11 @@ class usb_ocp_peer_setup_retry_callback extends svt_usb_protocol_20_host_rx_pid_
     if (configured || $isunknown(target_address) || target_address == 0)
       `uvm_fatal("OCP_SETUP_RETRY", "Retry requires one configured peer control")
     address = target_address;
+    immediate_retry = $test$plusargs("usb_ocp_peer_setup_retry=immediate");
     configured = 1;
+    `uvm_info("OCP_SETUP_RETRY",$sformatf(
+      "Configured peer SETUP replay address=%0d immediate_retry=%0b",
+      address,immediate_retry),UVM_NONE)
   endfunction
 
   virtual function void pre_usb_20_packet_out_port_put(
@@ -53,7 +58,7 @@ class usb_ocp_peer_setup_retry_callback extends svt_usb_protocol_20_host_rx_pid_
         setup_tokens++;
         if (setup_tokens > 2)
           `uvm_fatal("OCP_SETUP_RETRY", "Unexpected additional peer SETUP retry")
-        if (setup_tokens == 2) begin
+        if (setup_tokens == 2 && !immediate_retry) begin
           // Directed host backoff lets software service the original SETUP.
           // This tests correlation, not the minimum retry-latency boundary.
           // The longint helper is valid only during randomization.
