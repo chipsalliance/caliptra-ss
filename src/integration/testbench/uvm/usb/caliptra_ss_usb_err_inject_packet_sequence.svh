@@ -251,7 +251,14 @@ class caliptra_ss_usb_err_inject_packet_sequence
                 pid_type_sel = svt_usb_packet::TOKEN;
             svt_usb_packet::PING:
                 pid_type_sel = svt_usb_packet::SPECIAL;
-            svt_usb_packet::DATA0, svt_usb_packet::DATA1:
+            svt_usb_packet::DATA0, svt_usb_packet::DATA1,
+            svt_usb_packet::DATA2, svt_usb_packet::MDATA:
+                // DATA2/MDATA are the high-bandwidth-isochronous data PIDs
+                // (USB 2.0 section 5.9.2 / table 8-1). Mapped to pid_type
+                // DATA the same way caliptra_ss_usb_ocp_packet_observer_
+                // selftest_sequence.svh already does for its synthetic
+                // packet builder - see that file's pid_type case for the
+                // precedent this follows.
                 pid_type_sel = svt_usb_packet::DATA;
             default:
                 `uvm_fatal(msg_id,
