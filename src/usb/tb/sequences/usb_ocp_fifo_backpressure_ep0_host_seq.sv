@@ -117,14 +117,19 @@ class usb_ocp_fifo_backpressure_ep0_host_seq extends usb_ocp_base_host_seq;
       fork
         begin
           fork
-            begin wait (fifo_checker.full_status_seen); full = 1; end
+            begin
+              wait (fifo_checker.full_status_seen && fifo_checker.dma_hold_entered);
+              full = 1;
+            end
             begin #(fifo_checker.witness_timeout); end
           join_any
           disable fork;
         end
       join
       if (!full)
-        `uvm_fatal("OCP_FIFO_EP0_WAIT", "Full status response lacks passive native/monitor cross-check")
+        `uvm_fatal("OCP_FIFO_EP0_WAIT", $sformatf(
+          "Full status/first-DMA hold barrier timed out: full=%0b hold=%0b",
+          fifo_checker.full_status_seen,fifo_checker.dma_hold_entered))
     end else if (fifo_checker.dma_released && (offset%64 == 0 || offset == words))
       ocp_do_check_empty_batch();
   endtask

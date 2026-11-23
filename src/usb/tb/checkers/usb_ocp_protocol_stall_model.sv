@@ -54,7 +54,10 @@ class usb_ocp_protocol_stall_model extends uvm_object;
   bit negative_peer;
   bit negative_prefix;
   bit negative_stage;
+  bit negative_host;
+  bit negative_firmware;
   int unsigned firmware_clears;
+  int unsigned recovery_errors;
 
   function new(string name = "usb_ocp_protocol_stall_model");
     uvm_cmdline_processor cli;
@@ -67,7 +70,8 @@ class usb_ocp_protocol_stall_model extends uvm_object;
           !(args[i] inside {
             "+usb_ocp_stall_negative_owner", "+usb_ocp_stall_negative_status",
             "+usb_ocp_stall_negative_rtc", "+usb_ocp_stall_negative_peer",
-            "+usb_ocp_stall_negative_prefix", "+usb_ocp_stall_negative_stage"}))
+            "+usb_ocp_stall_negative_prefix", "+usb_ocp_stall_negative_stage",
+            "+usb_ocp_stall_negative_host", "+usb_ocp_stall_negative_firmware"}))
         `uvm_fatal("OCP_STALL_GUARD", "Unknown protocol STALL private control")
     negative_owner = $test$plusargs("usb_ocp_stall_negative_owner");
     negative_status = $test$plusargs("usb_ocp_stall_negative_status");
@@ -75,6 +79,12 @@ class usb_ocp_protocol_stall_model extends uvm_object;
     negative_peer = $test$plusargs("usb_ocp_stall_negative_peer");
     negative_prefix = $test$plusargs("usb_ocp_stall_negative_prefix");
     negative_stage = $test$plusargs("usb_ocp_stall_negative_stage");
+    negative_host = $test$plusargs("usb_ocp_stall_negative_host");
+    negative_firmware = $test$plusargs("usb_ocp_stall_negative_firmware");
+  endfunction
+
+  function void ocp_capture_recovery_failure();
+    recovery_errors++;
   endfunction
 
   function bit ocp_check_terminal_owner(int device, usb_ocp_base_control c);
@@ -246,6 +256,7 @@ class usb_ocp_protocol_stall_model extends uvm_object;
       if (!ocp_check_owner(device,c) || c.data !== write_data)
         `uvm_fatal("OCP_STALL_PREFIX", "Incorrect successful write-RO completion still requires exact accepted OUT bytes")
       invalid_status_completed = 1;
+      ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_MISSING", "Write to RO PROT_CAP incorrectly completed STATUS; recovery will continue")
     end
     if (device == 2 && ocp_check_owner(1,ocp) && ocp.active === 1 &&
@@ -299,20 +310,25 @@ class usb_ocp_protocol_stall_model extends uvm_object;
     if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS)
       `uvm_fatal("OCP_STALL_STATUS", "Owned DEVICE_STATUS has malformed length")
     if (c.data[1] !== expected) begin
+      ocp_capture_recovery_failure();
       `uvm_error((status_reads == 0) ? "OCP_STALL_STATUS" : "OCP_STALL_RTC",
         $sformatf("OCP 1.1 9.1/9.2 read=%0d protocol_code=%02h expected=%02h",
                   status_reads+1,c.data[1],expected))
     end
     // Canonical spec check above always runs. Private operands cannot hide a
     // real DUT error by substituting a different expected protocol code.
-    if (negative_status && status_reads == 0 && c.data[1] !== 8'h02)
+    if (negative_status && status_reads == 0 && c.data[1] !== 8'h02) begin
+      ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_STATUS", $sformatf(
         "Private error-code comparison mismatch: actual=%02h injected_parameter_value=02",
         c.data[1]))
-    if (negative_rtc && status_reads == 1 && c.data[1] !== WRITE_RO_ERROR)
+    end
+    if (negative_rtc && status_reads == 1 && c.data[1] !== WRITE_RO_ERROR) begin
+      ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_RTC", $sformatf(
         "Private RTC comparison mismatch: actual=%02h injected_not_cleared=01",
         c.data[1]))
+    end
     status_reads++;
   endfunction
 
@@ -338,6 +354,7 @@ class usb_ocp_protocol_stall_model extends uvm_object;
       `uvm_fatal("OCP_STALL_ID", "Mandatory DEVICE_ID lacks firmware evidence or spec-sized UUID record")
     foreach (data[i])
       if (data[i] !== id_expected[i]) begin
+        ocp_capture_recovery_failure();
         `uvm_error("OCP_STALL_ID", "DEVICE_ID changed from completed firmware programming")
       end
     identity = data;
@@ -349,6 +366,7 @@ class usb_ocp_protocol_stall_model extends uvm_object;
     capability_reads++;
     if (!armed) begin capabilities = data; return; end
     if (data !== capabilities) begin
+      ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "Rejected write changed PROT_CAP")
     end
   endfunction
@@ -373,10 +391,10 @@ class usb_ocp_protocol_stall_model extends uvm_object;
         setup_seen,stall_seen,native_checked,clear_seen,clear_native_checked,
         firmware_clears,status_reads,identity_seen,finished))
     `uvm_info("OCP_STALL_EVIDENCE", $sformatf(
-      "addr=%0d epoch=%0d generation=%0d SETUP=%0d STALL=%0d CLEAR=%0d peer=%0d/%0d RTC_reads=%0d prefix=%0d peer_SETUP=%p peer_STATUS=%p peer_native=%p PROT_CAP_reads=%0d ID_reads=%0d",
+      "addr=%0d epoch=%0d generation=%0d SETUP=%0d STALL=%0d CLEAR=%0d peer=%0d/%0d RTC_reads=%0d prefix=%0d peer_SETUP=%p peer_STATUS=%p peer_native=%p PROT_CAP_reads=%0d ID_reads=%0d recovery_errors=%0d recovery_pass=%0b",
       address,epoch,generation,setup_order,stall_order,clear_order,
       peer_controls,peer_crosschecks,status_reads,accepted_prefix.size(),
       peer_setup_orders,peer_status_orders,peer_native_orders,
-      capability_reads,identity_reads), UVM_LOW)
+      capability_reads,identity_reads,recovery_errors,recovery_errors == 0), UVM_LOW)
   endfunction
 endclass
