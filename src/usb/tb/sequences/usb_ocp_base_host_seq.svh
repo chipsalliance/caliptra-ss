@@ -234,6 +234,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (!done) `uvm_fatal("OCP_HOST", "Bounded control submission/completion timed out")
     allowed_results = 0;
     if (!bm[7]) allowed_results[5] = 1;
+    if (observed.expected_device_timeout)
+      allowed_results[usb_ocp_event::DEVICE_TIMEOUT_RESULT_BIT] = 1;
     if (expect_protocol_stall) ocp_check_stall_result(observed);
     if (!expect_replacement && !expect_protocol_stall &&
         (!observed.transfer_ok || (observed.results & ~allowed_results) !== 0))
