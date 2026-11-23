@@ -232,28 +232,46 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
     ocp_do_check_read(OCP_CMD_DEVICE_STATUS,response);
     if (response.size() != baseline_status.size() ||
         response[0] !== baseline_status[0] || response[2] !== baseline_status[2] ||
-        response[3] !== baseline_status[3] || response[6] !== baseline_status[6])
+        response[3] !== baseline_status[3] || response[6] !== baseline_status[6]) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "Rejected write changed device state/recovery reason/vendor length")
+    end
     ocp_poll_check_observation();
     stall_model.finished = 1;
     ocp_do_check_read(OCP_CMD_RECOVERY_CTRL,response);
-    if (response !== baseline_recovery_ctrl)
+    if (stall_model.negative_host) begin
+      if (response !== baseline_recovery_ctrl || baseline_recovery_ctrl.size() == 0)
+        `uvm_fatal("OCP_STALL_SIDE_EFFECT", "Host comparison control lacks a valid retained RECOVERY_CTRL")
+      baseline_recovery_ctrl[0] ^= 1;
+      `uvm_info("OCP_STALL_CANARY", "Host RECOVERY_CTRL private expected byte toggled",UVM_NONE)
+    end
+    if (response !== baseline_recovery_ctrl) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "Rejected write changed RECOVERY_CTRL")
+    end
     ocp_do_check_read(OCP_CMD_RECOVERY_STATUS,response);
-    if (response !== baseline_recovery_status)
+    if (response !== baseline_recovery_status) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "Rejected write changed RECOVERY_STATUS")
+    end
     ocp_do_check_read(OCP_CMD_PROT_CAP,response);
-    if (response !== baseline_caps)
+    if (response !== baseline_caps) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "PROT_CAP bytes changed after rejected write and CLEAR_FEATURE")
+    end
     ocp_do_check_read(OCP_CMD_DEVICE_ID,response);
-    if (response !== baseline_id)
+    if (response !== baseline_id) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "DEVICE_ID changed after protocol STALL recovery")
+    end
     ocp_do_check_standard_controls(1,configuration_value[1],device_descriptor_bytes[1]);
     ocp_do_check_standard_controls(2,configuration_value[2],device_descriptor_bytes[2]);
     ocp_poll_check_observation();
     if (scoreboard.model.accepted_bytes != 0 || scoreboard.model.returned_bytes != 0 ||
-        scoreboard.model.image_words != 0 || scoreboard.model.activation_request)
+        scoreboard.model.image_words != 0 || scoreboard.model.activation_request) begin
+      stall_model.ocp_capture_recovery_failure();
       `uvm_error("OCP_STALL_SIDE_EFFECT", "Rejected write unexpectedly changed image/FIFO/activation ledger")
+    end
     recovery_checked = 1;
     // The inherited recovery body now performs live CMS/FIFO discovery and
     // the complete random image, FIXED DMA, activation and final drain checks.

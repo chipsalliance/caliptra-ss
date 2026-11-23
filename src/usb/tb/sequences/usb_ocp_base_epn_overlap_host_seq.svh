@@ -57,6 +57,10 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
           `uvm_fatal("OCP_FS_HUB", "Unknown FS hub configuration byte")
       interfaces = 0;
       pos = OCP_FS_CONFIG_HEADER_BYTES;
+      if ($test$plusargs("usb_ocp_fs_hub_fault=")) begin
+        while (data.size() > OCP_FS_CONFIG_HEADER_BYTES) void'(data.pop_back());
+        `uvm_info("OCP_FS_CANARY", "Private configuration copy retains header but no interface body",UVM_NONE)
+      end
       while (pos < data.size()) begin
         if (pos+2 > data.size() || data[pos] < 2 || pos+data[pos] > data.size())
           `uvm_fatal("OCP_FS_HUB", "Malformed FS hub descriptor chain")
@@ -69,10 +73,10 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
               data[pos+OCP_FS_INTERFACE_PROTOCOL_OFFSET] !== 0)
             `uvm_error("OCP_FS_HUB", "FS hub interface class/subclass/protocol violates USB2 11.23.1")
         end
-        if (interfaces != 1)
-          `uvm_error("OCP_FS_HUB", "FS hub configuration lacks exactly one interface")
         pos += data[pos];
       end
+      if (interfaces != 1)
+        `uvm_error("OCP_FS_HUB", "FS hub configuration lacks exactly one interface")
     end
     if (ocp_check_selected_device(device)) begin
       discoveries[device-1].full_speed =

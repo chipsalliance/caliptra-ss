@@ -36,6 +36,9 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     usb_ocp_event first_poll;
     usb_ocp_event nak;
     usb_ocp_event early_poll;
+    usb_ocp_event data;
+    usb_ocp_event ack;
+    string mode;
     // An isolated checker control, not USB stimulus or a DUT/model actual.
     // Native legal scheduling cannot be used to manufacture an illegal poll.
     profile = usb_ocp_base_epn_profile::type_id::create("nak_probe_profile");
@@ -69,6 +72,31 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     first_poll.endpoint = 4'(probe.discovery.endpoints[1].ep_number);
     first_poll.sof_serial = 1;
     probe.ocp_observe_packet(first_poll,probe_control);
+    if ($value$plusargs("usb_ocp_negative_epn_nak=%s",mode)) begin
+      if (mode != "service")
+        `uvm_fatal("OCP_EPN_CANARY", "Unknown interrupt cadence comparison control")
+      data = usb_ocp_event::type_id::create("service_data");
+      data.host_tx = 0;
+      data.pid = svt_usb_packet::DATA0;
+      data.packet_valid = 1;
+      data.sof_serial = 1;
+      data.bytes = usb_ocp_base_epn_profile::ocp_prepare_stream(USB_DIRECTION_IN,0,31);
+      ack = usb_ocp_event::type_id::create("service_ack");
+      ack.host_tx = 1;
+      ack.pid = svt_usb_packet::ACK;
+      ack.packet_valid = 1;
+      ack.sof_serial = 1;
+      probe.ocp_observe_packet(data,probe_control);
+      probe.ocp_observe_packet(ack,probe_control);
+      // Lost-ACK replay is not a second service opportunity.
+      probe.ocp_observe_packet(first_poll,probe_control);
+      probe.ocp_observe_packet(data,probe_control);
+      probe.ocp_observe_packet(ack,probe_control);
+      if (probe.accepted[1] != 1)
+        `uvm_fatal("OCP_EPN_CANARY", "Duplicate replay advanced interrupt service")
+      `uvm_info("OCP_EPN_CANARY", "Private successful service and duplicate replay checked; early IN/NAK must fail OCP_EPN_INTERVAL; no native traffic",UVM_NONE)
+      probe.ocp_observe_packet(first_poll,probe_control);
+    end
     nak = usb_ocp_event::type_id::create("nak_probe_nak");
     nak.host_tx = 0;
     nak.pid = svt_usb_packet::NAK;

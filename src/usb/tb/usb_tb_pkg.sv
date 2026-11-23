@@ -148,6 +148,17 @@ package usb_tb_pkg;
     USB_TRANSFER_TYPE_ISOCHRONOUS
   } usb_transfer_type_e;
 
+  // Diagnostic POST_SYNC_ARB_STATE encoding: integration spec Section 7.1.
+  // Encodings 6-7 are reserved.
+  typedef enum logic [2:0] {
+    USB_OCP_ARB_IDLE       = 3'd0,
+    USB_OCP_ARB_MIRROR     = 3'd1,
+    USB_OCP_ARB_META_WAIT  = 3'd2,
+    USB_OCP_ARB_DATA       = 3'd3,
+    USB_OCP_ARB_STATUS     = 3'd4,
+    USB_OCP_ARB_PROT_STALL = 3'd5
+  } usb_ocp_arb_state_e;
+
   // One DEV0 endpoint-list command/status word (USB2 Programmer's Guide 4.2.2
   // and 4.2.3). The list lives in packet memory, which the RAL models as a
   // field-less uvm_mem, so the layout is captured here instead. On EP0 entries
@@ -343,6 +354,8 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_fifo_backpressure_ep0_seq.sv"
   `include "sequences/usb_ocp_suspend_resume_seq.svh"
   `include "sequences/usb_ocp_reset_reinit_seq.svh"
+  // Directed ACK PID rejection and host retry backoff retain wire observations.
+  `include "sequences/usb_ocp_peer_setup_retry_callback.svh"
   `include "sequences/usb_ocp_dev1_ep0_service_seq.svh"
   `include "sequences/usb_ocp_protocol_stall_host_seq.sv"
   `include "sequences/usb_ocp_protocol_stall_overlap_seq.sv"
