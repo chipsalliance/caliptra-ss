@@ -26,9 +26,27 @@ class usb_ocp_base_test extends usb_base_test;
     int l2_faults = 0;
     int hub_faults = 0;
     int setup_retries = 0;
+    int retry_naks = 0;
+    int peer_pid_canaries = 0;
     cli = uvm_cmdline_processor::get_inst();
     cli.get_args(args);
     foreach (args[i]) begin
+      if (uvm_is_match("+usb_ocp_ep0_retry_nak*",args[i])) begin
+        retry_naks++;
+        if (get_type_name() != "usb_ocp_ep0_retry_test" || retry_naks != 1 ||
+            !(args[i] inside {"+usb_ocp_ep0_retry_nak=out",
+                              "+usb_ocp_ep0_retry_nak=in",
+                              "+usb_ocp_ep0_retry_nak=status"}))
+          `uvm_fatal("OCP_EP0_RETRY_NAK", "Native NAK controls require one owned retry variant")
+      end
+      if (uvm_is_match("+usb_ocp_peer_pid_error_canary*",args[i])) begin
+        peer_pid_canaries++;
+        if (get_type_name() != "usb_ocp_dev1_ep0_overlap_test" ||
+            !$test$plusargs("usb_ocp_peer_setup_retry") || peer_pid_canaries != 1 ||
+            !(args[i] inside {"+usb_ocp_peer_pid_error_canary=repeat",
+                              "+usb_ocp_peer_pid_error_canary=unrelated"}))
+          `uvm_fatal("OCP_SETUP_RETRY_GUARD", "Native PID-error canaries require delayed peer replay")
+      end
       if (uvm_is_match("+usb_ocp_peer_setup_retry*",args[i])) begin
         setup_retries++;
         if (get_type_name() != "usb_ocp_dev1_ep0_overlap_test" || setup_retries != 1 ||

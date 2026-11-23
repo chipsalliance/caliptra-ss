@@ -20,6 +20,8 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
   bit read_started;
   bit write_started;
   usb_ocp_peer_setup_retry_callback setup_retry;
+  usb_ocp_peer_setup_retry_catcher setup_retry_catcher;
+  usb_ocp_peer_extra_pid_callback extra_pid_callback;
 
   function new(string name = "usb_ocp_dev1_ep0_host_seq");
     super.new(name);
@@ -67,7 +69,20 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
       if (host_agent.prot == null)
         `uvm_fatal("OCP_SETUP_RETRY", "Peer replay requires the native host protocol")
       setup_retry = usb_ocp_peer_setup_retry_callback::type_id::create("setup_retry");
+      void'($value$plusargs("usb_ocp_peer_pid_error_canary=%s",setup_retry.extra_pid_mode));
+      if (!(setup_retry.extra_pid_mode inside {"","repeat","unrelated"}) ||
+          (setup_retry.extra_pid_mode != "" &&
+           $test$plusargs("usb_ocp_peer_setup_retry=immediate")))
+        `uvm_fatal("OCP_SETUP_RETRY_GUARD", "Native PID-error canaries require delayed peer replay")
+      setup_retry_catcher = usb_ocp_peer_setup_retry_catcher::type_id::create("setup_retry_catcher");
+      setup_retry_catcher.control = setup_retry;
       uvm_callbacks#(svt_usb_protocol)::add(host_agent.prot,setup_retry);
+      uvm_report_cb::add(host_agent.prot,setup_retry_catcher);
+      if (setup_retry.extra_pid_mode != "") begin
+        extra_pid_callback = usb_ocp_peer_extra_pid_callback::type_id::create("extra_pid_callback");
+        extra_pid_callback.control = setup_retry;
+        uvm_callbacks#(svt_usb_protocol)::add(host_agent.prot,extra_pid_callback);
+      end
     end
     ocp_cfg.control_transfer_timeout = 5ms;
     for (int device = 1; device < 3; device++)
@@ -81,6 +96,12 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
       if (!setup_retry.checked)
         `uvm_fatal("OCP_SETUP_RETRY", "Requested peer SETUP replay was not checked")
       uvm_callbacks#(svt_usb_protocol)::delete(host_agent.prot,setup_retry);
+      uvm_report_cb::delete(host_agent.prot,setup_retry_catcher);
+      if (extra_pid_callback != null) begin
+        uvm_callbacks#(svt_usb_protocol)::delete(host_agent.prot,extra_pid_callback);
+        if (setup_retry.extra_pid_injections != 1)
+          `uvm_fatal("OCP_SETUP_RETRY_CANARY", "Requested second native PID error was not injected")
+      end
     end
   endtask
 endclass
