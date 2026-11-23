@@ -258,3 +258,10 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_err_toggle/caliptra_ss_usb_hs_dev_err_toggle.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_err_stall/caliptra_ss_usb_hs_dev_err_stall.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_err_pkt_unexpected/caliptra_ss_usb_hs_dev_err_pkt_unexpected.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pid_check_data/caliptra_ss_usb_hs_dev_err_pid_check_data.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_missing_data/caliptra_ss_usb_hs_dev_err_missing_data.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_ping_stall/caliptra_ss_usb_hs_dev_err_ping_stall.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_iso_stalled/caliptra_ss_usb_hs_dev_err_iso_stalled.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_iso_pid_seq/caliptra_ss_usb_hs_dev_err_iso_pid_seq.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw/caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_iso_token_mismatch/caliptra_ss_usb_hs_dev_err_iso_token_mismatch.yml

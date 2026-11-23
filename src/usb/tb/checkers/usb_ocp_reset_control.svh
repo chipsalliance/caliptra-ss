@@ -12,7 +12,7 @@ class usb_ocp_reset_control extends uvm_object;
   `uvm_object_utils(usb_ocp_reset_control)
   typedef enum int {BUS, DEV0, DEV1} scope_e;
   typedef enum int {SETUP, DATA, STATUS, PARTIAL, ACTIVATE} stage_e;
-  typedef enum int {NONE, RETENTION, EPOCH, QUIESCENCE, PEER, BYTE_RETENTION} negative_e;
+  typedef enum int {NONE, RETENTION, EPOCH, QUIESCENCE, PEER, DISCARD} negative_e;
   scope_e scope;
   stage_e stage;
   negative_e negative;
@@ -76,7 +76,8 @@ class usb_ocp_reset_control extends uvm_object;
         "EPOCH": negative = EPOCH;
         "QUIESCENCE": negative = QUIESCENCE;
         "PEER": negative = PEER;
-        "BYTE_RETENTION": negative = BYTE_RETENTION;
+        // Keep the private spelling as an alias for the reset-loss checker.
+        "BYTE_RETENTION", "DISCARD": negative = DISCARD;
         default: `uvm_fatal("OCP_RESET_GUARD", "Malformed private reset checker control")
       endcase
     end
@@ -84,8 +85,8 @@ class usb_ocp_reset_control extends uvm_object;
         (negative inside {RETENTION,QUIESCENCE} && scope == DEV1) ||
         (negative == EPOCH && stage inside {PARTIAL,ACTIVATE}))
       `uvm_fatal("OCP_RESET_GUARD", "Private checker control is incompatible with scope/stage")
-    if (negative == BYTE_RETENTION && (scope == DEV1 || stage != PARTIAL))
-      `uvm_fatal("OCP_RESET_GUARD", "Byte-retention control requires BUS/DEV0 PARTIAL")
+    if (negative == DISCARD && (scope == DEV1 || stage != PARTIAL))
+      `uvm_fatal("OCP_RESET_GUARD", "Discard-accounting control requires BUS/DEV0 PARTIAL")
     cli.get_args(args);
     foreach (args[i]) begin
       if (uvm_is_match("+usb_ocp_reset_*",args[i]) &&

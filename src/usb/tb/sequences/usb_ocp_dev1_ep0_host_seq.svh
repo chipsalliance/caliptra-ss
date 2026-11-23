@@ -19,6 +19,7 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
   svt_usb_transfer peer_request;
   bit read_started;
   bit write_started;
+  usb_ocp_peer_setup_retry_callback setup_retry;
 
   function new(string name = "usb_ocp_dev1_ep0_host_seq");
     super.new(name);
@@ -44,6 +45,7 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
     peer.observer = observer;
     peer.expected_configuration = configuration_value[2];
     peer.expected_descriptor = device_descriptor_bytes[2];
+    if (kind == 1) peer.setup_retry = setup_retry;
     // The native stage notification arms a separate UVM sequence. Wire
     // callbacks, not this fork or notification, must prove actual overlap.
     tr.wait_for_control_transfer_stage(svt_usb_transfer::SETUP_STAGE,1);
@@ -61,6 +63,12 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
 
   task body();
     resolve_host_context(1);
+    if ($test$plusargs("usb_ocp_peer_setup_retry")) begin
+      if (host_agent.prot == null)
+        `uvm_fatal("OCP_SETUP_RETRY", "Peer replay requires the native host protocol")
+      setup_retry = usb_ocp_peer_setup_retry_callback::type_id::create("setup_retry");
+      uvm_callbacks#(svt_usb_protocol)::add(host_agent.prot,setup_retry);
+    end
     ocp_cfg.control_transfer_timeout = 5ms;
     for (int device = 1; device < 3; device++)
       usb_cfg.remote_device_cfg[device].endpoint_cfg[0].
@@ -69,5 +77,10 @@ class usb_ocp_dev1_ep0_host_seq extends usb_ocp_base_host_seq;
     super.body();
     if (!read_started || !write_started || peer == null || !peer.completed)
       `uvm_fatal("OCP_INTERLEAVE", "Read/write peer stimulus did not complete")
+    if (setup_retry != null) begin
+      if (!setup_retry.checked)
+        `uvm_fatal("OCP_SETUP_RETRY", "Requested peer SETUP replay was not checked")
+      uvm_callbacks#(svt_usb_protocol)::delete(host_agent.prot,setup_retry);
+    end
   endtask
 endclass

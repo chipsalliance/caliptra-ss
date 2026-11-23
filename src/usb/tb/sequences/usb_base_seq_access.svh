@@ -47,9 +47,36 @@
     return target_sequencer;
   endfunction
 
+  // Per-manager AXI IDs set by randomize_manager_ids(); targets not listed
+  // use the fixed IDs in transaction_id_for().
+  protected aaxi_id_t manager_ids[usb_target_e];
+
+  // Return a random AXI ID covering the full ID width.
+  protected function aaxi_id_t random_axi_id();
+    aaxi_id_t id;
+
+    if (!std::randomize(id)) `uvm_fatal("USB_SEQ", "AXI ID randomization failed")
+    return id;
+  endfunction
+
+  // Give each manager a random full-width ID for later native requests. HUB
+  // and DEV0 CSR share the COMBO manager, so they share one ID.
+  protected function void randomize_manager_ids();
+    aaxi_id_t combo_id = random_axi_id();
+
+    manager_ids[USB_HUB] = combo_id;
+    manager_ids[USB_DEV0_CSR] = combo_id;
+    manager_ids[USB_DEV0_SRAM] = random_axi_id();
+    manager_ids[USB_DEV1_CSR] = random_axi_id();
+    manager_ids[USB_DEV1_SRAM] = random_axi_id();
+    `uvm_info("USB_SEQ_AXI_ID", $sformatf("Random %0d-bit AXI IDs: COMBO=%0d DEV0_SRAM=%0d DEV1_CSR=%0d DEV1_SRAM=%0d", $bits(aaxi_id_t), combo_id, manager_ids[USB_DEV0_SRAM], manager_ids[USB_DEV1_CSR], manager_ids[USB_DEV1_SRAM]), UVM_LOW)
+  endfunction
+
   // Assign native traffic a stable AXI ID per manager, rather than a unique ID
-  // per request. HUB and DEV0 CSR both use ID 1 on their shared COMBO manager.
+  // per request: the random ID from randomize_manager_ids() if set, else a
+  // fixed one. HUB and DEV0 CSR both use ID 1 on their shared COMBO manager.
   protected function aaxi_id_t transaction_id_for(usb_target_e target);
+    if (manager_ids.exists(target)) return manager_ids[target];
     case (target)
       USB_HUB,
       USB_DEV0_CSR:  return aaxi_id_t'(1);
@@ -210,7 +237,7 @@
   endfunction
 
   // Build, but do not send, a single-beat 32-bit AXI4 request using the
-  // manager's configuration, fixed target ID, and root-map base plus the local
+  // manager's configuration, its stable target ID, and root-map base plus the local
   // byte offset. Apply one resolved USER value to the request fields; writes
   // pack the least significant byte first and enable all byte lanes. The caller
   // validates address.

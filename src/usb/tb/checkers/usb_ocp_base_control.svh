@@ -26,6 +26,17 @@ class usb_ocp_base_control extends uvm_object;
   logic status_frozen;
   longint unsigned status_setup_order;
   longint unsigned status_data_order;
+  longint unsigned previous_completed_setup_order;
+  longint unsigned status_complete_order;
+  typedef struct {
+    int unsigned ocp_epoch;
+    int unsigned ocp_generation;
+    string stage;
+    longint unsigned token_order;
+    longint unsigned handshake_order;
+  } overlap_witness_t;
+  overlap_witness_t peer_overlap[2];
+  int unsigned peer_overlap_count[2];
   longint unsigned replaced_at;
   logic [7:0] setup[8];
   logic [7:0] data[$];
@@ -52,6 +63,9 @@ class usb_ocp_base_control extends uvm_object;
     status_frozen = 0;
     status_setup_order = 0;
     status_data_order = 0;
+    previous_completed_setup_order = 0;
+    status_complete_order = 0;
+    peer_overlap_count = '{default:0};
     replaced_at = 0;
   endfunction
 
