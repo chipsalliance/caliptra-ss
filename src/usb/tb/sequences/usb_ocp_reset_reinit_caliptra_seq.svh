@@ -12,7 +12,6 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
   `uvm_object_utils(usb_ocp_reset_reinit_caliptra_seq)
   usb_ocp_reset_model reset_model;
   usb_ocp_scoreboard scoreboard;
-  bit completing_old_batch;
 
   function new(string name = "usb_ocp_reset_reinit_caliptra_seq");
     super.new(name);
@@ -20,11 +19,11 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
 
   virtual function bit ocp_check_attempt_abort();
     return reset_model != null && reset_model.cfg.abort_requested &&
-           reset_model.cfg.attempt == 0 && !completing_old_batch;
+           reset_model.cfg.attempt == 0;
   endfunction
 
   virtual task ocp_wait_attempt_abort();
-    if (reset_model.cfg.attempt == 0 && !completing_old_batch)
+    if (reset_model.cfg.attempt == 0)
       wait (reset_model.cfg.abort_requested);
     else wait (1'b0);
   endtask
@@ -65,6 +64,8 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
       end
     end
     ocp_poll_check_accounting();
+    if (after_reset)
+      reset_model.ocp_check_reset_discard(ocp_cfg.recovery_vif.payload_available);
     reset_model.sampling = command_effects ? 3 : (after_reset ? 2 : 1);
     if (command_effects)
       reset_model.command_read_floor = scoreboard.observer.next_order;
@@ -77,7 +78,8 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
     end
     reset_model.sampling = 0;
     if (command_effects) reset_model.ocp_check_command_checkpoint_complete();
-    else if (after_reset) reset_model.ocp_check_retention_complete();
+    else if (after_reset)
+      reset_model.ocp_check_retention_complete(ocp_cfg.recovery_vif.payload_available);
     else reset_model.snapshot_ready = 1;
   endtask
 
@@ -103,40 +105,6 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
           `uvm_fatal("OCP_RESET_ABORT", "MCU did not request abort after actual reset")
         #1us;
       end
-  endtask
-
-  task ocp_do_check_old_published_batch();
-    logic [31:0] size_words;
-    int unsigned batch_words;
-    int unsigned burst_words;
-    if (!reset_model.cfg.abort_requested || !reset_model.cfg.retention_complete ||
-        drained_words != 0 || completing_old_batch)
-      `uvm_fatal("OCP_RESET_PUBLICATION", "Old normal batch completion lacks abort/post-snapshot boundary")
-    ocp_read_register("INDIRECT_FIFO_CTRL_1",size_words);
-    ocp_poll_check_accounting();
-    if ($isunknown(size_words) || size_words <= drained_words || size_words > 1024)
-      `uvm_fatal("OCP_RESET_PUBLICATION", "Retained firmware image size cannot authorize the normal old batch")
-    batch_words = size_words-drained_words;
-    if (batch_words > 64) batch_words = 64;
-    if (batch_words != 64 || reset_model.old_accepted != batch_words*4)
-      `uvm_fatal("OCP_RESET_PUBLICATION", "Old accepted publication does not match normal firmware batch policy")
-    // Abort stays latched and ownership stays with Caliptra. Only this
-    // planned already-published completion must not short-circuit the common
-    // readiness helper's abort branch; timeout/stop and real readiness remain
-    // mandatory. No firmware attempt or subsequent publication runs here.
-    completing_old_batch = 1;
-    ocp_poll_dma_ready(0,reset_model.cfg.deadline);
-    reset_model.ocp_check_begin_old_batch(ocp_cfg.recovery_vif.payload_available);
-    while (batch_words != 0) begin
-      burst_words = (batch_words > 16) ? 16 : batch_words;
-      ocp_do_check_dma_burst(burst_words);
-      ocp_poll_check_accounting();
-      batch_words -= burst_words;
-    end
-    ocp_poll_dma_ready(0,reset_model.cfg.deadline,1'b0);
-    ocp_poll_check_accounting();
-    reset_model.ocp_check_old_batch_complete(ocp_cfg.recovery_vif.payload_available);
-    completing_old_batch = 0;
   endtask
 
   virtual task ocp_do_check_activation_boundary();
@@ -166,11 +134,9 @@ class usb_ocp_reset_reinit_caliptra_seq extends usb_ocp_base_caliptra_seq;
       // Every accepted operation finished normally before this acknowledgement.
       // No sequence kill, whole-core reset, or queue discard is an abort.
       ocp_poll_check_accounting();
-      // All registers/indices are sampled before ANY new recovery writer or
-      // old DMA completion can mask a reset effect.
+      // Retire actual accepted AXI before archiving reset loss. Sample local
+      // cleared state and retained scalars before ANY new recovery writer.
       ocp_do_check_retention_snapshot(1);
-      if (reset_model.cfg.stage == usb_ocp_reset_control::PARTIAL)
-        ocp_do_check_old_published_batch();
       ocp_poll_check_accounting();
       unretired_witness = scoreboard.model.fifo_actual.size();
       foreach (scoreboard.observer.accepted_axi[key])

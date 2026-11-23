@@ -14,6 +14,15 @@ class usb_ocp_reset_model extends uvm_object;
   usb_ocp_reset_control cfg;
   usb_ocp_predictor core;
   logic [31:0] dres_mask[2];
+  logic [31:0] fifo_empty_mask;
+  logic [31:0] fifo_full_mask;
+  logic [31:0] caliptra_local_clear_mask;
+  logic [31:0] caliptra_arb_mask;
+  int unsigned caliptra_arb_shift;
+  logic [31:0] setup_generation_mask;
+  int unsigned setup_generation_shift;
+  logic [31:0] setup_owner_mask;
+  int unsigned snapshot_setup_generation;
   logic [31:0] saved_register[string];
   bit post_register[string];
   int unsigned sampling; // 0: ordinary, 1: initial, 2: after reset, 3: command effects.
@@ -42,18 +51,9 @@ class usb_ocp_reset_model extends uvm_object;
   int unsigned old_compared;
   int unsigned old_entry_returned;
   int unsigned old_entry_compared;
-  bytes_t old_fifo_expected;
-  bytes_t old_fifo_actual;
-  int unsigned old_post_compared;
-  int unsigned old_post_bursts;
-  int unsigned old_post_instances[$];
-  int unsigned old_byte_errors;
-  bit byte_negative_applied;
-  bit old_batch_active;
-  bit old_batch_complete;
+  int unsigned old_discarded;
+  bit discard_complete;
   longint unsigned retention_end_order;
-  longint unsigned old_first_axi_order;
-  longint unsigned old_last_axi_order;
   int unsigned old_control_crosschecks;
   int unsigned old_control_invalidations;
   int unsigned native_reset_crosschecks;
@@ -88,6 +88,21 @@ class usb_ocp_reset_model extends uvm_object;
   function void ocp_configure_geometry(usb_reg_model ral);
     dres_mask[0] = 32'(1) << ral.combo.dev0_csr.DEVCMDSTAT.DRES_C.get_lsb_pos();
     dres_mask[1] = 32'(1) << ral.dev1_csr.DEVCMDSTAT.DRES_C.get_lsb_pos();
+    fifo_empty_mask = 32'(1) << ral.combo.recovery.INDIRECT_FIFO_STATUS_0.EMPTY.get_lsb_pos();
+    fifo_full_mask = 32'(1) << ral.combo.recovery.INDIRECT_FIFO_STATUS_0.FULL.get_lsb_pos();
+    caliptra_arb_shift = ral.combo.recovery.CALIPTRA_STATUS.POST_SYNC_ARB_STATE.get_lsb_pos();
+    caliptra_arb_mask = (32'hffff_ffff >>
+      (32-ral.combo.recovery.CALIPTRA_STATUS.POST_SYNC_ARB_STATE.get_n_bits())) <<
+      caliptra_arb_shift;
+    caliptra_local_clear_mask =
+      (32'(1) << ral.combo.recovery.CALIPTRA_STATUS.OVERFLOW.get_lsb_pos()) |
+      (32'(1) << ral.combo.recovery.CALIPTRA_STATUS.IMAGE_DONE.get_lsb_pos()) |
+      caliptra_arb_mask;
+    setup_generation_shift = ral.combo.recovery.CALIPTRA_SETUP_DEBUG.GENERATION.get_lsb_pos();
+    setup_generation_mask = (32'hffff_ffff >>
+      (32-ral.combo.recovery.CALIPTRA_SETUP_DEBUG.GENERATION.get_n_bits())) <<
+      setup_generation_shift;
+    setup_owner_mask = 32'(1) << ral.combo.recovery.CALIPTRA_SETUP_DEBUG.OWNER_OCP.get_lsb_pos();
   endfunction
 
   function void ocp_check_entry();
@@ -111,8 +126,6 @@ class usb_ocp_reset_model extends uvm_object;
     old_compared = core.compared_bytes;
     old_entry_returned = old_returned;
     old_entry_compared = old_compared;
-    // Copy only the passive ACK-qualified expected stream, never DUT FIFO.
-    old_fifo_expected = core.fifo_expected;
     cfg.armed = 1;
   endfunction
 
@@ -234,66 +247,37 @@ class usb_ocp_reset_model extends uvm_object;
     return 1;
   endfunction
 
-  function void ocp_check_begin_old_batch(logic payload_available);
-    if (!cfg.ocp_check_recovery_affected() ||
-        cfg.stage != usb_ocp_reset_control::PARTIAL || !cfg.abort_requested ||
-        !epoch_changed || !cfg.retention_complete || sampling != 0 ||
-        cfg.caliptra_quiescent || cfg.mcu_reinitialized || reinit_writes != 0 ||
-        recovery_epoch != 0 || old_batch_active || old_batch_complete ||
-        payload_available !== 1'b1 || old_fifo_expected.size() != 64*4 ||
-        core.accepted_bytes != old_accepted || core.returned_bytes != 0 ||
-        core.compared_bytes != 0)
-      `uvm_fatal("OCP_RESET_PUBLICATION", "Old batch lacks real readiness/reset/all-register snapshot/ownership evidence")
-    old_batch_active = 1;
-  endfunction
-
-  function void ocp_check_old_fifo_bytes(usb_ocp_event item);
-    logic [7:0] expected;
-    int unsigned index;
-    if (!old_batch_active || !cfg.retention_complete || sampling != 0 ||
-        !epoch_changed || item.order <= event_order ||
-        item.order <= retention_end_order || cfg.caliptra_quiescent ||
-        cfg.mcu_reinitialized || reinit_writes != 0 ||
-        item.axi_beats == 0 || item.axi_beats > 16 ||
-        item.bytes.size() != item.axi_beats*4 ||
-        old_fifo_actual.size()+item.bytes.size() > old_fifo_expected.size())
-      `uvm_fatal("OCP_RESET_BYTE_RETENTION", "Old FIFO actual lacks POST-reset/pre-writer normal-burst evidence")
-    if (old_post_bursts == 0) old_first_axi_order = item.order;
-    old_last_axi_order = item.order;
-    old_post_bursts++;
-    old_post_instances.push_back(item.axi_instance);
-    foreach (item.bytes[i]) begin
-      index = old_fifo_actual.size();
-      expected = old_fifo_expected[index];
-      // Only this private comparison operand changes. Canonical OCP_IMAGE
-      // comparison still sees the original accepted and returned byte streams.
-      if (cfg.negative == usb_ocp_reset_control::BYTE_RETENTION &&
-          !byte_negative_applied) begin
-        expected ^= 8'h01;
-        byte_negative_applied = 1;
-      end
-      if (item.bytes[i] !== expected) begin
-        old_byte_errors++;
-        `uvm_error("OCP_RESET_BYTE_RETENTION", $sformatf(
-          "POST-reset old byte=%0d order=%0d actual=%02h accepted=%02h",
-          index,item.order,item.bytes[i],expected))
-      end
-      old_fifo_actual.push_back(item.bytes[i]);
-      old_post_compared++;
-    end
-  endfunction
-
-  function void ocp_check_old_batch_complete(logic payload_available);
-    if (!old_batch_active || payload_available !== 1'b0 ||
-        old_fifo_actual.size() != old_accepted || old_post_compared != old_accepted ||
-        old_post_bursts != 4 || core.accepted_bytes != old_accepted ||
-        core.returned_bytes != old_accepted || core.compared_bytes != old_accepted ||
-        core.fifo_expected.size() != 0 || core.fifo_actual.size() != 0 ||
-        (cfg.negative != usb_ocp_reset_control::BYTE_RETENTION && old_byte_errors != 0) ||
-        (cfg.negative == usb_ocp_reset_control::BYTE_RETENTION && !byte_negative_applied))
-      `uvm_fatal("OCP_RESET_QUIESCENCE", "Old published batch lacks readiness fall/exact returned-byte reconciliation")
-    old_batch_active = 0;
-    old_batch_complete = 1;
+  function void ocp_check_reset_discard(logic payload_available);
+    int unsigned discard_witness;
+    if (!cfg.armed || !cfg.ocp_check_recovery_affected() ||
+        !cfg.abort_requested || !epoch_changed || !reset_seen[0] ||
+        (cfg.scope == usb_ocp_reset_control::BUS && !reset_seen[1]) ||
+        sampling != 0 || cfg.caliptra_quiescent || cfg.mcu_reinitialized ||
+        reinit_writes != 0 || recovery_epoch != 0 || discard_complete ||
+        payload_available !== 1'b0 ||
+        core.accepted_bytes != old_accepted ||
+        core.returned_bytes < old_entry_returned ||
+        core.compared_bytes < old_entry_compared ||
+        core.returned_bytes > old_accepted ||
+        core.compared_bytes != core.returned_bytes ||
+        core.fifo_actual.size() != 0 ||
+        core.fifo_expected.size() != old_accepted-core.returned_bytes)
+      `uvm_fatal("OCP_RESET_DISCARD", "Local reset lacks cleared notification and retired real-AXI accounting")
+    old_returned = core.returned_bytes;
+    old_compared = core.compared_bytes;
+    old_discarded = core.fifo_expected.size();
+    // Archive accepted/returned/comparison evidence before starting the empty
+    // CMS epoch (integration spec 3.2). No actual or accepted AXI is deleted.
+    core.ocp_check_local_reset_discard();
+    discard_witness = old_discarded;
+    if (cfg.negative == usb_ocp_reset_control::DISCARD) discard_witness--;
+    if (core.reset_discarded_bytes != discard_witness ||
+        old_accepted != old_returned+discard_witness)
+      `uvm_error("OCP_RESET_DISCARD", $sformatf(
+        "Accepted old bytes must equal real DMA returns plus reset-discarded bytes: accepted=%0d returned=%0d compared=%0d reset_discarded=%0d discard_witness=%0d",
+        old_accepted,old_returned,old_compared,core.reset_discarded_bytes,
+        discard_witness))
+    discard_complete = 1;
   endfunction
 
   function void ocp_check_usb_reset(usb_ocp_event item, int dev);
@@ -337,7 +321,8 @@ class usb_ocp_reset_model extends uvm_object;
           core.returned_bytes < old_returned ||
           core.compared_bytes < old_compared)
         `uvm_fatal("OCP_RESET_LEDGER", "USB reset discarded a recovery or accepted-AXI obligation")
-      // Mandatory discovery is fresh; recovery bytes and activation persist.
+      // Discovery is fresh. Scalar activation persists; the CMS ledger is
+      // reconciled separately only after accepted AXI has really retired.
       core.recovery_mode_seen = 0;
       core.capabilities_seen = 0;
       core.discovery_seen = 0;
@@ -479,11 +464,14 @@ class usb_ocp_reset_model extends uvm_object;
       end
       return;
     end
-    // OCP 8.2.5 forbids random FIFO access. Only the ordinary already-
-    // published old batch may complete after all retained-register reads.
+    // Reset must not authorize new reads of discarded CMS data. An already
+    // accepted read still retires normally through the canonical byte checker.
     if (name == "INDIRECT_FIFO_DATA") begin
-      if (cfg.armed && cfg.ocp_check_recovery_affected() && !cfg.fifo_reset_observed)
-        ocp_check_old_fifo_bytes(item);
+      if (cfg.armed && cfg.ocp_check_recovery_affected() &&
+          !cfg.fifo_reset_observed &&
+          (discard_complete ||
+           (epoch_changed && item.axi_address_order_floor > event_order)))
+        `uvm_fatal("OCP_RESET_DISCARD", "New FIFO DMA cannot consume reset-discarded old data")
       return;
     end
     if (sampling == 0) return;
@@ -491,6 +479,8 @@ class usb_ocp_reset_model extends uvm_object;
       `uvm_fatal("OCP_RESET_RETENTION", "Retention snapshot is not a known owned DWORD")
     if (sampling == 1) begin
       saved_register[name] = value;
+      if (name == "CALIPTRA_SETUP_DEBUG")
+        snapshot_setup_generation = core.control[1].generation;
       // OCP 9.2 defines clear-on-read at the recovery interface. Legal
       // stimulus keeps it zero; do not infer undocumented AXI read effects.
       if (name == "DEVICE_STATUS_0" && value[15:8] !== 0)
@@ -503,6 +493,31 @@ class usb_ocp_reset_model extends uvm_object;
       if (name == "RECOVERY_CTRL") begin
         if (ocp_check_command_fields(value,command_initial_ctrl,"OCP_RESET_COMMAND_EFFECT"))
           command_checkpoint_ctrl = value;
+      end else if (name == "CALIPTRA_SETUP_DEBUG") begin
+        // Integration spec 7.1: accepted SETUPs advance the live diagnostic,
+        // not a retained scalar. Project only from its frontdoor baseline and
+        // the passive accepted-SETUP count, including modulo rollover.
+        expected = saved_register[name] & ~(setup_generation_mask | setup_owner_mask);
+        expected |= (((saved_register[name] & setup_generation_mask) >>
+          setup_generation_shift) + core.control[1].generation -
+          snapshot_setup_generation) << setup_generation_shift & setup_generation_mask;
+        expected |= setup_owner_mask;
+        if (value !== expected)
+          `uvm_error("OCP_RESET_COMMAND_EFFECT", $sformatf(
+            "Accepted command SETUP diagnostic actual=%08h expected=%08h",value,expected))
+      end else if (name == "CALIPTRA_STATUS") begin
+        // Integration spec 3.3/7.1: after full accepted command DATA the live
+        // FSM may still process DATA or have advanced to STATUS; an observed
+        // STATUS response requires STATUS. All non-FSM bits remain exact.
+        logic [31:0] arb_state;
+        arb_state = (value & caliptra_arb_mask) >> caliptra_arb_shift;
+        if ((value & ~caliptra_arb_mask) !==
+            (saved_register[name] & ~caliptra_arb_mask) ||
+            !(arb_state === USB_OCP_ARB_STATUS ||
+              (cfg.stage == usb_ocp_reset_control::DATA && arb_state === USB_OCP_ARB_DATA)))
+          `uvm_error("OCP_RESET_COMMAND_EFFECT", $sformatf(
+            "Command live status actual=%08h initial=%08h state=%0d",
+            value,saved_register[name],arb_state))
       end else if (value !== saved_register[name])
         `uvm_error("OCP_RESET_COMMAND_EFFECT", $sformatf(
           "Unrelated %s changed before reset: actual=%08h initial=%08h",
@@ -513,6 +528,16 @@ class usb_ocp_reset_model extends uvm_object;
       if (!epoch_changed || !saved_register.exists(name))
         `uvm_fatal("OCP_RESET_RETENTION", "Post-reset read lacks a pre-event frontdoor value")
       expected = saved_register[name];
+      // Integration spec 3.2 and 7.1: local FIFO/reset diagnostics clear.
+      // Preserve every unrelated bit, including BATCH_ABORTED history.
+      case (name)
+        "INDIRECT_FIFO_STATUS_0":
+          expected = (expected & ~fifo_full_mask) | fifo_empty_mask;
+        "INDIRECT_FIFO_STATUS_1", "INDIRECT_FIFO_STATUS_2",
+        "CALIPTRA_SETUP_DEBUG": expected = 0;
+        "CALIPTRA_STATUS": expected &= ~caliptra_local_clear_mask;
+        default: begin end
+      endcase
       if (name == "RECOVERY_CTRL" && cfg.stage == usb_ocp_reset_control::ACTIVATE)
         expected[23:0] = core.recovery_ctrl;
       if (cfg.negative == usb_ocp_reset_control::RETENTION &&
@@ -639,17 +664,18 @@ class usb_ocp_reset_model extends uvm_object;
         c.data[1] === 1) begin
       if (!cfg.caliptra_quiescent || !cfg.mcu_reinitialized ||
           fresh_mode_reads == 0 || fresh_caps_reads == 0 || fresh_fifo_reads == 0 ||
-          explicit_resets != 0 || old_returned != old_accepted ||
-          old_compared != old_accepted ||
-          (cfg.stage == usb_ocp_reset_control::PARTIAL && !old_batch_complete))
+          explicit_resets != 0 || !discard_complete ||
+          old_accepted != old_returned+old_discarded ||
+          old_compared != old_returned)
         `uvm_fatal("OCP_RESET_FIFO", "Explicit FIFO reset lacks quiescence/reinit/fresh discovery")
       explicit_resets++;
       cfg.fifo_reset_observed = 1;
     end
   endfunction
 
-  function void ocp_check_retention_complete();
-    if (retained_reads == 0 || !reset_seen[0] ||
+  function void ocp_check_retention_complete(logic payload_available);
+    if (retained_reads == 0 || !discard_complete || !reset_seen[0] ||
+        payload_available !== 1'b0 ||
         (cfg.scope == usb_ocp_reset_control::BUS && !reset_seen[1]))
       `uvm_fatal("OCP_RESET_RETENTION", "Missing actual affected reset or pre-firmware reads")
     foreach (saved_register[name])
@@ -660,24 +686,23 @@ class usb_ocp_reset_model extends uvm_object;
 
   function void ocp_check_abort_ack();
     if (!cfg.abort_requested || !epoch_changed || recovery_epoch != 0 ||
-        !cfg.retention_complete || old_batch_active ||
-        core.accepted_bytes != old_accepted || core.returned_bytes != old_accepted ||
-        core.compared_bytes != old_accepted ||
+        !cfg.retention_complete || !discard_complete ||
+        old_accepted != old_returned+old_discarded ||
+        old_compared != old_returned ||
+        core.reset_discarded_bytes != old_discarded ||
+        core.accepted_bytes != 0 || core.returned_bytes != 0 ||
+        core.compared_bytes != 0 ||
         core.fifo_expected.size() != 0 || core.fifo_actual.size() != 0 ||
-        (cfg.stage == usb_ocp_reset_control::PARTIAL && !old_batch_complete))
-      `uvm_fatal("OCP_RESET_QUIESCENCE", "Abort acknowledgement lacks actual reset/accounted returned bytes")
-    // Keep the completed old ledger independently of the later canonical
-    // explicit FIFO reset and fresh image counters.
-    old_returned = core.returned_bytes;
-    old_compared = core.compared_bytes;
+        (cfg.stage == usb_ocp_reset_control::PARTIAL &&
+         (old_discarded != 64*4 || old_returned != 0 || old_compared != 0)))
+      `uvm_fatal("OCP_RESET_QUIESCENCE", "Abort acknowledgement lacks real DMA retirement and exact reset-discard reconciliation")
     `uvm_info("OCP_RESET_OLD_ACCOUNTING", $sformatf(
-      "scope=%s stage=%s accepted=%0d entry_returned=%0d entry_compared=%0d returned=%0d compared=%0d POST_bytes=%0d POST_compared=%0d POST_bursts=%0d POST_AXI_instances=%p retention_end_order=%0d POST_orders=%0d..%0d byte_errors=%0d",
+      "scope=%s stage=%s accepted=%0d entry_returned=%0d entry_compared=%0d returned=%0d compared=%0d reset_discarded=%0d retention_end_order=%0d; discarded bytes have no DMA/pop/comparison credit",
       cfg.scope.name(),cfg.stage.name(),old_accepted,old_entry_returned,
-      old_entry_compared,old_returned,old_compared,old_fifo_actual.size(),
-      old_post_compared,old_post_bursts,old_post_instances,retention_end_order,
-      old_first_axi_order,old_last_axi_order,old_byte_errors), UVM_LOW)
+      old_entry_compared,old_returned,old_compared,old_discarded,
+      retention_end_order), UVM_LOW)
     // USB invalidation does not change this epoch. The old recovery attempt
-    // retires only at its accounted firmware acknowledgement, retaining FIFO.
+    // retires only at its accounted firmware acknowledgement.
     recovery_epoch++;
   endfunction
 
@@ -714,23 +739,24 @@ class usb_ocp_reset_model extends uvm_object;
           fresh_mode_reads == 0 || fresh_caps_reads == 0 || fresh_fifo_reads == 0 ||
           recovery_epoch != 1)
         `uvm_fatal("OCP_RESET_INCOMPLETE", "Missing retention/quiescence/ownership/discovery/FIFO-reset proof")
-      if (old_returned != old_accepted || old_compared != old_accepted ||
-          old_batch_active ||
+      if (!discard_complete || !core.local_reset_accounted ||
+          old_accepted != old_returned+old_discarded ||
+          old_compared != old_returned ||
+          core.reset_discarded_bytes != old_discarded ||
           (cfg.stage == usb_ocp_reset_control::PARTIAL &&
-           (!old_batch_complete || old_fifo_actual.size() != old_accepted ||
-            old_post_compared != old_accepted || old_post_bursts != 4 ||
-            old_first_axi_order <= retention_end_order)))
-        `uvm_fatal("OCP_RESET_BYTE_RETENTION", "Missing preserved completed old accounting/POST-reset content witness")
-    end else if (cfg.abort_requested || explicit_resets != 0 || recovery_epoch != 0)
+           (old_discarded != 64*4 || old_returned != 0 || old_compared != 0)))
+        `uvm_fatal("OCP_RESET_DISCARD", "Missing preserved real-return/reset-discard accounting")
+    end else if (cfg.abort_requested || explicit_resets != 0 || recovery_epoch != 0 ||
+                 discard_complete || core.local_reset_accounted ||
+                 core.reset_discarded_bytes != 0)
       `uvm_fatal("OCP_RESET_SCOPE", "DEV1 reset disturbed unaffected OCP recovery")
     final_epoch = '{core.control[0].epoch,core.control[1].epoch,core.control[2].epoch};
     finished = 1;
     `uvm_info("OCP_RESET_EVIDENCE", $sformatf(
-      "scope=%s stage=%s USB_epochs=%p final_USB_epochs=%p recovery_epoch=%0d old_accepted=%0d old_entry_returned=%0d old_entry_compared=%0d old_returned=%0d old_compared=%0d old_POST_bytes=%0d old_POST_compared=%0d old_POST_bursts=%0d old_POST_orders=%0d..%0d old_byte_errors=%0d retention=%0d old_invalidations=%0d old_crosschecks=%0d native_reset_bit0=%0d HOST_cleanup_bit1=%0d peer_USB=%0d peer_AXI=%0d peer_DMA_bytes=%0d",
+      "scope=%s stage=%s USB_epochs=%p final_USB_epochs=%p recovery_epoch=%0d old_accepted=%0d old_entry_returned=%0d old_entry_compared=%0d old_returned=%0d old_compared=%0d old_reset_discarded=%0d retention=%0d old_invalidations=%0d old_crosschecks=%0d native_reset_bit0=%0d HOST_cleanup_bit1=%0d peer_USB=%0d peer_AXI=%0d peer_DMA_bytes=%0d",
       cfg.scope.name(),cfg.stage.name(),saved_epoch,final_epoch,recovery_epoch,
       old_accepted,old_entry_returned,old_entry_compared,old_returned,old_compared,
-      old_fifo_actual.size(),old_post_compared,old_post_bursts,old_first_axi_order,
-      old_last_axi_order,old_byte_errors,retained_reads,old_control_invalidations,
+      old_discarded,retained_reads,old_control_invalidations,
       old_control_crosschecks,native_reset_crosschecks,host_cleanup_crosschecks,
       peer_controls,peer_axi,peer_dma_bytes), UVM_LOW)
   endfunction

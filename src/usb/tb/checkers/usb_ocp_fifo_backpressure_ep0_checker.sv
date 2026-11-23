@@ -109,7 +109,8 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
           uvm_pkg::uvm_report_fatal("OCP_FIFO_EP0_GUARD", "Duplicate usb_ocp_negative_fifo_ep0 selector", UVM_NONE, `__FILE__, `__LINE__);
         mode = args[i].substr(negative_prefix.len(),args[i].len()-1);
         if (!(mode inside {"full","blocked","replacement","sram_setup","sram_response",
-                           "completed_prefix","missing_blocked","resubmit","witness_phase"}))
+                           "completed_prefix","missing_blocked","resubmit","witness_phase",
+                           "hold_delay","hold_missing"}))
           uvm_pkg::uvm_report_fatal("OCP_FIFO_EP0_GUARD", "Unknown FIFO EP0 canary value", UVM_NONE, `__FILE__, `__LINE__);
       end else if (uvm_is_match({variant_prefix,"*"},args[i])) begin
         variant_count++;
@@ -636,7 +637,7 @@ class usb_ocp_fifo_backpressure_ep0_checker extends usb_ocp_scoreboard;
   endfunction
 
   virtual function void ocp_check_replacements();
-    if (canary_mode != "" && canary_mode != "witness_phase")
+    if (canary_mode != "" && !(canary_mode inside {"witness_phase","hold_delay"}))
       `uvm_fatal("OCP_FIFO_EP0_GUARD", "Selected FIFO EP0 canary reached final checks without targeted rejection")
     if (canary_mode == "witness_phase" && witness_phase_checked !== 2'b11)
       `uvm_fatal("OCP_FIFO_EP0_PHASE", "Released-phase exclusion lacks actual OUT/NAK and PING/NAK contexts")

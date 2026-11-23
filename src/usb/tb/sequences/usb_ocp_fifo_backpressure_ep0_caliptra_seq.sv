@@ -24,6 +24,13 @@ class usb_ocp_fifo_backpressure_ep0_caliptra_seq extends usb_ocp_base_caliptra_s
     // This is a stimulus barrier before the first normal read, not forced
     // RREADY, FIFO, native scheduler, or DUT backpressure.
     ocp_poll_dma_ready(0,$time+ocp_cfg.control_transfer_timeout);
+    if (fifo_checker.canary_mode inside {"hold_delay","hold_missing"}) begin
+      wait (fifo_checker.full_status_seen);
+      `uvm_info("OCP_FIFO_EP0_CANARY", "Full status precedes intentionally delayed actor hold entry",UVM_NONE)
+      if (fifo_checker.canary_mode == "hold_missing")
+        #(fifo_checker.witness_timeout+1us);
+      else #10us;
+    end
     fifo_checker.dma_hold_entered = 1;
     released = 0;
     `uvm_info("OCP_FIFO_EP0_HOLD", "Payload available; entered planned first-DMA barrier", UVM_NONE)

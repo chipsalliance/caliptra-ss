@@ -21,6 +21,7 @@ class usb_ocp_protocol_stall_mcu_seq extends usb_ocp_base_mcu_seq;
       logic [15:0] length, output bit handled);
     logic [31:0] entry;
     logic [31:0] readback;
+    logic [31:0] expected_readback;
     usb_ep_entry_t decoded;
     time deadline;
     handled = 0;
@@ -45,12 +46,23 @@ class usb_ocp_protocol_stall_mcu_seq extends usb_ocp_base_mcu_seq;
       if (decoded.active !== 0 && (decoded.stall === 1 || offset == 8))
         `uvm_fatal("OCP_STALL_FIRMWARE",
           "Legal CLEAR_FEATURE cannot modify/rearm an active EP0 buffer; STATUS and later recovery remain unreached")
-      if (decoded.stall === 1) begin
-        decoded.stall = 0;
-        write32(memory_target,endpoint_list_base()+offset,32'(decoded));
+      if (decoded.stall === 1 || (stall_model.negative_firmware && offset == 8)) begin
+        if (decoded.stall === 1) begin
+          decoded.stall = 0;
+          write32(memory_target,endpoint_list_base()+offset,32'(decoded));
+        end
         read32(memory_target,endpoint_list_base()+offset,readback);
-        if (readback !== 32'(decoded))
+        expected_readback = 32'(decoded);
+        if (stall_model.negative_firmware && offset == 8) begin
+          if (readback !== expected_readback)
+            `uvm_fatal("OCP_STALL_FIRMWARE", "Firmware comparison control lacks valid inactive readback")
+          expected_readback ^= 1;
+          `uvm_info("OCP_STALL_CANARY", "MCU inactive-IN private expected readback bit toggled",UVM_NONE)
+        end
+        if (readback !== expected_readback) begin
+          stall_model.ocp_capture_recovery_failure();
           `uvm_error("OCP_STALL_FIRMWARE", "Frontdoor EP0 halt clear did not retain the other inactive entry fields")
+        end
       end
     end
     ocp_write_csr("INTSTAT",ocp_get_mask("INTSTAT","EP0IN"));
