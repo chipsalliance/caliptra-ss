@@ -110,6 +110,16 @@ module usb_axi_manager_connection #(
     end
   end
 
+  // Tests that deliberately hold BREADY/RREADY low (to fill bridge FIFOs or
+  // keep requests outstanding) set +usb_axi_disable_resp_ready_max_wait_recs
+  // to turn off only these two advisory manager-side recommendations.
+  initial begin
+    if ($test$plusargs("usb_axi_disable_resp_ready_max_wait_recs")) begin
+      $assertoff(0, protocol_monitor.checker0.axi4_recm_bready_max_wait, protocol_monitor.checker0.axi4_recm_rready_max_wait);
+      `uvm_info("USB_AXI_MONITOR", $sformatf("%s: Axi4PC BREADY/RREADY MAX_WAIT recommendations disabled", MANAGER_NAME), UVM_LOW)
+    end
+  end
+
   // Detect invalid subordinate responses before they can be masked by a test.
   read_response_known: assert property (@(posedge clk) disable iff (!rst_n)
     manager_vif.RVALID |->

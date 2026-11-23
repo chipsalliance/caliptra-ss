@@ -84,9 +84,12 @@ class usb_ocp_suspend_model extends uvm_object;
   bit evidence_applied;
   int unsigned retention_errors;
   int unsigned evidence_errors;
+  string fault;
+  bit fault_applied;
 
   function new(string name = "usb_ocp_suspend_model");
     super.new(name);
+    void'($value$plusargs("usb_ocp_l2_fault=%s",fault));
   endfunction
 
   static function mode_e ocp_prepare_mode();
@@ -232,6 +235,11 @@ class usb_ocp_suspend_model extends uvm_object;
     end
   endfunction
 
+  function bit ocp_check_recovery_time(realtime observed_at);
+    return recovery_guard_at != 0 && observed_at >= recovery_guard_at &&
+      (recovery_guard_end_at == 0 || observed_at < recovery_guard_end_at);
+  endfunction
+
   function void ocp_check_recovery_guard();
     if (!resumed || native_microframe <= 0 || !ocp_check_upstream_active())
       `uvm_fatal("OCP_L2_NATIVE", $sformatf(
@@ -251,6 +259,7 @@ class usb_ocp_suspend_model extends uvm_object;
   // a legitimately resumed SOF after quiet_end_at.
   function void ocp_capture_axi(usb_ocp_event item);
     logic [31:0] word;
+    logic [31:0] checked_dsus;
     logic [6:0] expected_address;
     logic expected_dsus;
     int dev;
@@ -285,6 +294,18 @@ class usb_ocp_suspend_model extends uvm_object;
           if ((word & dsus_mask[dev]) !== (expected_dsus ? dsus_mask[dev] : 32'b0))
             `uvm_fatal("OCP_L2_DSUS", "Actual DSUS changed inside the stable pre-resume window")
         end
+        if (ocp_check_recovery_time(item.observed_at)) begin
+          checked_dsus = word & dsus_mask[dev];
+          if (fault == "dsus" && !fault_applied) begin
+            checked_dsus |= dsus_mask[dev];
+            fault_applied = 1;
+            `uvm_info("OCP_L2_CANARY", $sformatf(
+              "Private DSUS comparison asserted: device=%0d observed_at=%0t guard=%0t..%0t",
+              dev,item.observed_at,recovery_guard_at,recovery_guard_end_at),UVM_NONE)
+          end
+          if (checked_dsus !== 0)
+            `uvm_fatal("OCP_L2_DSUS", "Actual DSUS asserted inside the resume recovery guard")
+        end
       end
     end
     if (!ocp_check_quiet_time(item.observed_at)) return;
@@ -301,8 +322,7 @@ class usb_ocp_suspend_model extends uvm_object;
   function void ocp_capture_packet(usb_ocp_event item);
     if (item.host_tx && item.pid === svt_usb_packet::SOF && item.packet_valid)
       last_sof_at = item.observed_at;
-    if (recovery_guard_at != 0 && item.observed_at >= recovery_guard_at &&
-        (recovery_guard_end_at == 0 || item.observed_at < recovery_guard_end_at) &&
+    if (ocp_check_recovery_time(item.observed_at) &&
         item.host_tx && item.pid inside {svt_usb_packet::SETUP,svt_usb_packet::IN,
           svt_usb_packet::OUT,svt_usb_packet::PING} &&
         (mode == GLOBAL ||
