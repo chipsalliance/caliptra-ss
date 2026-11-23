@@ -1,0 +1,89 @@
+// Copyright 2026 Google LLC (chipsalliance project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+
+class uart_driver extends dv_base_driver #(uart_item, uart_agent_cfg);
+  `uvm_component_utils(uart_driver)
+
+  `uvm_component_new
+
+  local realtime last_set_rx_elapsed = 0;
+  local bit      use_monitor_rx_clk  = 1'b1;
+
+  task on_enter_reset();
+    cfg.vif.reset_uart_rx();
+  endtask
+
+  // Sets the value of rx after randomly glitching for 10% of uart clk
+  task set_rx(input bit val);
+    uint     glitch_ns = uint'(cfg.vif.uart_clk_period * cfg.get_uart_period_glitch_pct() / 100 / 1ns);
+    realtime t_start   = $realtime;
+    repeat (glitch_ns) begin
+      if (cfg.in_reset) break;
+      cfg.vif.uart_rx <= $urandom_range(0, 1);
+      #1ns;
+    end
+    if (!cfg.in_reset) begin
+      cfg.vif.uart_rx <= val;
+    end
+    last_set_rx_elapsed = $realtime - t_start;
+  endtask
+
+  // Drives transfers.
+  virtual task get_and_drive();
+    bit send_data[];
+    forever begin
+      seq_item_port.get(req);
+      $cast(rsp, req.clone());
+      rsp.set_id_info(req);
+      if (!cfg.in_reset) begin
+        `uvm_info(`gfn, $sformatf("starting to send rx item: %0s", rsp.sprint()), UVM_HIGH)
+        // we send parity if enabled or if overridden in the req
+        if (cfg.en_parity ^ req.ovrd_en_parity) begin
+          send_data = new[NUM_UART_XFER_BITS_WO_PARITY + 1]; // + 1 for parity bit
+          {<<{send_data}} = {req.stop_bit, req.parity, req.data, req.start_bit};
+        end
+        else begin
+          send_data = new[NUM_UART_XFER_BITS_WO_PARITY];
+          {<<{send_data}} = {req.stop_bit, req.data, req.start_bit};
+        end
+        // send data on uart_rx
+        use_monitor_rx_clk = cfg.en_rx_monitor && !req.ovrd_en_parity;
+        for (int i = 0; i < send_data.size(); i++) begin
+          if (cfg.in_reset) break;
+          set_rx(send_data[i]);
+          wait_uart_rx_cycle();
+          if (cfg.in_reset) break;
+        end
+        `uvm_info(`gfn, $sformatf("finished sending rx item: %0s", rsp.sprint()), UVM_HIGH)
+      end
+      if (cfg.in_reset) begin
+        `uvm_info(`gfn, $sformatf("Reset happens and drop rx item: %0s", rsp.sprint()), UVM_HIGH)
+      end
+      seq_item_port.put_response(rsp);
+    end
+  endtask
+
+  virtual task wait_uart_rx_cycle();
+    fork
+      begin : isolation_fork
+        fork
+          begin
+            wait(cfg.in_reset);
+          end
+          begin
+            if (use_monitor_rx_clk) begin
+              @(cfg.vif.drv_rx_mp.drv_rx_cb);
+            end else begin
+              realtime rem_period = (cfg.vif.uart_clk_period > last_set_rx_elapsed) ?
+                                    (cfg.vif.uart_clk_period - last_set_rx_elapsed) : 0;
+              #(rem_period);
+            end
+          end
+        join_any
+        disable fork;
+      end : isolation_fork
+    join
+  endtask
+
+endclass
