@@ -5,8 +5,12 @@ contents:
   - tests:
       tags: ["L1"]
       paths:
+        - ../tests/usb_axi_combo_access.yml
+        - ../tests/usb_axi_dev_ram_rw.yml
+        - ../tests/usb_axi_during_usb_traffic.yml
         - ../tests/usb_axi_filter.yml
         - ../tests/usb_axi_read_backpressure.yml
+        - ../tests/usb_axi_unsupported_access.yml
         - ../tests/usb_axi_write_backpressure.yml
         - ../tests/usb_bad_crc16.yml
         - ../tests/usb_bad_crc5.yml
