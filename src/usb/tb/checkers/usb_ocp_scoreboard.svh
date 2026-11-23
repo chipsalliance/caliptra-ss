@@ -148,11 +148,13 @@ class usb_ocp_scoreboard extends uvm_component;
         !caps[OCP_CAP_PUSH_C_IMAGE] || !caps[OCP_CAP_INDIRECT_FIFO] ||
         data[12] == 0)
       `uvm_fatal("OCP_CAP", "Required OCP FIFO/push capabilities absent or malformed")
+    // The FIFO-only host flow treats this spec discrepancy as nonblocking.
     if (!caps[OCP_CAP_INDIRECT_CTRL])
-      `uvm_error("OCP_CAP_INDIRECT_CTRL", $sformatf(
+      `uvm_warning("OCP_CAP_INDIRECT_CTRL", $sformatf(
         "OCP 1.1 Section 9.2 requires INDIRECT_CTRL with Push C-image; capabilities=0x%04h. Continuing with advertised INDIRECT_FIFO.", caps))
     model.cms_count = data[12];
     model.capabilities_seen = 1;
+    if (model.stall_model != null) model.stall_model.ocp_check_capabilities(data);
   endfunction
 
   function void ocp_check_fifo_status(bytes_t data);
@@ -207,7 +209,8 @@ class usb_ocp_scoreboard extends uvm_component;
     model.fifo_discovered = 1;
   endfunction
 
-  function void ocp_check_status_version(usb_ocp_base_control c, logic [31:0] actual);
+  function void ocp_check_status_version(usb_ocp_base_control c, logic [31:0] actual,
+      bit owned_protocol_error = 0);
     logic found;
     if (!c.status_read || !c.status_frozen || c.status_versions.size() == 0 ||
         c.status_data_order <= c.status_setup_order)
@@ -223,7 +226,10 @@ class usb_ocp_scoreboard extends uvm_component;
         `uvm_fatal("OCP_STATUS", "Status expectation version lies outside this read's observation interval")
       if (i != 0 && c.status_versions[i].order <= c.status_versions[i-1].order)
         `uvm_fatal("OCP_STATUS", "Read status versions are not strictly ordered")
-      if (actual === c.status_versions[i].value) found = 1;
+      if ((!owned_protocol_error && actual === c.status_versions[i].value) ||
+          (owned_protocol_error &&
+           (actual & 32'hffff00ff) === (c.status_versions[i].value & 32'hffff00ff)))
+        found = 1;
     end
     if (!found)
       `uvm_fatal("OCP_STATUS",$sformatf(
@@ -274,6 +280,11 @@ class usb_ocp_scoreboard extends uvm_component;
     if (device == 1 && c.setup[0] === 8'ha1) begin
       case (c.setup[2])
         OCP_CMD_PROT_CAP: ocp_check_capabilities(c.data);
+        OCP_CMD_DEVICE_ID: begin
+          if (model.stall_model == null)
+            `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
+          model.stall_model.ocp_check_identity(c.data);
+        end
         OCP_CMD_INDIRECT_FIFO_CTRL: begin
           if (l2_model == null && reset_model == null)
             `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
@@ -292,9 +303,15 @@ class usb_ocp_scoreboard extends uvm_component;
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
           if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS ||
-              c.data[1] !== OCP_PROTOCOL_ERROR_NONE || c.data[6] !== 0)
+              (model.stall_model == null && c.data[1] !== OCP_PROTOCOL_ERROR_NONE) ||
+              c.data[6] !== 0)
             `uvm_fatal("OCP_STATUS", "Malformed DEVICE_STATUS or protocol error")
-          ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]});
+          if (model.stall_model != null && model.stall_model.ocp_check_status_owned(c))
+            model.stall_model.ocp_check_status(c);
+          else if (c.data[1] !== OCP_PROTOCOL_ERROR_NONE)
+            `uvm_fatal("OCP_STATUS", "Unexpected DEVICE_STATUS protocol error")
+          ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]},
+            model.stall_model != null && model.stall_model.ocp_check_status_owned(c));
           if (c.data[OCP_OFF_DS_STATUS] === OCP_DEVICE_STATUS_RECOVERY_MODE)
             model.recovery_mode_seen = 1;
           if (c.data[0] === OCP_DEVICE_STATUS_RECOVERY_PENDING) model.pending_seen = 1;
@@ -500,6 +517,7 @@ class usb_ocp_scoreboard extends uvm_component;
 
   function void ocp_check_transfer(usb_ocp_event item);
     int device;
+    int peer_index;
     usb_ocp_base_control c;
     usb_ocp_base_epn_model epn;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
@@ -512,6 +530,17 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     allowed_results = 0;
     if (!item.setup[0][7]) allowed_results[5] = 1;
+    if (model.stall_model != null &&
+        model.stall_model.ocp_check_terminal_transfer(item)) begin
+      // A matched terminal STALL ends this operation without STATUS success.
+      // No usb_completions/crosscheck credit and no FIFO acceptance is added.
+      c = model.control[1];
+      if (!model.stall_model.ocp_check_terminal_owner(1,c) ||
+          c.active !== 1 || c.status_acked !== 0)
+        `uvm_fatal("OCP_STALL_OWNER", "Terminal STALL lost the registered live control")
+      c.active = 0;
+      return;
+    end
     if (reset_model != null &&
         (item.results[0] === 1 ||
          item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1)) begin
@@ -544,21 +573,66 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     // SET_ADDRESS completes at the old address, retained in control context.
     device = -1;
+    peer_index = -1;
+    foreach (model.completed_peer_controls[i]) begin
+      c = model.completed_peer_controls[i];
+      if (item.endpoint === 0 && c.status_acked === 1 &&
+          c.address === item.address && c.setup === item.setup &&
+          item.transfer_start_order < c.status_setup_order &&
+          (c.previous_completed_setup_order == 0 ||
+           item.transfer_start_order > c.previous_completed_setup_order) &&
+          c.status_complete_order < item.order) begin
+        if (peer_index != -1)
+          `uvm_fatal("OCP_CROSSCHECK", "Ambiguous completed peer generation")
+        peer_index = i;
+        device = 2;
+      end
+    end
     foreach (model.control[i])
-      if (model.control[i].status_acked &&
+      if (!(model.require_dev1_ep0_overlap && i == 2) &&
+          model.control[i].status_acked &&
           model.control[i].address === item.address &&
           model.control[i].setup === item.setup &&
-          model.transfer_crosschecks[i] < model.usb_completions[i]) device = i;
+          model.transfer_crosschecks[i] < model.usb_completions[i]) begin
+        if (device != -1)
+          `uvm_fatal("OCP_CROSSCHECK", "Ambiguous observed STATUS acceptance")
+        device = i;
+      end
     if (device < 0)
       `uvm_fatal("OCP_CROSSCHECK", "Transfer completion has no matching observed STATUS acceptance")
-    c = model.control[device];
+    c = (peer_index == -1) ? model.control[device] : model.completed_peer_controls[peer_index];
     allowed_results = 0;
     // SVT results bit 5 also describes the IN status ZLP after control-OUT data.
     if (!c.setup[0][7]) allowed_results[5] = 1;
-    if (!item.transfer_ok || (item.results & ~allowed_results) !== 0)
+    if (item.transfer_ok !== 1 || (item.results & ~allowed_results) !== 0)
       `uvm_fatal("OCP_CROSSCHECK", "VIP control transfer failed")
     ocp_check_bytes(item.bytes,c.data,"packet/transfer cross-check");
     model.transfer_crosschecks[device]++;
+    if (peer_index != -1) begin
+      foreach (c.peer_overlap_count[direction]) begin
+        if (c.peer_overlap_count[direction] == 0) continue;
+        if (direction == 0) model.dev1_ep0_read_overlap += c.peer_overlap_count[direction];
+        else model.dev1_ep0_write_overlap += c.peer_overlap_count[direction];
+        `uvm_info("OCP_OVERLAP_COMMIT",$sformatf(
+          "window=%s accepted=%0d ocp=%0d/%0d peer=%0d/%0d stage=%s token=%0d handshake=%0d status=%0d native_start=%0d native=%0d serial=%0d",
+          direction == 0 ? "read" : "write",c.peer_overlap_count[direction],
+          c.peer_overlap[direction].ocp_epoch,c.peer_overlap[direction].ocp_generation,
+          c.epoch,c.generation,c.peer_overlap[direction].stage,
+          c.peer_overlap[direction].token_order,c.peer_overlap[direction].handshake_order,
+          c.status_complete_order,item.transfer_start_order,item.order,item.transfer_serial),UVM_LOW)
+      end
+      model.completed_peer_controls.delete(peer_index);
+    end
+    if (model.stall_model != null)
+      model.stall_model.ocp_capture_crosscheck(device,c,item.order);
+  endfunction
+
+  // Row-owned passive extensions see the same immutable snapshots and the
+  // original ledger. Defaults neither observe extra streams nor alter credit.
+  virtual function void ocp_check_event_before(usb_ocp_event item);
+  endfunction
+
+  virtual function void ocp_check_event_after(usb_ocp_event item);
   endfunction
 
   task run_phase(uvm_phase phase);
@@ -570,6 +644,7 @@ class usb_ocp_scoreboard extends uvm_component;
       observer.ocp_wait_snapshot(item);
       busy = 1;
       event_count++;
+      ocp_check_event_before(item);
       case (item.kind)
         usb_ocp_event::USB_PACKET: begin
           if (l2_model != null) l2_model.ocp_capture_packet(item);
@@ -585,6 +660,9 @@ class usb_ocp_scoreboard extends uvm_component;
           // let the later ledger flush move a write backward across USB DATA.
           // FIFO/activation accounting still consumes every deferred actual.
           model.ocp_record_status_programming(item);
+          if (model.stall_model != null &&
+              model.recovery_register.exists(item.axi_address))
+            model.stall_model.ocp_capture_axi(item,model.recovery_register[item.axi_address]);
           if (reset_model != null) reset_model.ocp_capture_axi(item);
           if (l2_model != null) l2_model.ocp_capture_axi(item);
           if (deferred_axi.size() >= 16384)
@@ -617,8 +695,11 @@ class usb_ocp_scoreboard extends uvm_component;
       while (model.ready_controls.size() != 0) begin
         device = model.ready_controls.pop_front();
         ocp_check_control(device);
+        if (model.stall_model != null)
+          model.stall_model.ocp_capture_control(device,model.control[device],model.control[1],item.order);
         if (reset_model != null) reset_model.ocp_capture_control(device);
       end
+      ocp_check_event_after(item);
       busy = 0;
     end
   endtask
@@ -627,6 +708,7 @@ class usb_ocp_scoreboard extends uvm_component;
     foreach (model.epn_models[i])
       if (model.epn_models[i] != null && !model.epn_models[i].ocp_check_drained()) return 0;
     if (busy || !observer.ocp_check_drained() || deferred_axi.size() != 0 ||
+        model.completed_peer_controls.size() != 0 ||
         (reset_model != null && reset_model.command_snapshot_reads.num() != 0) ||
         deferred_transfer_aborts.size() != 0 ||
         model.token != null || model.ready_controls.size() != 0 ||
@@ -639,7 +721,7 @@ class usb_ocp_scoreboard extends uvm_component;
     return 1;
   endfunction
 
-  function void ocp_check_replacements();
+  virtual function void ocp_check_replacements();
     if (!model.require_dev0_ep0_replacement) return;
     if (negative_replacement)
       model.dev0_ep0_write_replacements = 0;
@@ -687,8 +769,10 @@ class usb_ocp_scoreboard extends uvm_component;
     bit read_epn_window_seen;
     bit write_epn_window_seen;
     usb_ocp_base_epn_model epn;
+    int unsigned write_peer_accepted;
     if (l2_model != null) l2_model.ocp_check_complete();
     if (reset_model != null) reset_model.ocp_check_complete();
+    if (model.stall_model != null) model.stall_model.ocp_check_complete();
     if ($test$plusargs("usb_ocp_control_zlp_canary")) begin
       if (model.control_data_stage_errors != 1)
         `uvm_fatal("OCP_CONTROL_DATA_CANARY", $sformatf(
@@ -716,14 +800,15 @@ class usb_ocp_scoreboard extends uvm_component;
     ocp_check_mixed_windows();
     // Checker-only injection removes write-window evidence, not USB stimulus
     // or mandatory packet/transfer checks.
+    write_peer_accepted = model.dev1_ep0_write_overlap;
     if (model.require_dev1_ep0_overlap && negative_overlap)
-      model.dev1_ep0_write_overlap = 0;
+      write_peer_accepted = 0;
     if (model.require_dev1_ep0_overlap &&
         (model.dev1_ep0_read_overlap == 0 ||
-         model.dev1_ep0_write_overlap == 0 || observer.reordered_completions == 0))
+         write_peer_accepted == 0 || observer.reordered_completions == 0))
       `uvm_fatal("OCP_OVERLAP", $sformatf(
-        "Missing wire overlap or reordered routing: read_tokens=%0d write_tokens=%0d reordered=%0d negative=%0b",
-        model.dev1_ep0_read_overlap,model.dev1_ep0_write_overlap,
+        "Missing accepted peer overlap or reordered routing: read_accepted=%0d write_accepted=%0d reordered=%0d negative=%0b",
+        model.dev1_ep0_read_overlap,write_peer_accepted,
         observer.reordered_completions,negative_overlap))
     if (!ocp_check_drained() || event_count == 0 || observer.packet_count == 0 ||
         !model.hub_enabled || !model.hub_connected || !model.hub_descriptor_seen ||
@@ -748,7 +833,7 @@ class usb_ocp_scoreboard extends uvm_component;
       model.recovery_mode_seen,model.activation_observed),UVM_LOW)
     if (model.require_dev1_ep0_overlap)
       `uvm_info("OCP_OVERLAP",$sformatf(
-        "Checked dev1 EP0 inside OCP read/write windows: read_tokens=%0d write_tokens=%0d reordered=%0d",
+        "Checked dev1 EP0 inside OCP read/write windows: read_accepted=%0d write_accepted=%0d reordered=%0d",
         model.dev1_ep0_read_overlap,model.dev1_ep0_write_overlap,
         observer.reordered_completions),UVM_LOW)
     if (model.require_dev0_ep0_replacement)

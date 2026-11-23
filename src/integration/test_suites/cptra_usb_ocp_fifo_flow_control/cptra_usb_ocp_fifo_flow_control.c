@@ -52,7 +52,9 @@
 #define OCP_FIFO_FLOW_RECOVERY_STATUS_BOOTING_IMAGE 0x02u
 #define OCP_FIFO_FLOW_RECOVERY_STATUS_SUCCESS 0x03u
 #define OCP_FIFO_FLOW_DMA_BLOCK_SIZE_BYTES 64u
+#ifndef OCP_FIFO_FLOW_MAX_IMAGE_WORDS
 #define OCP_FIFO_FLOW_MAX_IMAGE_WORDS 192u
+#endif
 #define OCP_FIFO_FLOW_MCU_SRAM_ALIGNMENT 64u
 
 volatile char *stdout = (char *)STDOUT;
@@ -196,7 +198,7 @@ void main(void)
         uint32_t image_destination;
 
         if (image_size_words > OCP_FIFO_FLOW_MAX_IMAGE_WORDS) {
-            fail_and_halt("CPTRA: randomized image exceeds verify buffer");
+            fail_and_halt("CPTRA: image exceeds verify buffer");
         }
         image_size_bytes = image_size_words * sizeof(uint32_t);
         image_destination = get_image_destination(image_size_bytes);

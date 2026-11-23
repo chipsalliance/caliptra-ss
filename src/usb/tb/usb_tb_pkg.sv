@@ -148,6 +148,17 @@ package usb_tb_pkg;
     USB_TRANSFER_TYPE_ISOCHRONOUS
   } usb_transfer_type_e;
 
+  // Diagnostic POST_SYNC_ARB_STATE encoding: integration spec Section 7.1.
+  // Encodings 6-7 are reserved.
+  typedef enum logic [2:0] {
+    USB_OCP_ARB_IDLE       = 3'd0,
+    USB_OCP_ARB_MIRROR     = 3'd1,
+    USB_OCP_ARB_META_WAIT  = 3'd2,
+    USB_OCP_ARB_DATA       = 3'd3,
+    USB_OCP_ARB_STATUS     = 3'd4,
+    USB_OCP_ARB_PROT_STALL = 3'd5
+  } usb_ocp_arb_state_e;
+
   // One DEV0 endpoint-list command/status word (USB2 Programmer's Guide 4.2.2
   // and 4.2.3). The list lives in packet memory, which the RAL models as a
   // field-less uvm_mem, so the layout is captured here instead. On EP0 entries
@@ -224,6 +235,10 @@ package usb_tb_pkg;
   `include "sequences/usb_axi_write_backpressure_seq.svh"
   `include "sequences/usb_axi_filter_seq.svh"
   `include "sequences/usb_axi_stress_seq.svh"
+  `include "sequences/usb_axi_bridge_base_seq.svh"
+  `include "sequences/usb_axi_dev_ram_rw_seq.svh"
+  `include "sequences/usb_axi_combo_access_seq.svh"
+  `include "sequences/usb_axi_unsupported_access_seq.svh"
   `include "sequences/usb_endpoint_rw_seq.svh"
   `include "sequences/usb_host_base_seq.svh"
   `include "sequences/usb_bulk_out_host_seq.svh"
@@ -231,6 +246,7 @@ package usb_tb_pkg;
   `include "sequences/usb_interrupt_host_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
+  `include "sequences/usb_lpm_capability_host_seq.svh"
   `include "sequences/usb_unsupported_request_host_seq.svh"
   `include "sequences/usb_unsupported_request_seq.svh"
   `include "sequences/usb_resume_recovery_seq.svh"
@@ -247,6 +263,7 @@ package usb_tb_pkg;
   `include "sequences/usb_l1_host_resume_host_seq.svh"
   `include "sequences/usb_l1_host_resume_seq.svh"
   `include "sequences/usb_double_buffer_bulk_seq.svh"
+  `include "sequences/usb_axi_during_usb_traffic_seq.svh"
   `include "sequences/usb_bulk_ping_seq.svh"
   `include "sequences/usb_high_bandwidth_iso_host_seq.svh"
   `include "sequences/usb_high_bandwidth_iso_seq.svh"
@@ -254,11 +271,19 @@ package usb_tb_pkg;
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "sequences/usb_dev_skip_during_rx_seq.svh"
+  `include "sequences/usb_remote_wake_enable_host_seq.svh"
+  `include "sequences/usb_l1_remote_wake_host_seq.svh"
+  `include "sequences/usb_l1_remote_wake_seq.svh"
+  `include "sequences/usb_l2_remote_wake_host_seq.svh"
+  `include "sequences/usb_l2_remote_wake_seq.svh"
   `include "tests/usb_base_test.svh"
   `include "tests/usb_axi_read_backpressure_test.svh"
   `include "tests/usb_axi_write_backpressure_test.svh"
   `include "tests/usb_axi_filter_test.svh"
   `include "tests/usb_axi_stress_test.svh"
+  `include "tests/usb_axi_dev_ram_rw_test.svh"
+  `include "tests/usb_axi_combo_access_test.svh"
+  `include "tests/usb_axi_unsupported_access_test.svh"
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
   `include "tests/usb_test_packet_test.svh"
@@ -270,11 +295,14 @@ package usb_tb_pkg;
   `include "tests/usb_l2_host_resume_test.svh"
   `include "tests/usb_l1_host_resume_test.svh"
   `include "tests/usb_double_buffer_bulk_test.svh"
+  `include "tests/usb_axi_during_usb_traffic_test.svh"
   `include "tests/usb_bulk_ping_test.svh"
   `include "tests/usb_high_bandwidth_iso_test.svh"
   `include "tests/usb_high_bandwidth_interrupt_test.svh"
   `include "tests/usb_dev_skip_test.svh"
   `include "tests/usb_dev_skip_during_rx_test.svh"
+  `include "tests/usb_l1_remote_wake_test.svh"
+  `include "tests/usb_l2_remote_wake_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
   // OCP-only architecture. Overrides are installed by usb_ocp_base_test,
   // never during package loading or generic environment construction.
@@ -298,6 +326,7 @@ package usb_tb_pkg;
   `include "checkers/usb_ocp_base_transfer_callback.svh"
   `include "checkers/usb_ocp_base_axi_callback.svh"
   `include "checkers/usb_ocp_base_epn_model.svh"
+  `include "checkers/usb_ocp_protocol_stall_model.sv"
   `include "checkers/usb_ocp_predictor.svh"
   `include "checkers/usb_ocp_suspend_model.svh"
   `include "checkers/usb_ocp_reset_model.svh"
@@ -306,9 +335,14 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_base_seq.svh"
   `include "sequences/usb_ocp_base_epn_service_seq.svh"
   `include "sequences/usb_ocp_firmware_base_seq.svh"
+  `include "checkers/usb_ocp_fifo_backpressure_ep0_checker.sv"
+  `include "checkers/usb_ocp_fifo_backpressure_epn_checker.sv"
   `include "sequences/usb_ocp_base_mcu_seq.svh"
+  `include "sequences/usb_ocp_protocol_stall_mcu_seq.sv"
   `include "sequences/usb_ocp_base_soc_seq.svh"
   `include "sequences/usb_ocp_base_caliptra_seq.svh"
+  `include "sequences/usb_ocp_fifo_backpressure_ep0_caliptra_seq.sv"
+  `include "sequences/usb_ocp_fifo_backpressure_epn_caliptra_seq.sv"
   `include "sequences/usb_ocp_reset_reinit_mcu_seq.svh"
   `include "sequences/usb_ocp_reset_reinit_caliptra_seq.svh"
   `include "sequences/usb_ocp_base_host_seq.svh"
@@ -316,6 +350,8 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_suspend_clear_seq.svh"
   `include "sequences/usb_ocp_suspend_resume_host_seq.svh"
   `include "sequences/usb_ocp_base_ep0_peer_seq.svh"
+  `include "sequences/usb_ocp_fifo_backpressure_ep0_peer_seq.sv"
+  `include "sequences/usb_ocp_fifo_backpressure_ep0_host_seq.sv"
   `include "sequences/usb_ocp_reset_service_seq.svh"
   `include "sequences/usb_ocp_reset_protocol_seq.svh"
   `include "checkers/usb_ocp_reset_link_callback.svh"
@@ -324,28 +360,38 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_base_replacement_host_seq.svh"
   `include "sequences/usb_ocp_base_epn_host_seq.svh"
   `include "sequences/usb_ocp_bringup_seq.svh"
+  `include "sequences/usb_ocp_fifo_backpressure_ep0_seq.sv"
   `include "sequences/usb_ocp_suspend_resume_seq.svh"
   `include "sequences/usb_ocp_reset_reinit_seq.svh"
+  // Directed ACK PID rejection and host retry backoff retain wire observations.
+  `include "sequences/usb_ocp_peer_setup_retry_callback.svh"
   `include "sequences/usb_ocp_dev1_ep0_service_seq.svh"
+  `include "sequences/usb_ocp_protocol_stall_host_seq.sv"
+  `include "sequences/usb_ocp_protocol_stall_overlap_seq.sv"
   `include "sequences/usb_ocp_dev1_ep0_host_seq.svh"
   `include "sequences/usb_ocp_dev1_ep0_overlap_seq.svh"
   `include "sequences/usb_ocp_dev0_ep0_service_seq.svh"
   `include "sequences/usb_ocp_dev0_ep0_host_seq.svh"
   `include "sequences/usb_ocp_dev0_ep0_interleave_seq.svh"
   `include "sequences/usb_ocp_base_epn_overlap_host_seq.svh"
+  `include "sequences/usb_ocp_fifo_backpressure_epn_host_seq.sv"
   `include "sequences/usb_ocp_dev0_epn_host_seq.svh"
   `include "sequences/usb_ocp_dev1_epn_host_seq.svh"
   `include "sequences/usb_ocp_base_epn_overlap_seq.svh"
+  `include "sequences/usb_ocp_fifo_backpressure_epn_seq.sv"
   `include "sequences/usb_ocp_dev0_epn_overlap_seq.svh"
   `include "sequences/usb_ocp_dev1_epn_overlap_seq.svh"
   `include "sequences/usb_ocp_dev1_epn_fs_overlap_seq.svh"
   `include "sequences/usb_ocp_mixed_traffic_host_seq.svh"
   `include "sequences/usb_ocp_mixed_traffic_seq.svh"
   `include "tests/usb_ocp_base_test.svh"
+  `include "tests/usb_ocp_fifo_backpressure_ep0_test.sv"
+  `include "tests/usb_ocp_fifo_backpressure_epn_test.sv"
   `include "tests/usb_ocp_reset_reinit_test.svh"
   `include "tests/usb_ocp_suspend_resume_test.svh"
   `include "tests/usb_ocp_bringup_test.svh"
   `include "tests/usb_ocp_dev1_ep0_overlap_test.svh"
+  `include "tests/usb_ocp_protocol_stall_overlap_test.sv"
   `include "tests/usb_ocp_dev0_ep0_interleave_test.svh"
   `include "tests/usb_ocp_dev0_epn_overlap_test.svh"
   `include "tests/usb_ocp_dev1_epn_overlap_test.svh"

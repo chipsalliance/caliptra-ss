@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 377;
+  localparam int USB_PKG_VERSION = 381;
 
 
   import uvm_pkg::*;
@@ -141,8 +141,40 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_toggle_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_stall_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_pkt_unexpected_test.svh"
+  // Extended error-injection coverage (closing additional usb_pie.m.vhdl
+  // live sites of codes already partly covered by the nine suites above).
+  // See docs/CaliptraSSUSBErrorInjection.md "Additional PIE error-path
+  // tests" section.
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_test.svh"
+  // Closes pid_unknown (0x2) at line 2632 (PID_MDATA unexpected on a
+  // single-buffer, non high-bandwidth ISO endpoint).
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh"
+
+  // Forked sibling of the above, high-bandwidth ISO OUT endpoint. Closes
+  // pid_unknown (0x2) at line 2704 (PID_DATA0 unexpected when
+  // iso_mdata_cnt_up /= 00), which the non-HBW suite above cannot reach -
+  // see that suite's README and this sequence's header for the rationale.
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_test.svh"
+
+  // Token-direction mismatch while an ISO transaction is pending.
+  // Closes RTL line/branch coverage of usb_pie.m.vhdl lines
+  // 2192/2211/2231/2251 (packet_unexpected 0x3, same bin as
+  // err_pkt_unexpected / err_iso_stalled - see sequence header).
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_test.svh"
+
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
+
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
@@ -563,6 +595,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_usb_nak_test.svh"
   `include "caliptra_ss_usb_ocp_flow_random_image_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_large_multitransfer_image_test.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_test.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_test.svh"
   `include "caliptra_ss_usb_ocp_device_fifo_clear_test.svh"

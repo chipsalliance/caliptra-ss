@@ -596,9 +596,12 @@ class usb_ocp_reset_reinit_host_seq extends usb_ocp_base_host_seq;
 
   virtual task ocp_do_check_control(int device, logic [7:0] bm, logic [7:0] request,
       logic [15:0] value, logic [15:0] index, logic [15:0] length,
-      bytes_t write_data, output bytes_t read_data, input bit expect_replacement = 0);
+      bytes_t write_data, output bytes_t read_data, input bit expect_replacement = 0,
+      input bit expect_protocol_stall = 0);
     bit selected;
     bit track_submission;
+    if (expect_protocol_stall)
+      `uvm_fatal("OCP_STALL_GUARD", "Reset actor does not own protocol STALL")
     if (expect_replacement)
       `uvm_fatal("OCP_RESET_NATIVE", "Nested abort/replacement is not a reset variant")
     track_submission = !port_actor && device == 1 &&
@@ -707,8 +710,8 @@ class usb_ocp_reset_reinit_host_seq extends usb_ocp_base_host_seq;
     end else ocp_do_check_reset_event();
   endtask
 
-  // OCP 9.2: byte 1 == 1 explicitly resets both FIFO indices. Discovery does
-  // not itself authorize deletion of old accepted bytes.
+  // OCP 9.2: explicitly reset both indices and program zero image size.
+  // Local reset loss was independently reconciled before MCU ownership.
   task ocp_do_check_fresh_fifo_reset();
     bytes_t data;
     int unsigned spaces;

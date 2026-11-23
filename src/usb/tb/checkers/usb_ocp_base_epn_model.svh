@@ -22,6 +22,7 @@ class usb_ocp_base_epn_model extends uvm_object;
   usb_ocp_event candidate;
   int unsigned device = 1;
   int unsigned data_tag;
+  int unsigned payload_lengths[2][2] = '{default:'{default:0}};
   bit full_speed;
   logic [6:0] address;
   // Learned from device0 SET_ADDRESS, never the peer's descriptor EP0.
@@ -52,6 +53,7 @@ class usb_ocp_base_epn_model extends uvm_object;
   longint unsigned last_iso_token[2];
   bit iso_token_seen[2];
   longint unsigned interrupt_next_poll[2];
+  bit interrupt_poll_seen[2];
   bit interrupt_nak_seen[2];
   bit sof_seen;
   bit frame_edge_seen;
@@ -71,6 +73,7 @@ class usb_ocp_base_epn_model extends uvm_object;
     retired = '{default:0};
     iso_token_seen = '{default:0};
     interrupt_nak_seen = '{default:0};
+    interrupt_poll_seen = '{default:0};
   endfunction
 
   function svt_usb_transfer::transfer_type_enum ocp_get_transfer_type(int dir);
@@ -145,7 +148,7 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (phase > 1 || phase != token_phase)
       `uvm_fatal("OCP_EPN_STREAM", "Extra, duplicate, or wrong-phase accepted stream")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
-      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,data_tag);
+      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,payload_lengths[dir][phase],data_tag);
     if (data.bytes.size() != expected.size() || data.bytes.size() > ep.max_packet_size)
       `uvm_fatal("OCP_EPN_STREAM", "Accepted EPN packet length differs from planned stream")
     foreach (expected[i]) begin
@@ -173,6 +176,10 @@ class usb_ocp_base_epn_model extends uvm_object;
     // The acceptance order itself is assigned by the caller below for ACK.
     accepted_sof[dir][phase] = token.sof_serial;
     accepted_generation[dir][phase] = c.generation;
+    if (ep.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+      interrupt_next_poll[dir] = token.sof_serial + discovery.ocp_get_period(ep);
+      interrupt_poll_seen[dir] = 1;
+    end
     previous[dir] = data.bytes;
     accepted[dir]++;
   endfunction
@@ -250,9 +257,17 @@ class usb_ocp_base_epn_model extends uvm_object;
       if (item.host_tx !== 0 || (incoming && candidate != null))
         `uvm_fatal("OCP_EPN_PACKET", "Invalid NAK responder/context")
       if (ep.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+        // Defer post-service classification until the response so an old-toggle
+        // transmission-error retry is not mistaken for a new poll (USB2 5.7.5).
+        if (interrupt_poll_seen[token_direction] &&
+            token.sof_serial < interrupt_next_poll[token_direction] &&
+            (candidate == null ||
+             (candidate.pid == svt_usb_packet::DATA1) === next_toggle[token_direction]))
+          `uvm_fatal("OCP_EPN_INTERVAL", "Interrupt poll before the next successful-service opportunity")
         interrupt_next_poll[token_direction] =
           token.sof_serial + discovery.ocp_get_period(ep);
         interrupt_nak_seen[token_direction] = 1;
+        interrupt_poll_seen[token_direction] = 1;
       end
       candidate = null;
       token = null;
@@ -308,7 +323,7 @@ class usb_ocp_base_epn_model extends uvm_object;
         item.order < accepted_order[dir][phase])
       `uvm_fatal("OCP_EPN_CORRELATION", "Unsuccessful/unmatched actual EPN transfer")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
-      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,data_tag);
+      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,payload_lengths[dir][phase],data_tag);
     if (item.completed_bytes !== expected.size() || item.bytes !== expected)
       `uvm_fatal("OCP_EPN_CORRELATION", "Monitor bytes differ from accepted independent stream")
     crosschecked[dir]++;
@@ -337,7 +352,7 @@ class usb_ocp_base_epn_model extends uvm_object;
               entry.stall !== 0 || entry.disabled !== 0 ||
               entry.buffer_offset !==
                 usb_ocp_base_epn_profile::ocp_get_retired_buffer_offset(
-                  dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase))
+                  dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase,payload_lengths[dir][phase]))
             `uvm_fatal("OCP_EPN_SRAM", "Retirement lacks accepted bytes or exact writeback")
           retired[dir] = 1;
           if (dir == 1) begin
@@ -352,7 +367,8 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (!item.write_access && retired[0] && phase < 2 &&
         offset >= usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT) &&
         offset < usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT)+64) begin
-      expected = usb_ocp_base_epn_profile::ocp_prepare_stream(USB_DIRECTION_OUT,phase,data_tag);
+      expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
+        USB_DIRECTION_OUT,phase,payload_lengths[0][phase],data_tag);
       if (offset != usb_ocp_base_epn_profile::ocp_get_buffer(USB_DIRECTION_OUT)+read_offset ||
           item.bytes.size() != 4 || item.response_ok !== 1)
         `uvm_fatal("OCP_EPN_SRAM", "OUT SRAM proof is unordered or unsuccessful")

@@ -23,6 +23,7 @@ class usb_ocp_suspend_service_record extends uvm_object;
   string status_name;
   realtime ended_at;
   int unsigned responses;
+  bit negative_response;
   int unsigned ingress_count;
   uvm_sequence_base issuer;
   uvm_sequence_item issued;
@@ -80,6 +81,11 @@ class usb_ocp_suspend_service_record extends uvm_object;
         sequence_id != issuer.get_sequence_id())
       `uvm_fatal("OCP_L2_SERVICE_API", "Executed service did not preserve actual issuing IDs")
     wait (release_requested);
+    if (negative_response)
+      `uvm_info("OCP_L2_CANARY", $sformatf(
+        "Private retirement response count=0 actual=%0d op=%s",
+        responses,operation.name()),UVM_NONE)
+    wait ((negative_response ? 0 : responses) != 0);
     `uvm_info("OCP_L2_SERVICE", $sformatf(
       "Retiring op=%s actual_responses=%0d executed_at=%0t retire_at=%0t",
       operation.name(),responses,ended_at,$realtime), UVM_LOW)
