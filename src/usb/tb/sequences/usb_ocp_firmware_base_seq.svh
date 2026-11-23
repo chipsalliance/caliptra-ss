@@ -23,6 +23,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
   usb_target_e memory_target;
   logic [6:0] address_shadow;
   logic [7:0] configuration_shadow;
+  logic [7:0] alternate_shadow;
   logic [31:0] command_shadow;
   int unsigned serviced;
   localparam logic [31:0] SETUP_BUFFER = 'h100;
@@ -114,7 +115,14 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
             endpoint_entry(1'b1,1'b0,0,OUT_BUFFER));
   endtask
 
+  virtual task ocp_do_check_owned_setup(logic [7:0] request_type,
+      logic [7:0] request, logic [15:0] value, logic [15:0] index,
+      logic [15:0] length, output bit handled);
+    handled = 0;
+  endtask
+
   task ocp_service_setup();
+    usb_ocp_base_epn_profile profile;
     logic [31:0] word0;
     logic [31:0] word1;
     logic [7:0] request_type;
@@ -123,6 +131,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     logic [15:0] index;
     logic [15:0] length;
     bytes_t data;
+    bit handled;
     read32(memory_target,SETUP_BUFFER,word0);
     read32(memory_target,SETUP_BUFFER+4,word1);
     request_type = word0[7:0];
@@ -133,12 +142,18 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     // OCP requests belong solely to hardware. In particular do not clear
     // SETUP, arm a response, or consume endpoint SRAM on its behalf.
     if (device == 1 && request_type inside {8'h21,8'ha1}) return;
+    ocp_do_check_owned_setup(request_type,request,value,index,length,handled);
+    if (handled) return;
+    profile = ocp_cfg.ocp_get_epn_profile(device);
     ocp_write_csr("INTSTAT",ocp_get_mask("INTSTAT","EP0IN"));
     case (request)
       6: begin
         if (request_type !== 8'h80)
           `uvm_fatal("OCP_FIRMWARE", "Unexpected descriptor request type")
-        data = usb_ocp_base_descriptors::ocp_prepare_descriptor(device,value);
+        if (profile != null)
+          data = profile.ocp_prepare_descriptor(device,value);
+        else
+          data = usb_ocp_base_descriptors::ocp_prepare_descriptor(device,value);
         if (data.size() == 0) `uvm_fatal("OCP_FIRMWARE", "Unsupported descriptor")
         while (data.size() > length) void'(data.pop_back());
         command_shadow |= ocp_get_mask("DEVCMDSTAT","INTONNAK_CO");
@@ -163,6 +178,29 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
         if (request_type !== 0 || length !== 0 || index !== 0 || value > 1)
           `uvm_fatal("OCP_FIRMWARE", "Malformed SET_CONFIGURATION")
         configuration_shadow = value[7:0];
+        if (profile != null) begin
+          alternate_shadow = 0;
+          ocp_cfg.epn_enabled[device-1] = (value == 1 &&
+            profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
+        end
+      end
+      svt_usb_types::GET_INTERFACE,svt_usb_types::SET_INTERFACE: begin
+        if (profile == null ||
+            configuration_shadow !== 1 || index !== 1)
+          `uvm_fatal("OCP_EPN_INTERFACE", "Unsupported/unconfigured firmware interface")
+        if (request == svt_usb_types::GET_INTERFACE) begin
+          if (request_type !== 8'h81 || value !== 0 || length !== 1)
+            `uvm_fatal("OCP_EPN_INTERFACE", "Malformed GET_INTERFACE")
+          data = '{alternate_shadow};
+        end else begin
+          if (request_type !== 8'h01 || length !== 0 || value > 1 ||
+              (value == 1 &&
+               profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS))
+            `uvm_fatal("OCP_EPN_INTERFACE", "Unadvertised SET_INTERFACE")
+          alternate_shadow = value[7:0];
+          ocp_cfg.epn_enabled[device-1] = (value == 1 ||
+            profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
+        end
       end
       default: `uvm_fatal("OCP_FIRMWARE", "Unimplemented standard request in bringup")
     endcase
@@ -177,7 +215,30 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
   virtual task ocp_connect_upstream();
   endtask
 
+  // Called only after the owner's actual DEVCMDSTAT frontdoor detected DRES_C.
+  virtual task ocp_do_check_reset_indication(logic [31:0] command);
+  endtask
+
   virtual task body();
+    usb_ocp_base_epn_service_seq epn_service;
+    usb_ocp_base_epn_profile profile;
+    profile = ocp_cfg.ocp_get_epn_profile(device);
+    if (profile == null) begin
+      ocp_do_standard_service();
+      return;
+    end
+    epn_service = usb_ocp_base_epn_service_seq::type_id::create("epn_service");
+    epn_service.profile = profile;
+    epn_service.device = device;
+    fork
+      ocp_do_standard_service();
+      epn_service.start(p_sequencer,this);
+    join
+    if (!epn_service.completed)
+      `uvm_fatal("OCP_EPN_SERVICE", "Owned endpoint service returned incomplete")
+  endtask
+
+  task ocp_do_standard_service();
     logic [31:0] command;
     logic [31:0] interrupts;
     logic reset_was_set;
@@ -202,8 +263,12 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
       reset_is_set = ((command & ocp_get_mask("DEVCMDSTAT","DRES_C")) != 0);
       if (reset_is_set) begin
         progress = (reset_was_set === 1'b0);
+        ocp_do_check_reset_indication(command);
         address_shadow = 0;
         configuration_shadow = 0;
+        alternate_shadow = 0;
+        if (ocp_cfg.ocp_get_epn_profile(device) != null)
+          ocp_cfg.epn_enabled[device-1] = 0;
         ocp_write_command(ocp_get_mask("DEVCMDSTAT","DRES_C"));
         ocp_initialize_ep0();
       end

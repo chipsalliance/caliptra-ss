@@ -27,6 +27,19 @@ class usb_ocp_observer extends uvm_component;
   int unsigned reordered_completions;
   int unsigned axi_count[4];
   int unsigned outstanding_axi[4];
+  usb_ocp_event accepted_axi[longint unsigned];
+  typedef struct packed {
+    int unsigned manager;
+    int unsigned id;
+    bit write_access;
+  } axi_route_t;
+  typedef longint unsigned axi_keys_t[$];
+  axi_keys_t axi_order[axi_route_t];
+  longint unsigned axi_accepts[4];
+  longint unsigned axi_retires[4];
+  longint unsigned sof_serial;
+  usb_ocp_base_service_callback service_callback;
+  usb_ocp_suspend_link_callback l2_link_callback;
   localparam int unsigned QUEUE_LIMIT = 16384;
 
   function new(string name = "usb_ocp_observer", uvm_component parent = null);
@@ -109,6 +122,12 @@ class usb_ocp_observer extends uvm_component;
     item.packet_valid = !pkt.crc_error_detected();
     item.address = pkt.device_address;
     item.endpoint = pkt.ept_num;
+    if (item.pid === svt_usb_packet::SOF)
+      item.frame_number = pkt.get_frame_number_val();
+    // A wire SOF ordinal, independent of submitted periodic scheduling.
+    if (host_tx && item.pid === svt_usb_packet::SOF && item.packet_valid)
+      sof_serial++;
+    item.sof_serial = sof_serial;
     if (pkt.get_payload_byte_count() != 0 &&
         (pkt.payload == null || pkt.payload_offset < 0 ||
          pkt.payload_offset + pkt.get_payload_byte_count() > pkt.payload.data.size()))
@@ -124,7 +143,11 @@ class usb_ocp_observer extends uvm_component;
   function void ocp_capture_transfer_start(svt_usb_transfer xfer);
     int unsigned identity;
     if (xfer == null) `uvm_fatal("OCP_OBSERVER", "Null transfer-start callback")
-    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER) return;
+    if (!(xfer.xfer_type inside {svt_usb_transfer::CONTROL_TRANSFER,
+        svt_usb_transfer::BULK_IN_TRANSFER,svt_usb_transfer::BULK_OUT_TRANSFER,
+        svt_usb_transfer::INTERRUPT_IN_TRANSFER,svt_usb_transfer::INTERRUPT_OUT_TRANSFER,
+        svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER,svt_usb_transfer::ISOCHRONOUS_OUT_TRANSFER}))
+      `uvm_fatal("OCP_OBSERVER", "Unsupported transfer type in OCP-only environment")
     identity = xfer.get_inst_id();
     if (started_at.exists(identity))
       `uvm_fatal("OCP_CORRELATION", "Transfer instance started twice without completion")
@@ -135,11 +158,13 @@ class usb_ocp_observer extends uvm_component;
   function void ocp_capture_transfer(svt_usb_transfer xfer);
     usb_ocp_event item;
     if (xfer == null) `uvm_fatal("OCP_OBSERVER", "Null transfer callback")
-    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER) return;
     item = usb_ocp_event::type_id::create("transfer_snapshot");
     item.kind = usb_ocp_event::USB_TRANSFER;
     item.address = xfer.device_address;
     item.endpoint = xfer.endpoint_number;
+    item.transfer_type = xfer.xfer_type;
+    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER)
+      item.completed_bytes = xfer.completed_payload_bytes();
     item.vendor_instance = xfer.get_inst_id();
     if (!started_at.exists(item.vendor_instance))
       `uvm_fatal("OCP_CORRELATION", "Ended transfer instance has no matching monitor start")
@@ -148,17 +173,20 @@ class usb_ocp_observer extends uvm_component;
     started_at.delete(item.vendor_instance);
     started_serial.delete(item.vendor_instance);
     item.transfer_ok = (xfer.status === svt_sequence_item::ACCEPT);
+    item.native_aborted = (xfer.status === svt_sequence_item::ABORTED);
     item.results = xfer.results_status;
-    item.setup[0] = ocp_prepare_request_type(xfer.setup_data_bmrequesttype_dir,
-                                            xfer.setup_data_bmrequesttype_type,
-                                            xfer.setup_data_bmrequesttype_recipient);
-    item.setup[1] = xfer.setup_data_brequest;
-    item.setup[2] = xfer.setup_data_w_value[7:0];
-    item.setup[3] = xfer.setup_data_w_value[15:8];
-    item.setup[4] = xfer.setup_data_w_index[7:0];
-    item.setup[5] = xfer.setup_data_w_index[15:8];
-    item.setup[6] = xfer.setup_data_w_length[7:0];
-    item.setup[7] = xfer.setup_data_w_length[15:8];
+    if (xfer.xfer_type == svt_usb_transfer::CONTROL_TRANSFER) begin
+      item.setup[0] = ocp_prepare_request_type(xfer.setup_data_bmrequesttype_dir,
+                                              xfer.setup_data_bmrequesttype_type,
+                                              xfer.setup_data_bmrequesttype_recipient);
+      item.setup[1] = xfer.setup_data_brequest;
+      item.setup[2] = xfer.setup_data_w_value[7:0];
+      item.setup[3] = xfer.setup_data_w_value[15:8];
+      item.setup[4] = xfer.setup_data_w_index[7:0];
+      item.setup[5] = xfer.setup_data_w_index[15:8];
+      item.setup[6] = xfer.setup_data_w_length[7:0];
+      item.setup[7] = xfer.setup_data_w_length[15:8];
+    end
     if (xfer.payload != null) begin
       if (xfer.payload_start_ix < 0 ||
           xfer.payload_start_ix + xfer.payload_byte_count() > xfer.payload.data.size())
@@ -176,10 +204,47 @@ class usb_ocp_observer extends uvm_component;
 
   // Callback tasks call this only after Avery read_done/write_done. No
   // submitted-intent observation and no DUT hierarchy reads are used.
+  function void ocp_capture_axi_accept(aaxi_master_tr tr, int unsigned manager);
+    usb_ocp_event item;
+    longint unsigned key;
+    axi_route_t route;
+    if (tr == null || manager >= 4)
+      `uvm_fatal("OCP_AXI_ACCOUNTING", "Missing accepted native AXI transaction")
+    if ($isunknown({tr.addr,tr.id,tr.len,tr.size,tr.burst,tr.kind}))
+      `uvm_fatal("OCP_AXI_ACCOUNTING", "Accepted AXI contains unknown request metadata")
+    key = {32'(manager),32'(tr.get_inst_id())};
+    if (accepted_axi.exists(key))
+      `uvm_fatal("OCP_AXI_ACCOUNTING", "Native AXI instance accepted twice")
+    if (accepted_axi.num() >= QUEUE_LIMIT)
+      `uvm_fatal("OCP_AXI_ACCOUNTING", "Accepted AXI ledger overflow")
+    item = usb_ocp_event::type_id::create("axi_accept_snapshot");
+    item.manager = manager;
+    // Preserve actual address admission without adding queue entries or
+    // advancing next_order. Row-owned joins can tolerate late completions.
+    item.axi_address_order_floor = next_order;
+    item.axi_address_at = $realtime;
+    item.axi_instance = tr.get_inst_id();
+    item.axi_id = tr.id;
+    item.axi_address = tr.addr;
+    item.axi_beats = int'(tr.len)+1;
+    item.axi_beat_bytes = 1 << tr.size;
+    item.axi_burst = tr.burst;
+    item.write_access = (tr.kind == AAXI_WRITE);
+    route = '{manager:manager,id:item.axi_id,write_access:item.write_access};
+    accepted_axi[key] = item;
+    axi_order[route].push_back(key);
+    outstanding_axi[manager]++;
+    axi_accepts[manager]++;
+  endfunction
+
   function void ocp_capture_axi(aaxi_master_tr tr, int unsigned manager);
     usb_ocp_event item;
+    longint unsigned key;
+    axi_route_t route;
     if (tr == null || manager >= 4)
       `uvm_fatal("OCP_OBSERVER", "Invalid Avery completed transaction")
+    if ($isunknown({tr.addr,tr.id,tr.len,tr.size,tr.burst,tr.kind}))
+      `uvm_fatal("OCP_AXI_ACCOUNTING", "Completed AXI contains unknown request metadata")
     item = usb_ocp_event::type_id::create("axi_snapshot");
     item.kind = usb_ocp_event::AXI_COMPLETED;
     item.manager = manager;
@@ -190,6 +255,46 @@ class usb_ocp_observer extends uvm_component;
     item.axi_beat_bytes = 1 << tr.size;
     item.axi_burst = tr.burst;
     item.write_access = (tr.kind == AAXI_WRITE);
+    // AXI responses preserve accepted order per channel and ID. Avery read
+    // completion callbacks may carry a different native object.
+    route = '{manager:manager,id:item.axi_id,write_access:item.write_access};
+    if (!axi_order.exists(route) || axi_order[route].size() == 0)
+      `uvm_fatal("OCP_AXI_ACCOUNTING", $sformatf(
+        "Completed AXI has no accepted channel/ID obligation: manager=%0d native=%0d id=%0h address=%016h beats=%0d write=%0b",
+        item.manager,item.axi_instance,item.axi_id,item.axi_address,item.axi_beats,item.write_access))
+    key = axi_order[route][0];
+    if (!accepted_axi.exists(key) ||
+        accepted_axi[key].manager != item.manager ||
+        accepted_axi[key].axi_address !== item.axi_address ||
+        accepted_axi[key].axi_id != item.axi_id ||
+        accepted_axi[key].axi_beats != item.axi_beats ||
+        accepted_axi[key].axi_beat_bytes != item.axi_beat_bytes ||
+        accepted_axi[key].axi_burst !== item.axi_burst ||
+        accepted_axi[key].write_access !== item.write_access) begin
+      foreach (accepted_axi[accepted_key])
+        `uvm_info("OCP_AXI_ACCOUNTING", $sformatf(
+          "unretired manager=%0d native=%0d id=%0h address=%016h beats=%0d write=%0b",
+          accepted_axi[accepted_key].manager,accepted_axi[accepted_key].axi_instance,
+          accepted_axi[accepted_key].axi_id,accepted_axi[accepted_key].axi_address,
+          accepted_axi[accepted_key].axi_beats,accepted_axi[accepted_key].write_access), UVM_NONE)
+      `uvm_fatal("OCP_AXI_ACCOUNTING", $sformatf(
+        "Completed AXI does not retire its accepted native identity: manager=%0d native=%0d id=%0h address=%016h beats=%0d write=%0b accepted_key=%0b accepted_entries=%0d",
+        item.manager,item.axi_instance,item.axi_id,item.axi_address,item.axi_beats,
+        item.write_access,accepted_axi.exists(key),accepted_axi.size()))
+    end
+    item.vendor_instance = item.axi_instance;
+    item.axi_instance = accepted_axi[key].axi_instance;
+    item.axi_address_order_floor = accepted_axi[key].axi_address_order_floor;
+    item.axi_address_at = accepted_axi[key].axi_address_at;
+    if (axi_retires[manager] == 0)
+      `uvm_info("OCP_AXI_ACCOUNTING", $sformatf(
+        "first_retirement manager=%0d accepted_native=%0d completed_native=%0d id=%0h address=%016h beats=%0d write=%0b",
+        item.manager,item.axi_instance,item.vendor_instance,item.axi_id,item.axi_address,
+        item.axi_beats,item.write_access), UVM_LOW)
+    key = axi_order[route].pop_front();
+    if (axi_order[route].size() == 0) axi_order.delete(route);
+    accepted_axi.delete(key);
+    axi_retires[manager]++;
     item.response_ok = 1'b1;
     if (tr.size != 2 || item.axi_beats > 16 ||
         (tr.len != 0 && (item.write_access || item.axi_burst !== AAXI_BURST_FIXED)))
@@ -215,6 +320,49 @@ class usb_ocp_observer extends uvm_component;
   task ocp_wait_snapshot(output usb_ocp_event item);
     wait (pending.size() != 0);
     item = pending.pop_front();
+  endtask
+
+  // EPN routing uses actual monitor-local identity plus an unambiguous key.
+  // At most one outstanding transfer of a given endpoint/direction is legal.
+  task ocp_wait_epn_completion(logic [6:0] address, logic [3:0] endpoint,
+      svt_usb_transfer::transfer_type_enum transfer_type,
+      longint unsigned floor, time timeout, output usb_ocp_event result);
+    bit done;
+    int match_index;
+    longint unsigned version;
+    result = null;
+    done = 0;
+    fork
+      begin
+        fork
+          begin
+            while (result == null) begin
+              version = completion_version;
+              match_index = -1;
+              foreach (completions[i])
+                if (completions[i].order >= floor &&
+                    completions[i].transfer_start_order >= floor &&
+                    completions[i].address === address &&
+                    completions[i].endpoint === endpoint &&
+                    completions[i].transfer_type === transfer_type) begin
+                  if (match_index != -1)
+                    `uvm_fatal("OCP_CORRELATION", "Ambiguous EPN monitor completion")
+                  match_index = i;
+                end
+              if (match_index != -1) begin
+                result = completions[match_index];
+                completions.delete(match_index);
+                completion_version++;
+              end else wait (completion_version != version);
+            end
+            done = 1;
+          end
+          begin #(timeout); end
+        join_any
+        disable fork;
+      end
+    join
+    if (!done) `uvm_fatal("OCP_CORRELATION", "EPN monitor completion timeout")
   endtask
 
   function int ocp_find_completion(logic [6:0] address, logic [7:0] setup[8],
@@ -279,7 +427,20 @@ class usb_ocp_observer extends uvm_component;
   function bit ocp_check_drained();
     if (pending.size() != 0 || completions.size() != 0 ||
         started_at.num() != 0 || transfer_starts != transfer_count) return 0;
-    foreach (outstanding_axi[i]) if (outstanding_axi[i] != 0) return 0;
+    if (accepted_axi.num() != 0 || axi_order.num() != 0) return 0;
+    foreach (outstanding_axi[i])
+      if (outstanding_axi[i] != 0 || axi_accepts[i] != axi_retires[i]) return 0;
     return 1;
+  endfunction
+
+  // Entry barriers must not demand that the continuously polling AXI actors
+  // stop, or that unpublished partial-image bytes have already been consumed.
+  function bit ocp_check_usb_idle();
+    return pending.size() == 0 && completions.size() == 0 &&
+           started_at.num() == 0 && transfer_starts == transfer_count;
+  endfunction
+
+  function bit ocp_check_snapshots_consumed();
+    return pending.size() == 0;
   endfunction
 endclass

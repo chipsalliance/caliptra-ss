@@ -57,6 +57,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
     function new(string name =
         "caliptra_ss_usb_ocp_flow_random_image_sequence");
         super.new(name);
+        randomize_chunks = 1'b1;
         complete_flow_cg = new();
     endfunction
 
@@ -111,26 +112,32 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
                           status.max_transfer_dwords))
         end
 
-        min_image_dwords =
-            status.fifo_size + ocp_get_max_chunk_dwords(status) + 1;
-        max_image_dwords = status.fifo_size * 3;
-        if (max_image_dwords > FLOW_MAX_IMAGE_DWORDS)
-            max_image_dwords = FLOW_MAX_IMAGE_DWORDS;
-        if (max_image_dwords < min_image_dwords) begin
+        if (!uvm_config_db#(int unsigned)::exists(
+                null, get_full_name(), "image_dwords")) begin
+            min_image_dwords =
+                status.fifo_size + ocp_get_max_chunk_dwords(status) + 1;
+            max_image_dwords = status.fifo_size * 3;
+            if (max_image_dwords > FLOW_MAX_IMAGE_DWORDS)
+                max_image_dwords = FLOW_MAX_IMAGE_DWORDS;
+            if (max_image_dwords < min_image_dwords) begin
+                `uvm_fatal("OCP_FLOW_006",
+                    "FIFO size leaves no legal multi-batch randomization range.")
+            end
+            image_dwords = $urandom_range(
+                max_image_dwords, min_image_dwords);
+        end
+        if (image_dwords <= status.fifo_size) begin
             `uvm_fatal("OCP_FLOW_006",
-                "FIFO size leaves no legal multi-batch randomization range.")
+                "Multi-batch image must exceed the discovered FIFO size.")
         end
 
-        image_dwords = $urandom_range(
-            max_image_dwords, min_image_dwords);
         pattern_base = 32'hC0DE_0000;
         final_valid_bytes = 4;
-        randomize_chunks = 1'b1;
         strategy = FIFO_FLOW_BY_USB_NAK;
         ocp_fifo_prepare_default_image();
 
         `uvm_info("OCP_FLOW_006",
-            $sformatf({"Starting randomized multi-batch flow: ",
+            $sformatf({"Starting multi-batch flow: ",
                        "image_dwords=%0d fifo_size=%0d max_chunk=%0d."},
                       image_dwords, status.fifo_size,
                       ocp_get_max_chunk_dwords(status)),
@@ -147,11 +154,11 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         ocp_fifo_do_push_and_check_image();
         ping_count =
             caliptra_ss_usb_nak_monitor_callback::get_ping_count();
-        if (observed_naks == 0) begin
+        if (require_backpressure && (observed_naks == 0)) begin
             `uvm_fatal("OCP_FLOW_006",
                 "Multi-batch flow completed without USB NAK backpressure.")
         end
-        if (ping_count == 0) begin
+        if (require_backpressure && (ping_count == 0)) begin
             `uvm_fatal("OCP_FLOW_006",
                 "Multi-batch flow observed no USB PING retry tokens.")
         end
@@ -210,7 +217,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         ocp_poll_mcu_axi_idle("OCP_FLOW_006");
         ocp_publish_transfer_count();
         `uvm_info("OCP_FLOW_006",
-            $sformatf({"Randomized recovery flow complete: image_dwords=%0d ",
+            $sformatf({"Recovery flow complete: image_dwords=%0d ",
                        "chunks=%0d observed_naks=%0d observed_pings=%0d ",
                        "transfers=%0d."},
                       image_dwords, successful_attempts,

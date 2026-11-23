@@ -15,6 +15,12 @@
 class usb_ocp_base_env_cfg extends usb_env_cfg;
   `uvm_object_utils(usb_ocp_base_env_cfg)
   virtual usb_ocp_recovery_if recovery_vif;
+  bit full_speed;
+  usb_ocp_base_epn_profile epn_profiles[2];
+  // Firmware lifecycle only; never acceptance or overlap evidence.
+  logic epn_enabled[2] = '{default:0};
+  logic epn_ready[2][2][2] = '{default:'{default:'{default:0}}};
+  logic epn_service_finished[2] = '{default:0};
 
   // Stable VIP slots: hub, downstream port 1, downstream port 2.
   // Unenumerated slots use distinct parking addresses, never shared address 0.
@@ -35,6 +41,13 @@ class usb_ocp_base_env_cfg extends usb_env_cfg;
     vbus_timeout = 300ms;
     control_transfer_timeout = 100ms;
     transfer_timeout = 100us;
+  endfunction
+
+  function usb_ocp_base_epn_profile ocp_get_epn_profile(int device);
+    if (!(device inside {0,1,2}))
+      `uvm_fatal("OCP_EPN_PROFILE", "Invalid firmware profile slot")
+    if (device == 0) return null;
+    return epn_profiles[device-1];
   endfunction
 
   virtual function void build_endpoint_cfgs();

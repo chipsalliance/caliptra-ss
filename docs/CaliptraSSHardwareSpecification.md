@@ -1981,6 +1981,8 @@ Enables and allowlists are live inputs, not internally sampled straps. The USB b
 
 ## DWORD-only accesses
 
-All four USB AXI interfaces support only aligned 32-bit DWORD accesses, including Hub descriptor, packet SRAM, and Recovery register/FIFO accesses. USB does not honor `WSTRB` masking, so deasserted strobes do not suppress writes.
+All four USB AXI interfaces support only aligned 32-bit DWORD accesses. USB AXI checks that the address is 4-byte aligned and that `AxSIZE` is `3'h2`. If not, it rejects the whole burst and returns an error; the target is never accessed.
+
+A rejected read still returns every requested beat, each with zero data and `SLVERR`. A rejected write still accepts every data beat, discards them, and returns a single `SLVERR`. The check does not look at `WSTRB`. USB ignores byte masking, so clearing strobes does not prevent a write to certain bytes.
 
 These are AXI-bus restrictions, not USB packet-length restrictions. The [AXI Access Restrictions](CaliptraSSIntegrationSpecification.md#axi-access-restrictions) specify the required transfer format and software restrictions.
