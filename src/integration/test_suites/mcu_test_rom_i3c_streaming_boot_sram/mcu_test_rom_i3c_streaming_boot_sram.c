@@ -49,6 +49,7 @@ void main (void) {
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting...\n");
+    mcu_set_streaming_boot_select(MCU_STREAMING_BOOT_I3C);
     boot_mcu();
     boot_i3c_core();
     mcu_cptra_advance_brkpoint();

@@ -132,6 +132,11 @@
 
 extern uint32_t state;
 
+typedef enum {
+    MCU_STREAMING_BOOT_USB = 0,
+    MCU_STREAMING_BOOT_I3C = 1,
+} mcu_streaming_boot_t;
+
 typedef struct {
     // FW_SRAM_EXEC_REGION_SIZE
     bool cfg_mcu_fw_sram_exec_reg_size;
@@ -153,6 +158,10 @@ typedef struct {
     // FUSE 
     bool cfg_cptra_fuse;
     bool cfg_skip_set_fuse_done;
+
+    // Streaming boot interface
+    bool cfg_streaming_boot_select;
+    mcu_streaming_boot_t streaming_boot_select;
 
     // Boot I3C
     bool cfg_boot_i3c_core;
@@ -189,6 +198,9 @@ typedef struct {
     /* FUSE DONE */                           \
     .cfg_cptra_fuse                  = false, \
     .cfg_skip_set_fuse_done          = false, \
+    /* Streaming boot interface */            \
+    .cfg_streaming_boot_select       = false, \
+    .streaming_boot_select           = MCU_STREAMING_BOOT_USB, \
     /* Boot I3C */                            \
     .cfg_boot_i3c_core          = false, \
     /* Trigger Prod ROM */                    \
@@ -269,6 +281,7 @@ void mcu_cptra_poll_mb_ready();
 uint32_t mcu_cptra_mb_ready_nb();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();
+void mcu_set_streaming_boot_select(mcu_streaming_boot_t select);
 void boot_i3c_core(void);
 void boot_i3c_socmgmt_if(void);
 void boot_i3c_standby_ctrl_mode();

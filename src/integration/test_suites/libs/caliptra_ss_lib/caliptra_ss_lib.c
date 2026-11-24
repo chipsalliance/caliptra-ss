@@ -217,6 +217,11 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
         mcu_mbox_configure_valid_axi(1, args.mcu_mbox1_valid_user);
     }
 
+    // Caliptra samples the recovery base address during boot.
+    if (args.cfg_streaming_boot_select) {
+        mcu_set_streaming_boot_select(args.streaming_boot_select);
+    }
+
     /////////////////////////////////
     // BRING CPTRA OUT OF RESET
     /////////////////////////////////
@@ -822,6 +827,13 @@ void boot_i3c_socmgmt_if(void) {
     i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
     i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
     lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
+}
+
+void mcu_set_streaming_boot_select(mcu_streaming_boot_t select) {
+    const uint32_t select_bits = (uint32_t)select << MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW;
+    uint32_t capabilities = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES);
+    const uint32_t mask = MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES, (capabilities & ~mask) | (select_bits & mask));
 }
 
 // -- function boot i3c core (i3c bringup)
