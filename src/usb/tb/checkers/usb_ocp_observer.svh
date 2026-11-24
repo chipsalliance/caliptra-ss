@@ -118,8 +118,9 @@ class usb_ocp_observer extends uvm_component;
     item.kind = usb_ocp_event::USB_PACKET;
     item.host_tx = host_tx;
     item.pid = pkt.pid_name;
-    // CRC errors must not establish packet acceptance (USB 2.0 8.7).
-    item.packet_valid = !pkt.crc_error_detected();
+    // CRC errors must not establish packet acceptance (USB 2.0 8.7). Host
+    // transmit corruption is an injected exception, so include those too.
+    item.packet_valid = !pkt.crc_error_detected(1);
     item.address = pkt.device_address;
     item.endpoint = pkt.ept_num;
     if (item.pid === svt_usb_packet::SOF)

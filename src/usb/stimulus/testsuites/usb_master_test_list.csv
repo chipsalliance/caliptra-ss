@@ -40,6 +40,9 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev0_iso          
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_bulk             , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_interrupt        , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_iso              , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error                           , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_exact                     , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_prefix                    , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic                               , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_peer_setup_retry                            , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap                      , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
@@ -61,6 +64,7 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit_dev1_status                
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_suspend_resume                              , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_suspend_resume_dev0                         , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_suspend_resume_dev1                         , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_write_crc_error                             , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_j                                          , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_k                                          , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_test_packet                                     , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100

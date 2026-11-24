@@ -303,15 +303,19 @@ class usb_ocp_scoreboard extends uvm_component;
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
           if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS ||
-              (model.stall_model == null && c.data[1] !== OCP_PROTOCOL_ERROR_NONE) ||
+              (model.stall_model == null && model.error_model == null &&
+               c.data[1] !== OCP_PROTOCOL_ERROR_NONE) ||
               c.data[6] !== 0)
             `uvm_fatal("OCP_STATUS", "Malformed DEVICE_STATUS or protocol error")
           if (model.stall_model != null && model.stall_model.ocp_check_status_owned(c))
             model.stall_model.ocp_check_status(c);
+          else if (model.error_model != null && model.error_model.ocp_check_status_owned(c))
+            model.error_model.ocp_check_status(c);
           else if (c.data[1] !== OCP_PROTOCOL_ERROR_NONE)
             `uvm_fatal("OCP_STATUS", "Unexpected DEVICE_STATUS protocol error")
           ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]},
-            model.stall_model != null && model.stall_model.ocp_check_status_owned(c));
+            (model.stall_model != null && model.stall_model.ocp_check_status_owned(c)) ||
+            (model.error_model != null && model.error_model.ocp_check_status_owned(c)));
           if (c.data[OCP_OFF_DS_STATUS] === OCP_DEVICE_STATUS_RECOVERY_MODE)
             model.recovery_mode_seen = 1;
           if (c.data[0] === OCP_DEVICE_STATUS_RECOVERY_PENDING) model.pending_seen = 1;
@@ -530,6 +534,14 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     allowed_results = 0;
     if (!item.setup[0][7]) allowed_results[5] = 1;
+    if (model.error_model != null &&
+        model.error_model.ocp_check_terminal_transfer(item)) begin
+      c = model.control[1];
+      if (!model.error_model.ocp_check_owner(1,c) || !c.active || c.status_acked)
+        `uvm_fatal("OCP_ERROR_OWNER", "Terminal error lost its registered live control")
+      c.active = 0;
+      return;
+    end
     if (model.stall_model != null &&
         model.stall_model.ocp_check_terminal_transfer(item)) begin
       // A matched terminal STALL ends this operation without STATUS success.
@@ -627,6 +639,8 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     if (model.stall_model != null)
       model.stall_model.ocp_capture_crosscheck(device,c,item.order);
+    if (model.error_model != null)
+      model.error_model.ocp_capture_crosscheck(device,c,item);
   endfunction
 
   // Row-owned passive extensions see the same immutable snapshots and the
@@ -699,6 +713,8 @@ class usb_ocp_scoreboard extends uvm_component;
         ocp_check_control(device);
         if (model.stall_model != null)
           model.stall_model.ocp_capture_control(device,model.control[device],model.control[1],item.order);
+        if (model.error_model != null)
+          model.error_model.ocp_capture_control(device,model.control[device]);
         if (reset_model != null) reset_model.ocp_capture_control(device);
       end
       ocp_check_event_after(item);
@@ -775,6 +791,8 @@ class usb_ocp_scoreboard extends uvm_component;
     if (l2_model != null) l2_model.ocp_check_complete();
     if (reset_model != null) reset_model.ocp_check_complete();
     if (model.stall_model != null) model.stall_model.ocp_check_complete();
+    if (model.error_model != null && model.error_model.armed)
+      model.error_model.ocp_check_complete();
     if ($test$plusargs("usb_ocp_control_zlp_canary")) begin
       if (model.control_data_stage_errors != 1)
         `uvm_fatal("OCP_CONTROL_DATA_CANARY", $sformatf(

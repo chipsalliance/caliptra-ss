@@ -84,6 +84,9 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual task ocp_do_check_image_progress(int offset, int words);
   endtask
 
+  virtual task ocp_do_check_pre_image();
+  endtask
+
   virtual task ocp_do_check_host_completion();
   endtask
 
@@ -491,6 +494,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     `uvm_info("OCP_IMAGE",$sformatf("image_bytes=%0d CMS=%0d depth=%0d max_chunk_words=%0d",
               image.size(),cms,fifo_depth,chunk_limit),UVM_LOW)
     ocp_do_check_fifo_control(cms,words);
+    ocp_do_check_pre_image();
     offset = 0;
     while (offset < words) begin
       chunk_words = $urandom_range(1,chunk_limit);

@@ -111,6 +111,7 @@ class usb_ocp_predictor extends uvm_object;
   bit require_mixed_epn;
   bit full_speed;
   usb_ocp_protocol_stall_model stall_model;
+  usb_ocp_protocol_error_model error_model;
   int unsigned mixed_generation[2];
 
   function new(string name = "usb_ocp_predictor");
@@ -437,6 +438,7 @@ class usb_ocp_predictor extends uvm_object;
     foreach (setup_status_versions[i]) setup_status_versions[i].delete();
     ocp_prepare_response(device);
     if (stall_model != null) stall_model.ocp_capture_setup(device,c);
+    if (error_model != null) error_model.ocp_capture_setup(device,c);
   endfunction
 
   function void ocp_accept_out(int device, usb_ocp_event data);
@@ -597,6 +599,8 @@ class usb_ocp_predictor extends uvm_object;
     bit valid_data_stage;
     string setup_context;
     int unsigned setup_generation;
+    if (error_model != null)
+      error_model.ocp_capture_packet(item,token,token_device,control[token_device]);
     if (full_speed && item.pid inside {svt_usb_packet::PING,svt_usb_packet::NYET} &&
         ((item.pid == svt_usb_packet::PING && item.endpoint == 0) ||
          (item.pid == svt_usb_packet::NYET && token != null && token.endpoint == 0))) begin
@@ -673,8 +677,16 @@ class usb_ocp_predictor extends uvm_object;
       `uvm_fatal("OCP_CONTEXT", "Stale token epoch or SETUP generation")
     incoming = (token.pid == svt_usb_packet::IN);
     if (item.pid inside {svt_usb_packet::DATA0,svt_usb_packet::DATA1}) begin
-      if (item.host_tx === incoming || !item.packet_valid)
+      if (item.host_tx === incoming)
         `uvm_fatal("OCP_PACKET", "Wrong DATA direction or invalid CRC")
+      if (!item.packet_valid) begin
+        if (error_model != null &&
+            error_model.ocp_check_invalid_data(token_device,c,token,item)) begin
+          candidate = null;
+          return;
+        end
+        `uvm_fatal("OCP_PACKET", "Wrong DATA direction or invalid CRC")
+      end
       // These short OCP status replies fit one EP0 packet. Freeze before
       // inspecting its bytes, not at ACK or control-transfer completion:
       // subsequent programming cannot justify data already on the wire.
@@ -697,8 +709,10 @@ class usb_ocp_predictor extends uvm_object;
         end else if (c.generation != 0)
           setup_context = $sformatf("accepted SETUP=%p",c.setup);
         else setup_context = "SETUP unavailable (no accepted generation)";
-        if (stall_model == null ||
-            !stall_model.ocp_check_stall(token_device,c,token,item,candidate))
+        if (!((stall_model != null &&
+               stall_model.ocp_check_stall(token_device,c,token,item,candidate)) ||
+              (error_model != null &&
+               error_model.ocp_check_stall(token_device,c,token,item,candidate))))
           `uvm_fatal("OCP_STALL",$sformatf(
           "Unexpected STALL device=%s slot=%0d addr=%0d ep=%0d token=%s epoch=%0d setup_generation=%0d %s",
           (token_device == 0) ? "hub" : ((token_device == 1) ? "dev0" : "dev1"),
