@@ -155,6 +155,10 @@ class usb_ocp_observer extends uvm_component;
     started_serial[identity] = transfer_starts++;
   endfunction
 
+  virtual function void ocp_configure_transfer_snapshot(
+      svt_usb_transfer xfer, usb_ocp_event item);
+  endfunction
+
   function void ocp_capture_transfer(svt_usb_transfer xfer);
     usb_ocp_event item;
     if (xfer == null) `uvm_fatal("OCP_OBSERVER", "Null transfer callback")
@@ -196,6 +200,7 @@ class usb_ocp_observer extends uvm_component;
     end
     if (completions.size() >= QUEUE_LIMIT)
       `uvm_fatal("OCP_OBSERVER", "Unconsumed control completion queue overflow")
+    ocp_configure_transfer_snapshot(xfer,item);
     transfer_count++;
     ocp_publish_snapshot(item);
     completions.push_back(item);

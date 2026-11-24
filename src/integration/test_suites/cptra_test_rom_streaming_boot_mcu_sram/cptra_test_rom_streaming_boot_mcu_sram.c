@@ -155,14 +155,8 @@ uint32_t read_image_size(){
 // Read the image from the FIFO
 void read_image_from_fifo(uint32_t fw_image_size) {
 
-    uint32_t dma_block_size;
+    const uint16_t dma_block_size = 64; // DMA limit; it can drain a FIFO batch in multiple blocks.
     uint32_t ss_mci_sram_base_addr;
-
-    // -- FIXME: Uncomment code for randomized block size
-    // -- randomize block size between 4 to 256 bytes for the power of 2
-    // dma_block_size = 1<<(rand() % 8); // 2^0 to 2^7
-    // dma_block_size = (dma_block_size < 4) ? 4 : dma_block_size; // minimum block size is 4 bytes
-    dma_block_size = 256; // 256 bytes
 
     // read the ss_mci_base address
     // 0xC00000 is the offset for the MCI SRAM
@@ -173,7 +167,7 @@ void read_image_from_fifo(uint32_t fw_image_size) {
 
     // Program DMA to read the payload from the FIFO
     VPRINTF(LOW, "CPTRA: Programming DMA to read DWORDS : 'h %0x , 'd %0d \n", fw_image_size, fw_image_size);
-    soc_ifc_axi_dma_send_axi_to_axi(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0, ss_mci_sram_base_addr, 1, fw_image_size*4, dma_block_size, 0, 0);
+    soc_ifc_axi_dma_send_axi_to_axi(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 1, ss_mci_sram_base_addr, 0, fw_image_size*4, dma_block_size, 0, 0);
     VPRINTF(LOW, "CPTRA: reading I3C FIFO and storing the data in MCU SRAM\n");
            
 }
