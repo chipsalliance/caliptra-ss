@@ -228,21 +228,24 @@ class caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port_sequence extend
                 $sformatf({"%s: last_ctrl_seq_item is null, the transfer ",
                            "status cannot be checked."}, label))
 
-        observed_stall = (last_ctrl_seq_item.status == svt_sequence_item::ABORTED);
+        observed_stall = (last_ctrl_seq_item.status == svt_sequence_item::ABORTED) &&
+                         (last_ctrl_seq_item.results_status[4] === 1'b1);
 
         if (expect_stalled && !observed_stall) begin
             `uvm_error("USB_HUB_EP0_UNSUP_FEAT",
-                $sformatf({"%s: the hub did NOT stall an unsupported request. ",
-                           "Transfer status is %p, expected ABORTED. ",
-                           "Expected RTL behaviour: %s."},
-                          label, last_ctrl_seq_item.status, rtl_reference))
+                $sformatf({"%s: expected a STALL handshake; status=%p, ",
+                           "results_status=0x%0h. Expected RTL behaviour: %s."},
+                          label, last_ctrl_seq_item.status,
+                          last_ctrl_seq_item.results_status, rtl_reference))
         end
-        else if (!expect_stalled && observed_stall) begin
+        else if (!expect_stalled &&
+                 ((last_ctrl_seq_item.status != svt_usb_transfer::ACCEPT) ||
+                  ((last_ctrl_seq_item.results_status & ~USB_RESULTS_STATUS_BENIGN_MASK) != 0))) begin
             `uvm_error("USB_HUB_EP0_UNSUP_FEAT",
-                $sformatf({"%s: the hub STALLed a request it must accept. ",
-                           "Transfer status is ABORTED. ",
-                           "Expected RTL behaviour: %s."},
-                          label, rtl_reference))
+                $sformatf({"%s: request did not complete successfully; status=%p, ",
+                           "results_status=0x%0h. Expected RTL behaviour: %s."},
+                          label, last_ctrl_seq_item.status,
+                          last_ctrl_seq_item.results_status, rtl_reference))
         end
         else begin
             `uvm_info("USB_HUB_EP0_UNSUP_FEAT",
