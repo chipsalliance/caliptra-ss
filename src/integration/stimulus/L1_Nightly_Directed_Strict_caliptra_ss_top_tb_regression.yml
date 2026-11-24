@@ -27,6 +27,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_arb_005/caliptra_ss_usb_ocp_arb_005.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_007/caliptra_ss_usb_ocp_arb_007.yml
         - ../test_suites/caliptra_ss_usb_ocp_fifo_flow_usb_nak/caliptra_ss_usb_ocp_fifo_flow_usb_nak.yml
+        - ../test_suites/caliptra_ss_usb_ocp_fifo_boundaries/caliptra_ss_usb_ocp_fifo_boundaries.yml
         - ../test_suites/caliptra_ss_usb_ocp_fifo_local_behavior/caliptra_ss_usb_ocp_fifo_local_behavior.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_bulk_loopback/caliptra_ss_usb_fs_dev_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_usbd_conn/caliptra_ss_usb_usbd_conn.yml
