@@ -37,6 +37,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_bypass_enum/caliptra_ss_usb_hs_dev_hub_bypass_enum.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_vbus_absent_boot/caliptra_ss_usb_hs_dev_vbus_absent_boot.yml
+        - ../test_suites/caliptra_ss_usb_ocp_flow_multistage/caliptra_ss_usb_ocp_flow_multistage.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_nbyte/caliptra_ss_usb_hs_dev_nbyte.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_resume/caliptra_ss_usb_hs_dev_resume.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_iso_out/caliptra_ss_usb_hs_dev_iso_out.yml
