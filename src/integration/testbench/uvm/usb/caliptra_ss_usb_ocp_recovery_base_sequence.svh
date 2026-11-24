@@ -1474,6 +1474,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         sem_vif.wait_for_fw_state_generation_bounded(
             state, generation, timeout, found);
         if (!found) begin
+            if ((sem_vif.get_fw_state() === sem_vif.FW_STATE_COMMAND_ERROR) &&
+                (sem_vif.get_fw_generation() === generation)) begin
+                `uvm_fatal(report_id,
+                    $sformatf("%s firmware reported COMMAND_ERROR for generation %0d while waiting for state 0x%02h.",
+                              label, generation, state))
+            end
             `uvm_fatal(report_id,
                 $sformatf("%s firmware state 0x%02h generation %0d timed out.",
                           label, state, generation))
