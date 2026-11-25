@@ -28,6 +28,7 @@ find "$CALIPTRA_SS_ROOT" -type f \( -name "*.sv" \
                                  -o -name "*.json" \
                                  -o -name "*.v" \
                                  -o -name "*.vh" \
+                                 -o -name "*.vhdl" \
                                  -o -name "*.rsp" \
                                  -o -name "*.s" \
                                  -o -name "*.c" \
