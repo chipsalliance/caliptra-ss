@@ -94,17 +94,30 @@ static volatile uint32_t usb_bus_reset_count = 0;
 
 // Service one pass of EP0 SETUP handling plus bus-reset handling on USBDC0.
 // Returns 1 if a control transfer was handled on this pass, else 0.
+//
+// Read-order note (race fix):
+//   INTSTAT must be sampled BEFORE DEVCMDSTAT. DRES_C and INTSTAT.DEV_INT are
+//   raised in the same cycle by the hub port reset. If DEVCMDSTAT is read
+//   first, a reset landing between the two reads gives DEV_INT=1 with a
+//   stale DRES_C=0; DEV_INT is then W1C-cleared and the bus reset is never
+//   serviced (observed on the Phase 2 recovery reset). Reading INTSTAT first
+//   guarantees DEVCMDSTAT is at least as fresh as the DEV_INT sample.
+//   In addition, DRES_C is a sticky W1C flag, so it is serviced whenever it
+//   is set, independent of DEV_INT, so a reset can never be lost.
 static uint32_t usb_service_ep0_once(void) {
-    uint32_t reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     uint32_t intstat  = lsu_read_32(USB_DEV_INTSTAT);
+    uint32_t reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     uint32_t handled  = 0;
 
     if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-        if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
-            usb_handle_bus_reset();
-            usb_bus_reset_count++;
-        }
         lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
+    }
+
+    if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+        usb_handle_bus_reset();
+        usb_bus_reset_count++;
+        // Re-sample after the reset handler cleared DRES_C and re-armed EP0.
+        reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     }
 
     if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
@@ -241,3 +254,5 @@ void main(void) {
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources
