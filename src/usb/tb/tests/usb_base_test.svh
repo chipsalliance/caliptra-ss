@@ -17,14 +17,14 @@
 // scenario_completed only after all scenario-specific checking has finished.
 //
 // The test owns the environment configuration: build_phase creates usb_env_cfg
-// with the bench defaults, lets the derived test adjust it through
+// for +usb_speed=HS|FS (default HS), lets the derived test adjust it through
 // configure_env_cfg(), and publishes it to usb_env through uvm_config_db.
 //
 // Whole-test timeout, highest precedence first:
 //   1. +UVM_TIMEOUT=<ns>[,YES|NO] on the command line (standard UVM plusarg,
 //      applied by uvm_root before this build_phase runs).
 //   2. uvm_config_db#(time) "test_timeout" set for this test by a parent.
-//   3. test_timeout as assigned by the derived test's constructor.
+//   3. The scenario/speed default from its constructor and full_speed_timeout().
 class usb_base_test extends uvm_test;
   `uvm_component_utils(usb_base_test)
 
@@ -32,8 +32,8 @@ class usb_base_test extends uvm_test;
   usb_env_cfg env_cfg;
   bit scenario_completed;
 
-  // Whole-test budget. A derived test that needs longer assigns this in its
-  // constructor; apply_test_timeout() resolves overrides and applies it.
+  // Whole-test budget. Scenarios supply constructor and FS defaults;
+  // apply_test_timeout() resolves caller overrides and applies the result.
   time test_timeout = USB_DEFAULT_TEST_TIMEOUT;
 
   function new(string name = "usb_base_test", uvm_component parent = null);
@@ -45,13 +45,25 @@ class usb_base_test extends uvm_test;
   virtual function void configure_env_cfg(usb_env_cfg cfg);
   endfunction
 
-  function void build_phase(uvm_phase phase);
-    super.build_phase(phase);
-    apply_test_timeout();
+  // Allow each scenario to budget FS scheduling without overriding caller timeouts.
+  virtual function time full_speed_timeout();
+    return USB_FS_ENUMERATION_BUDGET + test_timeout;
+  endfunction
 
+  function void build_phase(uvm_phase phase);
+    string speed_mode = "HS";
+
+    super.build_phase(phase);
     env_cfg = usb_env_cfg::type_id::create("env_cfg");
-    env_cfg.build_endpoint_cfgs();
+    void'($value$plusargs("usb_speed=%s", speed_mode));
+    case (speed_mode)
+      "HS": env_cfg.build_endpoint_cfgs();
+      "FS": env_cfg.select_full_speed();
+      default: `uvm_fatal("USB_SPEED", $sformatf("+usb_speed must be HS or FS, not '%s'", speed_mode))
+    endcase
     configure_env_cfg(env_cfg);
+    if (env_cfg.speed == USB_SPEED_FULL) test_timeout = full_speed_timeout();
+    apply_test_timeout();
     uvm_config_db#(usb_env_cfg)::set(this, "env", "cfg", env_cfg);
     `uvm_info("USB_TEST", $sformatf("%s configured: timeout=%0t %s", get_type_name(), test_timeout, env_cfg.convert2string()), UVM_LOW)
     `uvm_info("USB_TEST", {"Environment configuration:\n", env_cfg.sprint()}, UVM_HIGH)

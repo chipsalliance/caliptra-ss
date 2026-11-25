@@ -17,7 +17,6 @@ class usb_resume_recovery_seq extends usb_base_seq;
   logic [31:0] recovery_buffer_offset = 32'h0000_0200;
   int unsigned recovery_bytes = 16;
   logic [7:0] recovery_payload_base = 8'hd0;
-  time recovery_timeout = 750us;
   time recovery_poll_interval = 500ns;
 
   function new(string name = "usb_resume_recovery_seq");
@@ -65,7 +64,12 @@ class usb_resume_recovery_seq extends usb_base_seq;
     usb_bulk_out_host_seq host_sequence;
     usb_endpoint_cfg endpoint;
     usb_ep_entry_t entry;
+    time effective_timeout;
 
+    effective_timeout = p_sequencer.cfg.recovery_transfer_timeout;
+    `uvm_info("USB_RESUME_RECOVERY", $sformatf("Starting %s: speed=%s host/IRQ bound=%0t",
+      scenario_label, p_sequencer.cfg.speed.name(), effective_timeout), UVM_LOW)
+    check_device_speed(scenario_label);
     endpoint = get_endpoint(1, USB_DIRECTION_OUT);
     check_buffer_clear_of_endpoint_list(scenario_label, recovery_buffer_offset, recovery_bytes);
     enable_endpoint_interrupt(endpoint);
@@ -78,7 +82,7 @@ class usb_resume_recovery_seq extends usb_base_seq;
     host_sequence.payload_byte_count = recovery_bytes;
     host_sequence.payload_base = recovery_payload_base;
     host_sequence.device_address = p_sequencer.cfg.device_address;
-    host_sequence.bulk_transfer_timeout = recovery_timeout;
+    host_sequence.bulk_transfer_timeout = effective_timeout;
     host_sequence.transfer_label = scenario_label;
     fork
       begin
@@ -88,7 +92,7 @@ class usb_resume_recovery_seq extends usb_base_seq;
         end
       end
       begin
-        wait_for_endpoint_interrupt(endpoint, recovery_timeout, recovery_poll_interval);
+        wait_for_endpoint_interrupt(endpoint, effective_timeout, recovery_poll_interval);
       end
     join
     verify_recovery_transfer(endpoint, scenario_label);

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_fs_interrupt
+plusargs:
+  - '+UVM_TESTNAME=usb_periodic_test'
+  - '+usb_speed=FS'
+  - '+usb_periodic_type=INTERRUPT'

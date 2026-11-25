@@ -12,42 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-class usb_l2_remote_wake_cfg_builder extends usb_vip_cfg_builder;
-  `uvm_object_utils(usb_l2_remote_wake_cfg_builder)
-
-  function new(string name = "usb_l2_remote_wake_cfg_builder");
-    super.new(name);
-  endfunction
-
-  // Keep native scaled idle/recovery; override only external-DUT resume compatibility.
-  // This is an accelerated functional profile, not nominal USB timing compliance.
-  protected virtual function void configure_timers();
-    svt_usb_configuration resume_cfgs[2];
-
-    super.configure_timers();
-    resume_cfgs[0] = host_cfg;
-    resume_cfgs[1] = device_phy_cfg;
-    foreach (resume_cfgs[index]) begin
-      // The external DUT is not scaled: retain native upstream 1..15 ms checks.
-      resume_cfgs[index].tdrsmup_min = vip_ps(1ms);
-      resume_cfgs[index].tdrsmup_max = vip_ps(15ms);
-      resume_cfgs[index].tdrsmup = vip_ps(1ms);
-      resume_cfgs[index].tdrsmup_min_longint = longint'(vip_ps(1ms));
-      resume_cfgs[index].tdrsmup_max_longint = longint'(vip_ps(15ms));
-      resume_cfgs[index].tdrsmup_longint = longint'(vip_ps(1ms));
-      resume_cfgs[index].tdrsmdn = vip_ps(usb_l2_remote_wake_host_seq::ACCELERATED_HOST_RESUME_BUDGET);
-      resume_cfgs[index].tdrsmdn_min = resume_cfgs[index].tdrsmdn;
-      resume_cfgs[index].tdrsmdn_nom = resume_cfgs[index].tdrsmdn;
-      resume_cfgs[index].tdrsmdn_longint = longint'(resume_cfgs[index].tdrsmdn);
-      resume_cfgs[index].tdrsmdn_min_longint = resume_cfgs[index].tdrsmdn_longint;
-      resume_cfgs[index].tdrsmdn_nom_longint = resume_cfgs[index].tdrsmdn_longint;
-      resume_cfgs[index].block_resume = 1'b0;
-    end
-    // Software recovery excludes device accesses, not resumed bus framing.
-    host_cfg.enable_sof_during_recovery = 1'b1;
-  endfunction
-endclass
-
+// Verify authorized device-origin L2 wake with the selected bus speed.
 class usb_l2_remote_wake_test extends usb_base_test;
   `uvm_component_utils(usb_l2_remote_wake_test)
 
@@ -56,9 +21,14 @@ class usb_l2_remote_wake_test extends usb_base_test;
     test_timeout = 60ms;
   endfunction
 
-  function void build_phase(uvm_phase phase);
-    usb_vip_cfg_builder::type_id::set_type_override(usb_l2_remote_wake_cfg_builder::get_type());
-    super.build_phase(phase);
+  virtual function time full_speed_timeout();
+    return USB_FS_ENUMERATION_BUDGET + USB_FS_WAKE_PERMISSION_BUDGET + 35ms + USB_FS_TRANSFER_TIMEOUT + USB_FS_FRAME_PERIOD;
+  endfunction
+
+  // Select the existing paired upstream/downstream compatibility at either speed.
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    super.configure_env_cfg(cfg);
+    cfg.resume_timing_policy = usb_env_cfg::USB_RESUME_TIMING_L2_REMOTE_WAKE;
   endfunction
 
   task run_phase(uvm_phase phase);
