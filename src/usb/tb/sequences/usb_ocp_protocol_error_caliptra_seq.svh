@@ -47,6 +47,10 @@ class usb_ocp_protocol_error_caliptra_seq extends usb_ocp_base_caliptra_seq;
         ocp_read_register(names[i],data);
         error_model.snapshot[names[i]] = data;
       end
+      if (error_model.sample_setup_debug) begin
+        ocp_read_register("CALIPTRA_SETUP_DEBUG",data);
+        error_model.snapshot["CALIPTRA_SETUP_DEBUG"] = data;
+      end
       error_model.snapshot_complete = 1;
     end
   endtask

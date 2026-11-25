@@ -57,3 +57,5 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_suspend_resume_dev0: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_suspend_resume_dev1: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_write_crc_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_write_retry_crc_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_read_status_crc_error: { weight: 100 }

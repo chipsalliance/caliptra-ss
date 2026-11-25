@@ -302,20 +302,23 @@ class usb_ocp_scoreboard extends uvm_component;
         end
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
+          bit owned_stall_error;
+          bit owned_protocol_error;
+          owned_stall_error = model.stall_model != null && model.stall_model.ocp_check_status_owned(c);
+          owned_protocol_error = model.error_model != null && model.error_model.ocp_check_status_owned(c);
           if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS ||
               (model.stall_model == null && model.error_model == null &&
                c.data[1] !== OCP_PROTOCOL_ERROR_NONE) ||
               c.data[6] !== 0)
             `uvm_fatal("OCP_STATUS", "Malformed DEVICE_STATUS or protocol error")
-          if (model.stall_model != null && model.stall_model.ocp_check_status_owned(c))
+          if (owned_stall_error)
             model.stall_model.ocp_check_status(c);
-          else if (model.error_model != null && model.error_model.ocp_check_status_owned(c))
+          else if (owned_protocol_error)
             model.error_model.ocp_check_status(c);
           else if (c.data[1] !== OCP_PROTOCOL_ERROR_NONE)
             `uvm_fatal("OCP_STATUS", "Unexpected DEVICE_STATUS protocol error")
           ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]},
-            (model.stall_model != null && model.stall_model.ocp_check_status_owned(c)) ||
-            (model.error_model != null && model.error_model.ocp_check_status_owned(c)));
+            owned_stall_error || owned_protocol_error);
           if (c.data[OCP_OFF_DS_STATUS] === OCP_DEVICE_STATUS_RECOVERY_MODE)
             model.recovery_mode_seen = 1;
           if (c.data[0] === OCP_DEVICE_STATUS_RECOVERY_PENDING) model.pending_seen = 1;

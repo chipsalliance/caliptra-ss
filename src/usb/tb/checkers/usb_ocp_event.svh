@@ -27,6 +27,7 @@ class usb_ocp_event extends uvm_sequence_item;
   logic host_tx;
   svt_usb_packet::pid_name_enum pid;
   logic packet_valid;
+  logic packet_crc16_error;
   logic [6:0] address;
   logic [3:0] endpoint;
   logic [7:0] bytes[$];

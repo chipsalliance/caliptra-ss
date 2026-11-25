@@ -600,7 +600,7 @@ class usb_ocp_predictor extends uvm_object;
     string setup_context;
     int unsigned setup_generation;
     if (error_model != null)
-      error_model.ocp_capture_packet(item,token,token_device,control[token_device]);
+      error_model.ocp_capture_packet(item,token,token_device,control[token_device],candidate);
     if (full_speed && item.pid inside {svt_usb_packet::PING,svt_usb_packet::NYET} &&
         ((item.pid == svt_usb_packet::PING && item.endpoint == 0) ||
          (item.pid == svt_usb_packet::NYET && token != null && token.endpoint == 0))) begin
