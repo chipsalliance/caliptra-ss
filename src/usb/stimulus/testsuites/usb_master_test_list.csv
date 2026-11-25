@@ -43,6 +43,8 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_backpressure_epn_dev1_iso          
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error                           , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_exact                     , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_prefix                    , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_zero                      , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_complete                  , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic                               , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_peer_setup_retry                            , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap                      , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100

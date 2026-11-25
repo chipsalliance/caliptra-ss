@@ -28,7 +28,8 @@ class usb_ocp_fifo_length_error_host_seq extends usb_ocp_protocol_error_host_seq
     chunk_words = 1;
   endfunction
 
-  task ocp_do_check_overflow();
+  task ocp_do_check_overflow(int unsigned image_words, int unsigned accepted_words,
+                             int unsigned request_bytes);
     bytes_t response;
     bytes_t rejected = '{8'h91,8'h32,8'h73,8'h14,8'h55,8'hb6,8'hf7,8'h98};
     logic [31:0] ctrl;
@@ -40,23 +41,32 @@ class usb_ocp_fifo_length_error_host_seq extends usb_ocp_protocol_error_host_seq
     process request_process;
     process watchdog_process;
     if (exercised) `uvm_fatal("OCP_LENGTH_SCOPE", "Duplicate image-remainder experiment")
+    if (request_bytes == 0 || request_bytes % 4 != 0 || request_bytes > rejected.size() ||
+        accepted_words > image_words || accepted_words > fifo_depth)
+      `uvm_fatal("OCP_LENGTH_SCOPE", "Invalid FIFO length-probe geometry")
+    while (rejected.size() > request_bytes) void'(rejected.pop_back());
     ocp_do_check_snapshot();
     ctrl = error_model.snapshot["INDIRECT_FIFO_CTRL_0"];
     words = error_model.snapshot["INDIRECT_FIFO_CTRL_1"];
     flags = error_model.snapshot["INDIRECT_FIFO_STATUS_0"];
     wr = error_model.snapshot["INDIRECT_FIFO_STATUS_1"];
     rd = error_model.snapshot["INDIRECT_FIFO_STATUS_2"];
-    if (words != ((profile == "prefix") ? 2 : 1) ||
-        scoreboard.model.accepted_bytes != ((profile == "prefix") ? 4 : 0) ||
-        scoreboard.model.returned_bytes != 0 || wr != scoreboard.model.accepted_bytes/4 || rd != 0)
-      `uvm_fatal("OCP_LENGTH_PREREQUISITE", "Overflow lacks the isolated one-DWORD image remainder and retained prefix")
+    if (words !== 32'(image_words) || wr !== 32'(accepted_words) || rd !== 32'b0 ||
+        scoreboard.model.accepted_bytes != accepted_words*4 ||
+        scoreboard.model.returned_bytes != 0 ||
+        request_bytes/4 > fifo_depth-accepted_words ||
+        request_bytes/4 <= image_words-accepted_words)
+      `uvm_fatal("OCP_LENGTH_PREREQUISITE", $sformatf(
+        "profile=%s expected image/accepted words=%0d/%0d; observed size/wr/rd=%0d/%0d/%0d accepted/returned bytes=%0d/%0d",
+        profile,image_words,accepted_words,words,wr,rd,
+        scoreboard.model.accepted_bytes,scoreboard.model.returned_bytes))
     error_model.ocp_configure_request(usb_ocp_protocol_error_model::IMAGE_LENGTH,
       usb_cfg.remote_device_cfg[1].device_address,interface_number,
       OCP_CMD_INDIRECT_FIFO_DATA,scoreboard.model.control[1].epoch,
       scoreboard.model.control[1].generation+1,observer.next_order,rejected);
     `uvm_info("OCP_LENGTH_PROBE", $sformatf(
-      "profile=%s image_words=%0d accepted_bytes=%0d request_bytes=8 physical_free_words=%0d",
-      profile,words,scoreboard.model.accepted_bytes,fifo_depth-wr),UVM_NONE)
+      "profile=%s image_words=%0d accepted_bytes=%0d request_bytes=%0d physical_free_words=%0d",
+      profile,words,scoreboard.model.accepted_bytes,rejected.size(),fifo_depth-wr),UVM_NONE)
     done = 0;
     fork
       begin
@@ -72,6 +82,9 @@ class usb_ocp_fifo_length_error_host_seq extends usb_ocp_protocol_error_host_seq
             #50us;
             ocp_do_check_snapshot();
             ocp_check_snapshot_unchanged(ctrl,words,flags,wr,rd);
+            if (scoreboard.model.accepted_bytes != accepted_words*4 ||
+                scoreboard.model.returned_bytes != 0)
+              `uvm_fatal("OCP_LENGTH_EVIDENCE", "Rejected write changed the accepted or returned byte count")
             if (error_model.setup_seen && !error_model.stall_seen &&
                 error_model.data_naks != 0)
               `uvm_fatal("OCP_LENGTH_REJECT", $sformatf(
@@ -92,16 +105,23 @@ class usb_ocp_fifo_length_error_host_seq extends usb_ocp_protocol_error_host_seq
     ocp_check_snapshot_unchanged(ctrl,words,flags,wr,rd);
     ocp_do_check_error_status();
     exercised = 1;
-    error_model.release_dma = 1;
+    if (profile != "zero") error_model.release_dma = 1;
   endtask
 
   virtual task ocp_do_check_pre_image();
-    if (profile == "overflow") ocp_do_check_overflow();
+    if (profile == "overflow") ocp_do_check_overflow(1,0,8);
+    if (profile == "zero") begin
+      ocp_do_check_fifo_control(cms,0);
+      ocp_do_check_overflow(0,0,4);
+      ocp_do_check_fifo_control(cms,1);
+      error_model.release_dma = 1;
+    end
     if (profile == "exact") error_model.release_dma = 1;
   endtask
 
   virtual task ocp_do_check_image_progress(int offset, int words);
-    if (profile == "prefix" && offset == 1) ocp_do_check_overflow();
+    if (profile == "prefix" && offset == 1) ocp_do_check_overflow(2,1,8);
+    if (profile == "complete" && offset == words) ocp_do_check_overflow(words,words,4);
   endtask
 
   virtual task ocp_do_check_host_completion();
@@ -114,8 +134,8 @@ class usb_ocp_fifo_length_error_host_seq extends usb_ocp_protocol_error_host_seq
 
   task body();
     void'($value$plusargs("usb_ocp_length_profile=%s",profile));
-    if (!(profile inside {"overflow","exact","prefix"}))
-      `uvm_fatal("OCP_LENGTH_SCOPE", "Select overflow/exact/prefix image-remainder profile")
+    if (!(profile inside {"overflow","exact","prefix","zero","complete"}))
+      `uvm_fatal("OCP_LENGTH_SCOPE", "Select overflow/exact/prefix/zero/complete image-remainder profile")
     super.body();
   endtask
 endclass

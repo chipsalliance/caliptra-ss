@@ -33,6 +33,8 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_exact: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_prefix: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_zero: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_fifo_length_error_complete: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_peer_setup_retry: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap: { weight: 100 }
