@@ -94,6 +94,7 @@ class usb_ocp_suspend_resume_host_seq extends usb_ocp_base_host_seq;
       `uvm_fatal("OCP_L2_SERVICE", "Upstream CLEAR requires actual SUSPENDED/L2")
     record = usb_ocp_suspend_service_record::type_id::create("native_record");
     record.operation = operation;
+    record.negative_response = l2.fault == "response" && live_services.size() == 0;
     if (operation == usb_ocp_suspend_service_record::LINK_CLEAR) begin
       clear_seq = usb_ocp_suspend_clear_seq::type_id::create("native_clear");
       clear_seq.record = record;
@@ -414,6 +415,7 @@ class usb_ocp_suspend_resume_host_seq extends usb_ocp_base_host_seq;
     #2ms;
     foreach (live_services[i]) live_services[i].release_requested = 1;
     deadline = $time + case_timeout;
+    if (l2.fault == "response") deadline = $time + 100us;
     foreach (live_services[i]) begin
       while (!live_services[i].finished ||
              live_services[i].issuer.get_sequence_state() != UVM_FINISHED) begin

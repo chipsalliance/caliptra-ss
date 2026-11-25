@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 381;
+  localparam int USB_PKG_VERSION = 386;
 
 
   import uvm_pkg::*;
@@ -60,9 +60,16 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
+  // Hub EP0 unsupported-feature / SETUP mask-and-length coverage scenario.
+  `include "caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_int_ep_status_change_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_stall_sequence.svh"
+  // Extends the class_req_stall sequence: hub-itself Clear/SetHubFeature,
+  // accepted no-op port features, out-of-range ports, invalid selectors,
+  // wValue/wIndex toggle patterns, undefined class bRequest codes and a
+  // firmware-patched SETUP-row opcode. Must follow its parent.
+  `include "caliptra_ss_usb_hs_hub_class_req_invalid_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -141,8 +148,40 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_toggle_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_stall_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_pkt_unexpected_test.svh"
+  // Extended error-injection coverage (closing additional usb_pie.m.vhdl
+  // live sites of codes already partly covered by the nine suites above).
+  // See docs/CaliptraSSUSBErrorInjection.md "Additional PIE error-path
+  // tests" section.
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_test.svh"
+  // Closes pid_unknown (0x2) at line 2632 (PID_MDATA unexpected on a
+  // single-buffer, non high-bandwidth ISO endpoint).
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh"
+
+  // Forked sibling of the above, high-bandwidth ISO OUT endpoint. Closes
+  // pid_unknown (0x2) at line 2704 (PID_DATA0 unexpected when
+  // iso_mdata_cnt_up /= 00), which the non-HBW suite above cannot reach -
+  // see that suite's README and this sequence's header for the rationale.
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_hbw_test.svh"
+
+  // Token-direction mismatch while an ISO transaction is pending.
+  // Closes RTL line/branch coverage of usb_pie.m.vhdl lines
+  // 2192/2211/2231/2251 (packet_unexpected 0x3, same bin as
+  // err_pkt_unexpected / err_iso_stalled - see sequence header).
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_test.svh"
+
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
+
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
@@ -154,6 +193,10 @@ package caliptra_ss_usb_test_pkg;
   // per-endpoint enable is the D field, bit 30, of the EP list word.
   `include "caliptra_ss_usb_hs_dev_disabled_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disabled_ep_test.svh"
+  // usb_dma READ_EPINFO coverage: rate-feedback mode and descriptor TR/TV
+  // set/clear on both words of the 64-bit EP-list read (EP5 OUT).
+  `include "caliptra_ss_usb_hs_dev_epinfo_rate_feedback_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_epinfo_rate_feedback_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
@@ -462,9 +505,16 @@ package caliptra_ss_usb_test_pkg;
   // enumeration; the status bit is read back out of
   // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
+  // Hub EP0 control requests for unsupported features, SETUP mask/length
+  // patterns outside the standard request set, GetConfiguration and the EP0 IN
+  // STALL legs of usb_ep0_handler.m.vhdl. Code-coverage directed test; the
+  // firmware patches one SETUP-table word to make the last-row wIndex
+  // mismatch reachable (see the sequence header section 3).
+  `include "caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port_test.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
   `include "caliptra_ss_usb_hs_hub_int_ep_status_change_test.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_stall_test.svh"
+  `include "caliptra_ss_usb_hs_hub_class_req_invalid_test.svh"
 
   // USBDC1 (device1) replicas of the two remaining hub-descriptor families.
   // Both issue hub-class GET_DESCRIPTOR with wIndex=0, which is a hub-global
@@ -527,10 +577,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_disconnect_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_sequence.svh"
+  `include "caliptra_ss_usb_ocp_fifo_boundaries_sequence.svh"
   `include "caliptra_ss_usb_ocp_flow_random_image_sequence.svh"
+  `include "caliptra_ss_usb_ocp_flow_multistage_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
+  `include "caliptra_ss_usb_ocp_cmd_register_toggle_sequence.svh"
   `include "caliptra_ss_usb_ocp_access_collision_sequence.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_sequence.svh"
@@ -557,12 +610,15 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_test.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_test.svh"
+  `include "caliptra_ss_usb_ocp_cmd_register_toggle_test.svh"
   `include "caliptra_ss_usb_ocp_access_collision_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_boundaries_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_usb_nak_test.svh"
   `include "caliptra_ss_usb_ocp_flow_random_image_test.svh"
+  `include "caliptra_ss_usb_ocp_flow_multistage_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_large_multitransfer_image_test.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_test.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_test.svh"

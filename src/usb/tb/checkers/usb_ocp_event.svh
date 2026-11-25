@@ -17,6 +17,8 @@ class usb_ocp_event extends uvm_sequence_item;
   `uvm_object_utils(usb_ocp_event)
   // svt_usb_transfer::results_status: native CMD abort/flush, not generic abort().
   localparam int unsigned SERVICE_ABORT_RESULT_BIT = 1;
+  // SVT retains results_status[7] even after a timed-out transaction recovers.
+  localparam int unsigned DEVICE_TIMEOUT_RESULT_BIT = 7;
 
   typedef enum {USB_PACKET, USB_TRANSFER, AXI_COMPLETED} kind_e;
   kind_e kind;
@@ -32,6 +34,8 @@ class usb_ocp_event extends uvm_sequence_item;
   logic transfer_ok;
   bit native_aborted;
   logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] results;
+  // Injection qualification only; results retain the unmodified native bits.
+  bit expected_device_timeout;
   // AXI events retain the completed callback object's native instance here.
   int unsigned vendor_instance;
   longint unsigned transfer_start_order;

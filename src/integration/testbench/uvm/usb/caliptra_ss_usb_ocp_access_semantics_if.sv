@@ -183,13 +183,14 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
 
     task automatic issue_fw_command(
         input logic [7:0] opcode,
-        input logic [15:0] generation);
+        input logic [15:0] generation,
+        input logic [7:0] data = 8'h00);
 
         fw_command_wires = {
             FW_COMMAND_MAGIC,
             generation,
             opcode,
-            8'h00
+            data
         };
         fw_command_active = 1'b1;
     endtask

@@ -21,6 +21,52 @@ class usb_ocp_base_test extends usb_base_test;
   endfunction
 
   function void build_phase(uvm_phase phase);
+    uvm_cmdline_processor cli;
+    string args[$];
+    int l2_faults = 0;
+    int hub_faults = 0;
+    int setup_retries = 0;
+    int retry_naks = 0;
+    int peer_pid_canaries = 0;
+    cli = uvm_cmdline_processor::get_inst();
+    cli.get_args(args);
+    foreach (args[i]) begin
+      if (uvm_is_match("+usb_ocp_ep0_retry_nak*",args[i])) begin
+        retry_naks++;
+        if (get_type_name() != "usb_ocp_ep0_retry_test" || retry_naks != 1 ||
+            !(args[i] inside {"+usb_ocp_ep0_retry_nak=out",
+                              "+usb_ocp_ep0_retry_nak=in",
+                              "+usb_ocp_ep0_retry_nak=status"}))
+          `uvm_fatal("OCP_EP0_RETRY_NAK", "Native NAK controls require one owned retry variant")
+      end
+      if (uvm_is_match("+usb_ocp_peer_pid_error_canary*",args[i])) begin
+        peer_pid_canaries++;
+        if (get_type_name() != "usb_ocp_dev1_ep0_overlap_test" ||
+            !$test$plusargs("usb_ocp_peer_setup_retry") || peer_pid_canaries != 1 ||
+            !(args[i] inside {"+usb_ocp_peer_pid_error_canary=repeat",
+                              "+usb_ocp_peer_pid_error_canary=unrelated"}))
+          `uvm_fatal("OCP_SETUP_RETRY_GUARD", "Native PID-error canaries require delayed peer replay")
+      end
+      if (uvm_is_match("+usb_ocp_peer_setup_retry*",args[i])) begin
+        setup_retries++;
+        if (get_type_name() != "usb_ocp_dev1_ep0_overlap_test" || setup_retries != 1 ||
+            !(args[i] inside {"+usb_ocp_peer_setup_retry",
+                              "+usb_ocp_peer_setup_retry=immediate"}))
+          `uvm_fatal("OCP_SETUP_RETRY_GUARD", "Select one peer SETUP retry on the dev1 EP0 test")
+      end
+      if (uvm_is_match("+usb_ocp_l2_fault*",args[i])) begin
+        l2_faults++;
+        if (get_type_name() != "usb_ocp_suspend_resume_test" || l2_faults != 1 ||
+            !(args[i] inside {"+usb_ocp_l2_fault=dsus","+usb_ocp_l2_fault=response"}))
+          `uvm_fatal("OCP_L2_NEGATIVE", "Select one owned DSUS/response comparison control")
+      end
+      if (uvm_is_match("+usb_ocp_fs_hub_fault*",args[i])) begin
+        hub_faults++;
+        if (get_type_name() != "usb_ocp_dev1_epn_fs_overlap_test" || hub_faults != 1 ||
+            args[i] != "+usb_ocp_fs_hub_fault=missing_interface")
+          `uvm_fatal("OCP_FS_GUARD", "Missing-interface comparison control requires the FS EPN test")
+      end
+    end
     // Reject private FIFO selectors on other OCP tests before any actors.
     void'(usb_ocp_fifo_backpressure_epn_checker::ocp_check_control_args(
       get_type_name() == "usb_ocp_fifo_backpressure_epn_test"));

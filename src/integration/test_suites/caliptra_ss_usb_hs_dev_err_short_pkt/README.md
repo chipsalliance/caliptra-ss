@@ -21,7 +21,34 @@ The firmware reports the residual byte count of the EP1 descriptor rather
 than checking the payload, which makes a short packet directly visible in the
 log.
 
+## Status
+
+**Confirmed unreachable.** The hub designer confirmed this limitation: a
+short packet's CRC16 is recomputed over the truncated payload, so the result
+is a structurally valid, correctly-CRC'd packet that simply ends early. A
+short EOP is therefore never distinguishable from a normal end of transfer,
+and `pie_errortype` can never be driven to TR_EOP (0x8) by this stimulus.
+
+The test instead reports `0xf (DATA_IGNORED_WRONG_DATA01)`, for a reason
+downstream of the same limitation rather than a separate bug: the DUT accepts
+the short packet as a legitimate completed transfer (confirmed in the log by
+`MCU: EP1 OUT completion 1 - received 1020 bytes (residual 4)`), which
+silently advances the DUT's own data-toggle expectation to DATA0. The VIP
+sequencer that drives the shared `do_clean_reference_xfer()` post_clean leg
+never observed that acceptance - the injected packet was sent with a manually
+pinned PID, bypassing the VIP's own toggle bookkeeping entirely - so its next
+managed transfer still sends DATA1, which now collides with the DUT's
+already-advanced DATA0 expectation and is reported as `0xf`. This is the same
+toggle-mismatch mechanism exploited deliberately by `caliptra_ss_usb_hs_dev_err_toggle`,
+occurring here as an unintended side effect of the DUT consuming the short
+packet rather than rejecting it.
+
+No testbench fix is possible: there is no PID value for the injected packet
+that both triggers the length error and keeps the VIP's internal toggle state
+consistent with a DUT that will legitimately consume the packet.
+
 ## Run
+
 
 ```
 +UVM_TESTNAME=caliptra_ss_usb_hs_dev_err_short_pkt_test

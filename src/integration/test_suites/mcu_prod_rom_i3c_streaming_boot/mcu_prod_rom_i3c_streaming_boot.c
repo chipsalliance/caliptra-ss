@@ -63,6 +63,8 @@ void main (void) {
         .cfg_enable_cptra_mbox_user_init=true, 
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
+        .cfg_streaming_boot_select=true,
+        .streaming_boot_select=MCU_STREAMING_BOOT_I3C,
         .cfg_boot_i3c_core=true,
         .cfg_trigger_prod_rom=true); 
 
