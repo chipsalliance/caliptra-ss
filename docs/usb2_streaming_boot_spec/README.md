@@ -336,13 +336,16 @@ Protocol-error encodings are:
 | `0x00` | No error |
 | `0x01` | Unsupported command or host write to a read-only command |
 | `0x02` | Unsupported parameter; defined with no current USB RTL producer |
-| `0x03` | OUT/write length or accepted OUT final byte-count error |
-| `0x04` | CRC error; defined with no current USB RTL producer |
+| `0x03` | OUT/write length, FIFO image overrun, or accepted OUT final byte-count error |
+| `0x04` | CRC error on DATA of a claimed USB recovery write |
 | `0xFF` | Invalid IN framing/length or firmware general error |
 
-Current USB RTL producers drive `0x01`, `0x03`, and `0xFF`. Link CRC, PID,
-bit-stuff, and PHY failures discard uncommitted packet staging and use normal
-USB retry behavior instead of setting `0x04`.
+For a claimed recovery write, a DATA CRC16 failure (or a PHY receive error
+reported by the packet engine as the same DATA CRC error) latches `0x04`.
+This includes DATA retransmissions while the write awaits STATUS. The failed
+attempt is discarded without a handshake or a payload commit, so normal USB
+retry behavior is unchanged. SETUP CRC5, separately reported PID and bit-stuff
+errors, control-read STATUS, and non-OCP traffic do not set `0x04`.
 
 The first error wins. Only a completed Recovery Agent `DEVICE_STATUS` read
 clears `PROT_ERROR`; firmware/EXT reads are non-destructive. The clear has
@@ -388,10 +391,11 @@ nonempty terminal image batch completes, and remains asserted until the FIFO
 is empty. Caliptra waits for this level before reading
 `INDIRECT_FIFO_DATA`; each accepted EXT read pops exactly one DWORD.
 
-The published-batch contract requires every later `INDIRECT_FIFO_DATA` OUT
-request to receive NAK while `payload_available` remains asserted, including
-after Caliptra has partially drained the batch and physical FIFO space has
-reopened. Caliptra drains each published batch completely, up to 256 bytes,
+The published-batch contract requires every otherwise legal later
+`INDIRECT_FIFO_DATA` OUT request to receive NAK while `payload_available`
+remains asserted, including after Caliptra has partially drained the batch
+and physical FIFO space has reopened. Caliptra drains each published batch
+completely, up to 256 bytes,
 and host software waits for FIFO empty and `payload_available` deassertion
 before submitting the next batch. The post-sync arbiter input
 `fifo_payload_available_i` is the dedicated admission interlock for this
@@ -665,8 +669,8 @@ or authorizes firmware dispatch.
 - **Reservation before acceptance.** PING/DATA acceptance implies capacity is
   reserved for the whole packet. Capacity pressure NAK/NYET is flow control,
   not protocol error.
-- **Published-batch isolation.** While `payload_available` is asserted, every
-  new FIFO DATA request receives NAK until the FIFO becomes empty and
+- **Published-batch isolation.** While `payload_available` is asserted, an
+  otherwise legal FIFO DATA request receives NAK until the FIFO becomes empty and
   `payload_available` deasserts. Partial firmware drain does not reopen host
   admission.
 - **Bounded drain.** A valid 64-byte packet drains as 16 consecutive accepted
@@ -928,9 +932,14 @@ host to exceed the write length declared in SETUP. Host software must honor
 that length and should use the 64-byte batching pattern described above.
 The device must still check the request against both physical free space
 and remaining image size; a non-full FIFO alone is not sufficient for ACK.
-It also blocks new writes while firmware drains a notified batch and reserves
-space for an admitted write. These protections are essential to the rationale
-for this deviation. The deviation applies to claimed OCP transfers and must
+If the declared write length, rounded up to DWORDs, exceeds the image
+remainder, the device STALLs at the DATA stage and latches `0x03`.
+This also applies before a nonzero image size is programmed and after the
+image is complete. STALL takes priority over capacity NAK; a new SETUP
+clears the protocol STALL, not the latched error.
+The device also blocks otherwise legal writes while firmware drains a notified
+batch and reserves space for an admitted write. These protections are essential
+to the rationale for this deviation. The deviation applies to claimed OCP transfers and must
 be reassessed if writes spanning multiple DATA packets are introduced.
 
 **Verification coverage.** LOCAL4 of

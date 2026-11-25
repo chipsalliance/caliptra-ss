@@ -127,9 +127,8 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
         ocp_stall_do_request_and_check_first_error_wins();
         ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("STANDARD_BYPASS");
         ocp_stall_do_read_and_check_device_status("STANDARD_BYPASS_STATUS");
-        // USB link CRC is not an OCP checksum. No USB OCP checksum field
-        // is defined; code 0x04 is not applicable (OCP Sections 8.5/9.2).
-        ocp_stall_note_check_completed("OCP checksum code 0x04 not applicable to USB encapsulation");
+        // Claimed write DATA CRC16 reporting is checked in usb_top_tb.
+        // This matrix does not inject a claimed write DATA error.
         ocp_stall_do_final_read_and_check_completion("PROTOCOL_MATRIX");
     endtask
 endclass
