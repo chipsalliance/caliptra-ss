@@ -133,6 +133,9 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       `uvm_fatal("OCP_HOST", "Missing host context or invalid stable device slot")
     if (expect_protocol_stall && (expect_replacement || device != 1))
       `uvm_fatal("OCP_STALL_GUARD", "STALL is not replacement or an independent-device allowance")
+    // A scoped-reset peer may have replaced the native configuration since
+    // this persistent actor's last request. Do not submit using a stale clone.
+    resolve_host_context();
     if (!bm[7] && write_data.size() != length)
       `uvm_fatal("OCP_HOST", "OUT payload does not match wLength")
     addr = usb_cfg.remote_device_cfg[device].device_address;
@@ -287,8 +290,10 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   task ocp_do_check_enumeration(int device);
     bytes_t data;
     bytes_t empty;
+    bytes_t descriptor_prefix;
     int total;
     logic [7:0] discovered_configuration;
+    resolve_host_context();
     // Only the device being enumerated occupies address zero. Its own slot
     // transitions parking -> default -> assigned; other slot identities stay
     // unchanged and are never used as aliases to switch traffic.
@@ -296,16 +301,18 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       usb_cfg.remote_device_cfg[device].device_address = 0;
       host_agent.reconfigure(usb_cfg);
     end
-    ocp_do_check_control(device,8'h80,6,16'h0100,0,18,empty,data);
-    device_descriptor_bytes[device] = data;
-    if (data.size() != 18 || data[0] !== 18 || data[1] !== 1 || data[7] !== 64)
-      `uvm_fatal("OCP_ENUM", "Invalid EP0 device descriptor")
+    prepare_ep0_discovery(device);
+    ocp_do_check_control(device,8'h80,6,16'h0100,0,8,empty,data);
+    descriptor_prefix = data;
+    apply_ep0_discovery(device, descriptor_prefix);
     ocp_do_check_control(device,0,5,16'(ocp_cfg.assigned_address[device]),0,0,empty,data);
     // USB 2.0 9.2.6.3: reuse the VIP recovery guard for SET_ADDRESS.
     #(usb_cfg.trstrcy * 1ps);
     usb_cfg.remote_device_cfg[device].device_address = ocp_cfg.assigned_address[device];
     host_agent.reconfigure(usb_cfg);
     ocp_do_check_control(device,8'h80,6,16'h0100,0,18,empty,data);
+    check_device_descriptor_stability(descriptor_prefix, data);
+    device_descriptor_bytes[device] = data;
     ocp_do_check_control(device,8'h80,6,16'h0200,0,9,empty,data);
     if (data.size() != 9 || data[0] !== 9 || data[1] !== 2)
       `uvm_fatal("OCP_ENUM", "Invalid configuration header")

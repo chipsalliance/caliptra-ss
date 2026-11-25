@@ -14,11 +14,10 @@
 //
 // Generic mechanics shared by every host-side USB sequence in this bench.
 //
-// This class owns only transfer-independent plumbing: resolving the SVT host
-// agent and configuration from the virtual sequencer, waiting for USB 2.0 link
-// enablement, and the submit/observe/timeout handshake around
-// NOTIFY_USB_TRANSFER_ENDED. Deciding what to send and whether a completion is
-// correct stays in the derived scenario sequence.
+// This class owns shared native context, EP0 discovery configuration, USB2
+// link readiness, and the submit/observe/timeout handshake around
+// NOTIFY_USB_TRANSFER_ENDED. Scenario choices and transaction intent remain
+// in derived sequences.
 //
 // Completion observation is split into two calls because the observer must be
 // armed before the transfer is submitted, while the transfer's construction and
@@ -46,7 +45,7 @@ class usb_host_base_seq extends uvm_sequence;
   `uvm_object_utils(usb_host_base_seq)
   `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
-  // Resolved once by resolve_host_context() and reused by every transfer.
+  // Resolved from the native sequencer; refresh after peer reconfiguration.
   svt_usb_agent host_agent;
   svt_usb_configuration usb_cfg;
   svt_usb_status shared_status;
@@ -117,6 +116,70 @@ class usb_host_base_seq extends uvm_sequence;
       end
     end
   endtask
+
+  // Reconfigure only a quiescent EP0 slot; preserve other devices and endpoints.
+  // SVT agent::reconfigure and device_configuration::max_packet_size_0 are native APIs.
+  function void configure_ep0_packet_size(int unsigned device_slot, int unsigned packet_size);
+    svt_usb_configuration discovered_cfg;
+    int unsigned control_count;
+
+    if (host_agent == null || usb_cfg == null || watch_active ||
+        device_slot >= usb_cfg.remote_device_cfg.size() || usb_cfg.remote_device_cfg[device_slot] == null) begin
+      `uvm_fatal(report_id(), "EP0 reconfiguration requires resolved, quiescent native context and a valid device slot")
+    end
+    if (!((packet_size inside {8, 16, 32, 64}) === 1'b1) ||
+        !((usb_cfg.remote_device_cfg[device_slot].connected_bus_speed inside {svt_usb_types::FS, svt_usb_types::HS}) === 1'b1) ||
+        (usb_cfg.remote_device_cfg[device_slot].connected_bus_speed === svt_usb_types::HS && packet_size !== 64)) begin
+      `uvm_fatal(report_id(), "Native EP0 packet size must be legal for the discovered USB2 bus speed")
+    end
+    if (!$cast(discovered_cfg, usb_cfg.clone())) `uvm_fatal(report_id(), "Unable to clone native configuration for EP0 discovery")
+    control_count = 0;
+    foreach (discovered_cfg.remote_device_cfg[device_slot].endpoint_cfg[index]) begin
+      svt_usb_endpoint_configuration endpoint;
+      endpoint = discovered_cfg.remote_device_cfg[device_slot].endpoint_cfg[index];
+      if (endpoint != null && endpoint.ep_number === 0 && endpoint.ep_type === svt_usb_types::CONTROL) begin
+        endpoint.max_packet_size = packet_size;
+        // USB2 5.5.3: SETUP wLength already declares exact DATA completion.
+        endpoint.allow_aligned_transfer_without_zero_length = 1'b1;
+        control_count++;
+      end
+    end
+    if (control_count !== 1) `uvm_fatal(report_id(), "Native device slot must contain exactly one bidirectional EP0")
+    discovered_cfg.remote_device_cfg[device_slot].max_packet_size_0 = packet_size;
+    host_agent.reconfigure(discovered_cfg);
+    usb_cfg = discovered_cfg;
+    `uvm_info(report_id(), $sformatf("Native EP0 configuration applied: slot=%0d speed=%s MPS=%0d",
+      device_slot, usb_cfg.remote_device_cfg[device_slot].connected_bus_speed.name(), packet_size), UVM_LOW)
+  endfunction
+
+  // USB2 5.5.3: bootstrap FS at8; HS uses its required64-byte control pipe.
+  function void prepare_ep0_discovery(int unsigned device_slot);
+    if (usb_cfg == null || device_slot >= usb_cfg.remote_device_cfg.size() ||
+        usb_cfg.remote_device_cfg[device_slot] == null) `uvm_fatal(report_id(), "Invalid EP0 discovery slot")
+    case (usb_cfg.remote_device_cfg[device_slot].connected_bus_speed)
+      svt_usb_types::FS: configure_ep0_packet_size(device_slot, 8);
+      svt_usb_types::HS: configure_ep0_packet_size(device_slot, 64);
+      default: `uvm_fatal(report_id(), "EP0 discovery supports only the configured USB2 FS/HS paths")
+    endcase
+  endfunction
+
+  // USB2 5.5.3/9.6.1: consume actual initial8 bytes, then configure later requests.
+  function void apply_ep0_discovery(int unsigned device_slot, logic [7:0] prefix[$]);
+    if (prefix.size() !== 8 || prefix[0] !== 18 || prefix[1] !== 1 ||
+        !((prefix[7] inside {8, 16, 32, 64}) === 1'b1)) begin
+      `uvm_fatal(report_id(), "Initial device descriptor must contain8 bytes, bLength18, type DEVICE and legal bMaxPacketSize0")
+    end
+    configure_ep0_packet_size(device_slot, int'(prefix[7]));
+  endfunction
+
+  // Check the complete addressed response against its earlier discovery prefix.
+  function void check_device_descriptor_stability(logic [7:0] prefix[$], logic [7:0] descriptor[$]);
+    if (prefix.size() !== 8 || descriptor.size() !== 18) `uvm_fatal(report_id(), "Device descriptor discovery is incomplete")
+    foreach (prefix[index]) begin
+      if (prefix[index] !== descriptor[index]) `uvm_fatal(report_id(), "Device descriptor prefix changed after EP0 discovery")
+    end
+    `uvm_info(report_id(), "Complete addressed device descriptor matches initial8-byte discovery", UVM_LOW)
+  endfunction
 
   // Prearm native admission and the FIRST exit transition before submitting LPM.
   // SVT status/link/type references define these public boundaries; ENABLED is too late.
@@ -225,16 +288,18 @@ class usb_host_base_seq extends uvm_sequence;
     end
     link_enabled = 1'b0;
     `uvm_info(report_id(), "Waiting for the SVT USB 2.0 host link to reach ENABLED", UVM_LOW)
-    fork
-      begin
-        wait (shared_status.link_usb_20_state === svt_usb_types::ENABLED);
-        link_enabled = 1'b1;
-      end
-      begin
-        #(timeout);
-      end
-    join_any
-    disable fork;
+    fork begin
+      fork
+        begin
+          wait (shared_status.link_usb_20_state === svt_usb_types::ENABLED);
+          link_enabled = 1'b1;
+        end
+        begin
+          #(timeout);
+        end
+      join_any
+      disable fork;
+    end join
 
     if (!link_enabled) begin
       `uvm_fatal(report_id(), $sformatf("USB link did not reach ENABLED within %0t; state=%p", timeout, shared_status.link_usb_20_state))

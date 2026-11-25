@@ -21,6 +21,12 @@ class usb_bad_pid_test extends usb_base_test;
     test_timeout = 3ms;
   endfunction
 
+  // Keep recovery traffic independent of the error-detection bound.
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    super.configure_env_cfg(cfg);
+    cfg.recovery_transfer_timeout = cfg.speed == USB_SPEED_FULL ? USB_FS_TRANSFER_TIMEOUT : 500us;
+  endfunction
+
   task run_phase(uvm_phase phase);
     usb_bad_pid_seq pid_sequence;
 

@@ -14,7 +14,7 @@
 
 // Shared persistent MCU/SoC EP0 service. No host requests or recovery
 // register operations are issued here. Standard EP0 mechanics follow
-// usb_init_seq, without its fixed seven-request lifecycle.
+// usb_init_seq, without its bounded enumeration-request lifecycle.
 class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
   `uvm_object_utils(usb_ocp_firmware_base_seq)
   typedef logic [7:0] bytes_t[$];
@@ -94,10 +94,8 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     end while (1);
     command_shadow = ocp_get_mask("DEVCMDSTAT","DEV_EN") |
                      ocp_get_mask("DEVCMDSTAT","DCON");
-    ocp_write_command();
     ocp_write_csr("INTEN",ocp_get_mask("INTEN","DEV_INT_EN") | 3);
     ocp_write_csr("INTSTAT",ocp_get_mask("INTSTAT","DEV_INT") | 3);
-    ocp_cfg.prepared[device-1] = 1;
   endtask
 
   task ocp_send_ep0(bytes_t data);
@@ -238,21 +236,42 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
       `uvm_fatal("OCP_EPN_SERVICE", "Owned endpoint service returned incomplete")
   endtask
 
+  // Prepare the owned controller, start service, then connect internal/upstream links.
   task ocp_do_standard_service();
+    time deadline;
+    process service_process;
+    if (!(device inside {1,2})) `uvm_fatal("OCP_FIRMWARE", "Invalid device ownership")
+    csr_target = (device == 1) ? USB_DEV0_CSR : USB_DEV1_CSR;
+    memory_target = (device == 1) ? USB_DEV0_SRAM : USB_DEV1_SRAM;
+    ocp_initialize_controller();
+    deadline = $time + ocp_cfg.actor_timeout;
+    service_process = null;
+    fork
+      begin
+        wait (service_process != null);
+        ocp_write_command();
+        // Retain the hub's internal-controller preparation barrier, now serviced.
+        ocp_cfg.prepared[device-1] = 1;
+        ocp_connect_upstream();
+        `uvm_info("OCP_FIRMWARE", $sformatf("Device%0d connected with persistent reset/EP0 service active",device), UVM_LOW)
+      end
+      begin
+        service_process = process::self();
+        `uvm_info("OCP_FIRMWARE", $sformatf("Device%0d memory/interrupts prepared; reset/EP0 service starting before connection",device), UVM_LOW)
+        ocp_service_standard_requests(deadline);
+      end
+    join
+  endtask
+
+  // Service real reset/SETUP indications until teardown under the original actor deadline.
+  task ocp_service_standard_requests(time deadline);
     logic [31:0] command;
     logic [31:0] interrupts;
     logic reset_was_set;
     logic reset_is_set;
     logic progress;
     int unsigned serviced_before;
-    time deadline;
     time poll_interval;
-    if (!(device inside {1,2})) `uvm_fatal("OCP_FIRMWARE", "Invalid device ownership")
-    csr_target = (device == 1) ? USB_DEV0_CSR : USB_DEV1_CSR;
-    memory_target = (device == 1) ? USB_DEV0_SRAM : USB_DEV1_SRAM;
-    ocp_initialize_controller();
-    ocp_connect_upstream();
-    deadline = $time + ocp_cfg.actor_timeout;
     poll_interval = ocp_cfg.service_poll;
     reset_was_set = 0;
     while (!ocp_cfg.stop_requested) begin
@@ -293,5 +312,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
       `uvm_fatal("OCP_FIRMWARE", "Persistent actor stopped without enumeration")
     completed = 1;
     ocp_cfg.actor_finished[(device == 1) ? 1 : 3] = 1;
+    `uvm_info("OCP_FIRMWARE", $sformatf("Device%0d persistent service stopped after enumeration: SETUPs=%0d configuration=%0d",
+      device,serviced,configuration_shadow), UVM_LOW)
   endtask
 endclass

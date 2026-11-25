@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Verify device-origin L1 wake with the selected bus speed.
 class usb_l1_remote_wake_test extends usb_base_test;
   `uvm_component_utils(usb_l1_remote_wake_test)
 
   function new(string name = "usb_l1_remote_wake_test", uvm_component parent = null);
     super.new(name, parent);
     test_timeout = 5ms;
+  endfunction
+
+  virtual function time full_speed_timeout();
+    return USB_FS_ENUMERATION_BUDGET + USB_FS_LPM_DISCOVERY_BUDGET +
+      USB_FS_L1_CYCLE_TIMEOUT + USB_FS_TRANSFER_TIMEOUT + USB_FS_FRAME_PERIOD;
   endfunction
 
   // Select legacy LPM timing before the environment builds either VIP peer.

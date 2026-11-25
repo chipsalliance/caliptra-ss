@@ -16,10 +16,10 @@
 // through the real Synopsys SVT USB 2.0 stack. After the link is enabled and
 // SOF generation is running, the sequence performs these EP0 requests:
 //
-//   1. GET_DESCRIPTOR at the default address 0.
+//   1. GET_DESCRIPTOR initial8-byte EP0 discovery at the default address 0.
 //   2. GET_STATUS at address 0.
 //   3. SET_ADDRESS to assign device_address.
-//   4. GET_DESCRIPTOR again at the assigned device_address.
+//   4. GET_DESCRIPTOR full response at the assigned device_address.
 //   5. GET_CONFIGURATION and confirm the device is unconfigured (value 0).
 //   6. GET_DESCRIPTOR for the configuration header and its wTotalLength.
 //   7. GET_DESCRIPTOR for that complete configuration tree.
@@ -75,8 +75,6 @@ class usb_init_host_seq extends usb_host_base_seq;
   // usb_env_cfg before start. Link bring-up is bounded separately from each
   // individual control transfer.
   usb_endpoint_cfg control_endpoint;
-  // The device service publishes completion of the initial reset/EP0 rearm.
-  uvm_event dut_ep0_ready;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time link_timeout = USB_DEFAULT_LINK_TIMEOUT;
   time control_transfer_timeout = USB_DEFAULT_CONTROL_TRANSFER_TIMEOUT;
@@ -320,7 +318,12 @@ class usb_init_host_seq extends usb_host_base_seq;
     svt_usb_transfer completed_transfer;
     string transfer_label;
     string failure_reason;
+    bit aligned_control;
+    int unsigned control_max_packet_size;
 
+    control_max_packet_size = usb_cfg.remote_device_cfg[0].endpoint_cfg[control_endpoint.anchor_index].max_packet_size;
+    if (control_max_packet_size == 0) `uvm_fatal("USB_INIT_HOST", "Native EP0 has no discovered/bootstrap packet size")
+    aligned_control = length != 0 && length % control_max_packet_size == 0;
     transfer_label = $sformatf("Step %0d %s", step_number, label);
     request_transfer = svt_usb_transfer::type_id::create({label, "_request"});
     `uvm_info(
@@ -352,6 +355,10 @@ class usb_init_host_seq extends usb_host_base_seq;
           setup_data_w_value == value;
           setup_data_w_index == index;
           setup_data_w_length == length;
+          payload_start_ix == 0;
+          payload_intended_byte_count == local::length;
+          // USB2 5.5.3: exact wLength exhausts DATA without an additional ZLP.
+          if (local::aligned_control) aligned_transfer_ends_with_zero_length == 0;
         }) begin
       `uvm_fatal("USB_INIT_HOST", $sformatf("Unable to randomize %s", transfer_label))
     end
@@ -401,20 +408,10 @@ class usb_init_host_seq extends usb_host_base_seq;
     );
   endtask
 
-  // Wait for device-side reset writes, independently of native link readiness.
-  task wait_for_dut_ep0_ready();
-    if (dut_ep0_ready === null) begin
-      `uvm_fatal("USB_INIT_HOST", "No device-side EP0 reset-readiness event was supplied")
-    end
-    `uvm_info("USB_INIT_HOST", "Waiting for device reset handling and EP0 rearm", UVM_LOW)
-    dut_ep0_ready.wait_on();
-    `uvm_info("USB_INIT_HOST", "Device reset handling and EP0 rearm complete; starting checked enumeration traffic", UVM_LOW)
-  endtask
-
   // Reuse SVT's device-descriptor validator on the complete bus response.
   // See get_descriptor_system_virtual_sequence::validate_descriptor_data and
   // virtual_sequencer::get_err_check in the installed USB SVT class reference.
-  function void validate_device_descriptor(byte unsigned payload[$]);
+  function void validate_device_descriptor(logic [7:0] payload[$]);
     svt_usb_device_framework_get_descriptor_system_virtual_sequence validator;
     svt_usb_configuration remote_cfg;
     svt_usb_agent_configuration device_cfg;
@@ -469,7 +466,8 @@ class usb_init_host_seq extends usb_host_base_seq;
   // to determine wTotalLength and bConfigurationValue.
   virtual task body();
     byte unsigned no_payload[$];
-    byte unsigned descriptor_payload[$];
+    logic [7:0] descriptor_payload[$];
+    logic [7:0] descriptor_prefix[$];
     byte unsigned status_payload[$];
     byte unsigned unconfigured_payload[$];
     byte unsigned configured_payload[$];
@@ -506,8 +504,8 @@ class usb_init_host_seq extends usb_host_base_seq;
       sof_sequence.start(p_sequencer.prot_service_sequencer);
       `uvm_info("USB_INIT_HOST", "SOF generation started", UVM_LOW)
     end
-    // Native link/SOF readiness does not establish completion of DUT CSR writes.
-    wait_for_dut_ep0_ready();
+    // Device service starts before connection; native reset recovery owns admission.
+    prepare_ep0_discovery(0);
 
     // Steps 1-3 discover the default-address device, inspect its status, and
     // request the transition from address 0 to device_address.
@@ -516,18 +514,18 @@ class usb_init_host_seq extends usb_host_base_seq;
       svt_usb_types::GET_DESCRIPTOR,
       {DEVICE_DESCRIPTOR_TYPE, 8'h00},
       16'h0000,
-      16'(DEVICE_DESCRIPTOR_LENGTH),
+      16'd8,
       0,
       1,
       "GET_DESCRIPTOR_address_0",
       no_payload,
       1'b1
     );
-    descriptor_payload = discovered_payload;
-    if (descriptor_payload.size() < DEVICE_DESCRIPTOR_LENGTH) begin
-      `uvm_fatal("USB_INIT_HOST", "Device descriptor discovery returned a truncated descriptor")
-    end
-    validate_device_descriptor(descriptor_payload);
+    // Native discovery stores 2-state bytes; copy elements into the shared
+    // 4-state checker type rather than passing incompatible queue types.
+    descriptor_prefix.delete();
+    foreach (discovered_payload[index]) descriptor_prefix.push_back(discovered_payload[index]);
+    apply_ep0_discovery(0, descriptor_prefix);
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_STATUS,
@@ -572,7 +570,7 @@ class usb_init_host_seq extends usb_host_base_seq;
     end
     `uvm_info("USB_INIT_HOST", $sformatf("Reconfigured the SVT host for device address %0d", device_address), UVM_LOW)
 
-    // Prove descriptor stability at the assigned address, then discover the
+    // Complete device discovery at the assigned address, then discover the
     // complete configuration before selecting it.
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
@@ -583,8 +581,13 @@ class usb_init_host_seq extends usb_host_base_seq;
       device_address,
       4,
       $sformatf("GET_DESCRIPTOR_address_%0d", device_address),
-      descriptor_payload
+      no_payload,
+      1'b1
     );
+    descriptor_payload.delete();
+    foreach (discovered_payload[index]) descriptor_payload.push_back(discovered_payload[index]);
+    check_device_descriptor_stability(descriptor_prefix, descriptor_payload);
+    validate_device_descriptor(descriptor_payload);
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_CONFIGURATION,
