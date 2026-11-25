@@ -60,9 +60,16 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
+  // Hub EP0 unsupported-feature / SETUP mask-and-length coverage scenario.
+  `include "caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_int_ep_status_change_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_stall_sequence.svh"
+  // Extends the class_req_stall sequence: hub-itself Clear/SetHubFeature,
+  // accepted no-op port features, out-of-range ports, invalid selectors,
+  // wValue/wIndex toggle patterns, undefined class bRequest codes and a
+  // firmware-patched SETUP-row opcode. Must follow its parent.
+  `include "caliptra_ss_usb_hs_hub_class_req_invalid_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -186,6 +193,10 @@ package caliptra_ss_usb_test_pkg;
   // per-endpoint enable is the D field, bit 30, of the EP list word.
   `include "caliptra_ss_usb_hs_dev_disabled_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disabled_ep_test.svh"
+  // usb_dma READ_EPINFO coverage: rate-feedback mode and descriptor TR/TV
+  // set/clear on both words of the 64-bit EP-list read (EP5 OUT).
+  `include "caliptra_ss_usb_hs_dev_epinfo_rate_feedback_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_epinfo_rate_feedback_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
@@ -494,9 +505,16 @@ package caliptra_ss_usb_test_pkg;
   // enumeration; the status bit is read back out of
   // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
+  // Hub EP0 control requests for unsupported features, SETUP mask/length
+  // patterns outside the standard request set, GetConfiguration and the EP0 IN
+  // STALL legs of usb_ep0_handler.m.vhdl. Code-coverage directed test; the
+  // firmware patches one SETUP-table word to make the last-row wIndex
+  // mismatch reachable (see the sequence header section 3).
+  `include "caliptra_ss_usb_hs_hub_ep0_unsupported_features_valid_port_test.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
   `include "caliptra_ss_usb_hs_hub_int_ep_status_change_test.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_stall_test.svh"
+  `include "caliptra_ss_usb_hs_hub_class_req_invalid_test.svh"
 
   // USBDC1 (device1) replicas of the two remaining hub-descriptor families.
   // Both issue hub-class GET_DESCRIPTOR with wIndex=0, which is a hub-global
