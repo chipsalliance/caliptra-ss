@@ -79,7 +79,14 @@
 // caliptra_ss_usb_hs_dev_int_loopback_test is the precedent: it sets the flag on
 // its INTERRUPT OUT entry and leaves its INTERRUPT IN entry without it.
 //
-// NAK RETRY BUDGET IS DELIBERATELY LOWERED HERE
+// NAK RETRY BUDGET (UPDATED FOR SOF-GATED HUB EP1 IN)
+//
+// The hub now arms EP1 IN only at the next SOF after a port change bit is set.
+// The first IN after the control transfer is NAKed; data comes back on an IN
+// sent after the SOF (up to 125 us later). A host sends at most one IN per
+// SOF to an INTERRUPT endpoint, so the budget is 0 (one token per transfer)
+// and the sequence retries once per microframe. The older text that follows
+// describes a previous budget and is kept only for history.
 //
 // caliptra_ss_usb_shared_cfg raises max_retry_due_to_nak to 500 on every
 // endpoint because a software-polled MCU device can NAK for a long time while
@@ -130,8 +137,12 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_test extends caliptra_ss_usb_b
     // is or is not pending, never how long the host waited before asking.
     localparam int HUB_INT_INTERVAL = 1;
 
-    // Retry budget for the one leg that is expected to NAK. See the header.
-    localparam int HUB_INT_EP_NAK_RETRY = 8;
+    // NAK retry budget 0: the VIP issues ONE IN token per transfer and ends
+    // it as ABORTED on a NAK. A host sends at most one IN per SOF to an
+    // INTERRUPT endpoint, and the hub arms EP1 IN only at the next SOF, so the
+    // sequence retries once per microframe itself instead of letting the VIP
+    // hammer NAKed tokens back-to-back.
+    localparam int HUB_INT_EP_NAK_RETRY = 0;
 
     function new(string name = "caliptra_ss_usb_hs_hub_int_ep_status_change_test",
                  uvm_component parent = null);
@@ -157,13 +168,12 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_test extends caliptra_ss_usb_b
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].max_packet_size = HUB_INT_MAX_PKT;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].interval        = HUB_INT_INTERVAL;
 
-        // Bound the deliberately-NAKed final leg. Applied AFTER the endpoint
-        // fields above and never followed by cfg.apply_nak_retry_budget(), which
-        // would put the shared 500 back.
+        // One token per transfer, see HUB_INT_EP_NAK_RETRY. Applied AFTER the
+        // endpoint fields above.
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].max_retry_due_to_nak =
             HUB_INT_EP_NAK_RETRY;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].max_retry_due_to_nak_before_moving_to_next_ep =
-            HUB_INT_EP_NAK_RETRY / 2;
+            HUB_INT_EP_NAK_RETRY;
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
