@@ -150,7 +150,7 @@ void main(void) {
     bool     ep2_armed_once    = false;
     bool     host_stop_seen    = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - unexpected packet (ISO)\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB negative testing - unexpected packet (ISO)\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -251,7 +251,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: unexpected packet (ISO): %d control transfers, %d EP2 completions, EP2 entry 0x%x\n",
             transfers_handled, ep2_completions, usb_ep2_out_read());
 
-    VPRINTF(LOW, "MCU: USB error injection - halting\n");
+    VPRINTF(LOW, "MCU: USB negative testing - halting\n");
     csr_write_mpmc_halt();
 }
 

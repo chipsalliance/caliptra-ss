@@ -16,7 +16,7 @@
 `define CALIPTRA_SS_USB_HS_DEV_ERR_LENGTH_SEQUENCE_SV
 
 // =============================================================================
-// Packet-length error injection on a bulk OUT to USBDC0 (High Speed).
+// Packet-length negative testing on a bulk OUT to USBDC0 (High Speed).
 //
 // COVERAGE TARGET
 //
@@ -83,7 +83,7 @@ class caliptra_ss_usb_hs_dev_err_length_sequence
         bit                   ok;
 
         `uvm_info(MSG_ID,
-            $sformatf("Starting length error injection, length_error=%s.",
+            $sformatf("Starting length negative testing, length_error=%s.",
                       length_target.name()), UVM_LOW)
 
         err_inject_bringup(host_agent_h, usb_cfg, MSG_ID, ok);
@@ -128,7 +128,7 @@ class caliptra_ss_usb_hs_dev_err_length_sequence
         // request_mcu_stop() in caliptra_ss_usb_err_inject_base_sequence.
         request_mcu_stop(MSG_ID);
 
-        `uvm_info(MSG_ID, "Length error injection sequence complete.", UVM_LOW)
+        `uvm_info(MSG_ID, "Length negative testing sequence complete.", UVM_LOW)
     endtask
 
 endclass
