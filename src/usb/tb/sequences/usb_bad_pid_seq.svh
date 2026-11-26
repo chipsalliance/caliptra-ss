@@ -122,7 +122,6 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
     p_sequencer.host_sequencer.prot_service_sequencer.set_report_severity_id_action(
         UVM_WARNING, "Sequencer", saved_sequencer_warning_action);
 
-    recovery_timeout = status_timeout;
     run_recovery_transfer("Post-bad-PID recovery bulk OUT");
 
     completed = 1'b1;

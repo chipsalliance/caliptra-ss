@@ -16,7 +16,7 @@ class usb_l2_remote_wake_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_l2_remote_wake_host_seq)
 
   // Candidate stimulus budget, not an external-DUT timing oracle.
-  localparam time ACCELERATED_HOST_RESUME_BUDGET = 4ms;
+  localparam time ACCELERATED_HOST_RESUME_BUDGET = USB_ACCELERATED_HOST_RESUME_BUDGET;
   uvm_event host_suspended;
   uvm_event wake_requested;
   uvm_event host_resumed;

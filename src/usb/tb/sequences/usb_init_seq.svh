@@ -16,9 +16,8 @@
 // sequence implements the DUT-facing half of the enumeration scenario:
 //
 //   1. Initialize EP0 packet-memory entries and DEV0 control/interrupt CSRs.
-//   2. Wait for VBUS, enable/connect the controller, and handle the USB reset.
-//   3. Run usb_init_host_seq while concurrently polling DEV0 reset and EP0
-//      interrupt state.
+//   2. Start DEV0 reset/EP0 service, wait for VBUS, then enable/connect.
+//   3. Run usb_init_host_seq through native link readiness and discovery.
 //   4. Service device/configuration discovery, status, address assignment,
 //      configuration selection, and configuration readback.
 //   5. Require both host-side transfer validation and the final DUT state of
@@ -92,8 +91,6 @@ class usb_init_seq extends usb_base_seq;
   byte unsigned current_alternate_setting;
   int unsigned serviced_request_count;
   bit host_scenario_completed;
-  // Per-invocation, persistent notification for the first host SETUP gate.
-  uvm_event dut_ep0_ready;
 
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
@@ -116,7 +113,7 @@ class usb_init_seq extends usb_base_seq;
                    ENDPOINT_DESCRIPTOR_LENGTH * p_sequencer.cfg.endpoint_cfgs.size();
     // The shared fixture uses one EP0 packet and a 64-byte IN buffer.
     if (ep0_in_endpoint.max_packet_size != 64 || total_length > 64) begin
-      `uvm_fatal("USB_INIT_SEQ", "Descriptor fixture requires HS EP0 and configuration data fitting in 64 bytes")
+      `uvm_fatal("USB_INIT_SEQ", "Descriptor fixture requires 64-byte EP0 and configuration data fitting in 64 bytes")
     end
     device_descriptor = '{
       DEVICE_DESCRIPTOR_LENGTH, DEVICE_DESCRIPTOR_TYPE, lpm_supported ? 8'h01 : 8'h00, 8'h02, 0, 0, 0, 64,
@@ -160,13 +157,7 @@ class usb_init_seq extends usb_base_seq;
         USB_TRANSFER_TYPE_ISOCHRONOUS: attributes = ISOCHRONOUS_ENDPOINT_TYPE;
         default: `uvm_fatal("USB_INIT_SEQ", "Only non-control endpoints belong in the interface descriptor")
       endcase
-      if (endpoint.ep_number == 0 || endpoint.ep_number > 15 ||
-          endpoint.max_packet_size == 0 || endpoint.max_packet_size > 1024 ||
-          additional_transactions > 2 || endpoint.interval > 255 ||
-          (attributes == BULK_ENDPOINT_TYPE && (endpoint.max_packet_size != 512 || additional_transactions != 0)) ||
-          (attributes != BULK_ENDPOINT_TYPE && (endpoint.interval == 0 || endpoint.interval > 16))) begin
-        `uvm_fatal("USB_INIT_SEQ", $sformatf("Invalid HS descriptor endpoint: %s", endpoint.convert2string()))
-      end
+      p_sequencer.cfg.validate_packet_size(endpoint);
       // isoc_mult represents wMaxPacketSize[12:11] in USB 2.0; max_burst_size
       // belongs to the USB 3.0 companion descriptor and is not encoded here.
       packet_size = endpoint.max_packet_size | (additional_transactions << 11);
@@ -252,26 +243,16 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info("USB_INIT_SEQ", "Generic endpoint policy applied; unused/unconfigured buffers disabled and EP0 unchanged", UVM_LOW)
   endtask
 
-  // Prepare packet memory and DEV0 CSRs, wait for VBUS, then enable/connect the
-  // controller and arm the device, EP0 OUT, and EP0 IN interrupts.
+  // Prepare packet memory and interrupt service while the controller is disconnected.
   task initialize_controller();
-    logic [31:0] command;
-    logic [31:0] enable_connect_value;
     logic [31:0] interrupt_enable_value;
-    logic [31:0] vbus_mask;
-    bit vbus_detected;
     usb_ep_entry_t disabled_entry;
 
-    enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
-                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
-    // Keep hardware LPM acceptance consistent with the advertised capability.
-    if (lpm_supported) enable_connect_value |= ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUP);
     interrupt_enable_value = ral_field_value(
                                p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN,
                                ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()
                              ) |
                              ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTEN.DEV_INT_EN);
-    vbus_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.VBUS_DEBOUNCED);
     `uvm_info("USB_INIT_SEQ", "Initializing DEV0 endpoint list and control registers", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
@@ -288,40 +269,55 @@ class usb_init_seq extends usb_base_seq;
 
     ral_write32("EPLISTSTART", p_sequencer.reg_model.combo.dev0_csr.EPLISTSTART, endpoint_list_base());
     ral_write32("DATABUFSTART", p_sequencer.reg_model.combo.dev0_csr.DATABUFSTART, 0);
+    ral_write32("INTEN", p_sequencer.reg_model.combo.dev0_csr.INTEN, interrupt_enable_value);
+    ral_write32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, USB_DEV0_ROUTE_MASK);
+    `uvm_info("USB_INIT_SEQ", "DEV0 packet memory and interrupts prepared; starting service before connection", UVM_LOW)
+  endtask
+
+  // Connect only after preparation and service startup. SVT owns automatic PHY
+  // attachment and its configured delay; do not mirror that delay in controller code.
+  task connect_controller();
+    logic [31:0] command;
+    logic [31:0] enable_connect_value;
+    logic [31:0] vbus_mask;
+    bit vbus_detected;
+
+    enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
+                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
+    if (lpm_supported) enable_connect_value |= ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUP);
+    vbus_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.VBUS_DEBOUNCED);
 
     vbus_detected = 1'b0;
     `uvm_info("USB_INIT_SEQ", "Waiting for VBUS_DEBOUNCED", UVM_LOW)
-    fork
-      begin
-        do begin
-          ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
-          if (!(command & vbus_mask)) begin
-            // Pace VBUS polling while the PHY attach/debounce completes.
-            #100ns;
-          end
-        end while (!(command & vbus_mask));
-        vbus_detected = 1'b1;
-      end
-      begin
-        #(p_sequencer.cfg.vbus_timeout);
-      end
-    join_any
-    disable fork;
+    fork begin
+      fork
+        begin
+          do begin
+            ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
+            if (!((command & vbus_mask) === vbus_mask)) begin
+              // Pace VBUS polling while native PHY attachment/debounce completes.
+              #100ns;
+            end
+          end while (!((command & vbus_mask) === vbus_mask));
+          vbus_detected = 1'b1;
+        end
+        begin
+          #(p_sequencer.cfg.vbus_timeout);
+        end
+      join_any
+      disable fork;
+    end join
     if (!vbus_detected) begin
       `uvm_fatal("USB_INIT_SEQ", $sformatf("VBUS was not detected within %0t", p_sequencer.cfg.vbus_timeout))
     end
 
-    `uvm_info("USB_INIT_SEQ", "VBUS detected; allowing the remote PHY to settle before DEV_EN/DCON", UVM_LOW)
-    // Match the remote PHY's 20us poweron_auto_attach_delay in usb_vip_cfg_builder.
-    #20us;
+    `uvm_info("USB_INIT_SEQ", "VBUS detected with service active; enabling DEV_EN/DCON for native link bring-up", UVM_LOW)
     write_devcmdstat(enable_connect_value);
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
-    if ((command & enable_connect_value) != enable_connect_value) begin
+    if (!((command & enable_connect_value) === enable_connect_value)) begin
       `uvm_fatal("USB_INIT_SEQ", $sformatf("Device did not enable/connect; DEVCMDSTAT=0x%08h", command))
     end
-    ral_write32("INTEN", p_sequencer.reg_model.combo.dev0_csr.INTEN, interrupt_enable_value);
-    ral_write32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, USB_DEV0_ROUTE_MASK);
-    `uvm_info("USB_INIT_SEQ", "DEV0 initialized, connected, and ready for USB reset", UVM_LOW)
+    `uvm_info("USB_INIT_SEQ", "DEV0 connected; concurrent service handles reset while the host waits for native ENABLED", UVM_LOW)
   endtask
 
   // Acknowledge a detected USB reset, restore address/configuration protocol
@@ -348,8 +344,7 @@ class usb_init_seq extends usb_base_seq;
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
     command &= ~dev_addr_mask;
     write_devcmdstat(command);
-    dut_ep0_ready.trigger();
-    `uvm_info("USB_INIT_SEQ", "USB reset handled and EP0 rearmed; initial host traffic may proceed", UVM_LOW)
+    `uvm_info("USB_INIT_SEQ", "USB reset handled and EP0 rearmed; controller service continues", UVM_LOW)
   endtask
 
   // Decode the two little-endian words written by hardware into the EP0 SETUP
@@ -607,14 +602,13 @@ class usb_init_seq extends usb_base_seq;
     )
   endtask
 
-  // Run the host side of the enumeration flow.
+  // Run the speed-neutral host flow; concurrent reset/EP0 service remains active.
   virtual task run_host_scenario();
     usb_init_host_seq host_sequence;
 
     host_scenario_completed = 1'b0;
     host_sequence = usb_init_host_seq::type_id::create("host_sequence");
     host_sequence.control_endpoint = ep0_out_endpoint;
-    host_sequence.dut_ep0_ready = dut_ep0_ready;
     host_sequence.device_address = p_sequencer.cfg.device_address;
     host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
     host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
@@ -632,11 +626,12 @@ class usb_init_seq extends usb_base_seq;
     logic [31:0] command;
     logic [31:0] dev_addr_mask;
     logic [31:0] expected_dev_addr;
+    process service_process;
 
     completed = 1'b0;
     host_scenario_completed = 1'b0;
     serviced_request_count = 0;
-    dut_ep0_ready = new("dut_ep0_ready");
+    service_process = null;
     if (p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_INIT_SEQ", "INIT requires the SVT host virtual sequencer")
     end
@@ -655,9 +650,13 @@ class usb_init_seq extends usb_base_seq;
     // response through the DUT's CSRs and packet memory.
     fork
       begin
+        // A process-start handshake, not a reset/readiness barrier for the host.
+        wait (service_process != null);
+        connect_controller();
         run_host_scenario();
       end
       begin
+        service_process = process::self();
         service_ep0();
       end
     join
@@ -676,6 +675,7 @@ class usb_init_seq extends usb_base_seq;
               $sformatf("Hardware DEV_ADDR readback verified: address=%0d DEVCMDSTAT=0x%08h", p_sequencer.cfg.device_address, command),
               UVM_LOW)
 
+    check_device_speed("Enumeration");
     completed = host_scenario_completed &&
                 serviced_request_count == expected_setup_request_count() &&
                 current_configuration == CONFIGURATION_VALUE &&

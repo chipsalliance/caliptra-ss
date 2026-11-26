@@ -247,20 +247,36 @@ class usb_ocp_scoreboard extends uvm_component;
       ocp_check_bytes(c.data,c.expected,"standard control response");
     if (c.setup[1] === 6 && c.setup[0][6:5] === 0) begin
       if (c.setup[3] == 1) begin
-        if (c.data.size() != 18 || c.data[0] !== 18 || c.data[1] !== 1 ||
-            c.data[7] !== 64 || c.data[17] !== 1)
-          `uvm_fatal("OCP_DESCRIPTOR", "Device descriptor malformed")
-        if (device == 0 && c.data[4] !== 9)
-          `uvm_fatal("OCP_DESCRIPTOR", "Upstream device is not a hub")
-        if (device == 0 && (!model.hub_identity_programmed ||
-            model.ocp_get_le32(c.data,8) !== model.hub_identity_expected))
-          `uvm_fatal("OCP_DESCRIPTOR", "Hub identity differs from accepted AXI descriptor programming")
-        model.device_identity[device] = model.ocp_get_le32(c.data,8);
-        foreach (model.device_descriptor_seen[i])
-          if (i != device && model.device_descriptor_seen[i] &&
-              model.device_identity[i] === model.device_identity[device])
-            `uvm_fatal("OCP_DESCRIPTOR", "Hub/dev0/dev1 identities are not unique")
-        model.device_descriptor_seen[device] = 1;
+        // Initial8-byte discovery has no VID/PID/configuration-count fields.
+        // The later full descriptor still supplies all existing identity checks.
+        if (c.ocp_get_length() === 8) begin
+          if (c.data.size() !== 8 || c.data[0] !== 18 || c.data[1] !== 1 ||
+              !((c.data[7] inside {8,16,32,64}) === 1'b1))
+            `uvm_fatal("OCP_DESCRIPTOR", "Initial EP0 device descriptor prefix malformed")
+          if (!model.full_speed && c.data[7] !== 64)
+            `uvm_fatal("OCP_DESCRIPTOR", "High-speed EP0 discovery requires MPS64")
+          if (device == 0 && c.data[4] !== 9)
+            `uvm_fatal("OCP_DESCRIPTOR", "Upstream discovery prefix is not a hub")
+          `uvm_info("OCP_DESCRIPTOR", $sformatf("Observed initial EP0 discovery: slot=%0d MPS=%0d; full identity pending",
+            device,c.data[7]), UVM_LOW)
+        end else begin
+          if (c.data.size() !== 18 || c.data[0] !== 18 || c.data[1] !== 1 ||
+              !((c.data[7] inside {8,16,32,64}) === 1'b1) || c.data[17] !== 1)
+            `uvm_fatal("OCP_DESCRIPTOR", "Device descriptor malformed")
+          if (!model.full_speed && c.data[7] !== 64)
+            `uvm_fatal("OCP_DESCRIPTOR", "High-speed device descriptor requires EP0 MPS64")
+          if (device == 0 && c.data[4] !== 9)
+            `uvm_fatal("OCP_DESCRIPTOR", "Upstream device is not a hub")
+          if (device == 0 && (!model.hub_identity_programmed ||
+              model.ocp_get_le32(c.data,8) !== model.hub_identity_expected))
+            `uvm_fatal("OCP_DESCRIPTOR", "Hub identity differs from accepted AXI descriptor programming")
+          model.device_identity[device] = model.ocp_get_le32(c.data,8);
+          foreach (model.device_descriptor_seen[i])
+            if (i != device && model.device_descriptor_seen[i] &&
+                model.device_identity[i] === model.device_identity[device])
+              `uvm_fatal("OCP_DESCRIPTOR", "Hub/dev0/dev1 identities are not unique")
+          model.device_descriptor_seen[device] = 1;
+        end
       end
       if (c.setup[3] == 2 && c.data.size() > 9) begin
         if (c.data[0] !== 9 || c.data[1] !== 2 ||

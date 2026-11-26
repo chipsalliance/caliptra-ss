@@ -113,7 +113,6 @@ class usb_unsupported_request_seq extends usb_init_seq;
     status_payload = '{8'h00, 8'h00};
     init_host_sequence = usb_init_host_seq::type_id::create("init_host_sequence");
     init_host_sequence.control_endpoint = ep0_out_endpoint;
-    init_host_sequence.dut_ep0_ready = dut_ep0_ready;
     init_host_sequence.device_address = p_sequencer.cfg.device_address;
     init_host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
     init_host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
