@@ -49,6 +49,7 @@ module caliptra_ss_top_sva
   // SECRET_MANUF_PARTITION, and the first non-secret partition is SW_MANUF_PARTITION.
   logic dai_for_secret_partition;
   assign dai_for_secret_partition = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
+                                    (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_rsp.awready) &&
                                     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr ==
                                      `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
                                     (`FC_PATH.dai_addr + 7 >= SecretManufPartitionOffset &&
@@ -65,9 +66,14 @@ module caliptra_ss_top_sva
   // the access control policy is violated.
   //
   // The discard behaviour works by setting the discard_fuse_write signal in otp_ctrl and this
-  // assertion checks that the signal gets set.
+  // assertion checks that the signal gets set. The filter makes its decision when the write data
+  // (which carries the DAI command) is accepted, which AXI allows any number of cycles after the
+  // address, and registers discard_fuse_write on the following cycle.
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
-                   unpriv_dai_access |-> ##2 `FC_PATH.discard_fuse_write)
+                   unpriv_dai_access |=>
+                   (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.wvalid &&
+                    `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_rsp.wready)[->1] ##1
+                   `FC_PATH.discard_fuse_write)
 
   // If the fuse_ctrl filter decides that an AXI transaction's DAI request should be discarded, the
   // interface must signal a recoverable AccessError in its response (which becomes visible exactly
