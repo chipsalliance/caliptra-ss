@@ -189,16 +189,10 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
     // EP1 IN poll. Only has to cover the hub's own EP0 turnaround.
     localparam realtime STATUS_SETTLE = 10us;
 
-    // Disabled (RTL issue, not a stimulus bug): the designer confirmed the hub
-    // must NAK the FIRST EP1 IN token once every port-change bit is cleared,
-    // but it measurably answers that first token with one byte of 0x00 before
-    // NAKing from the second token onward (see README.md "OPEN RTL ISSUE: the
-    // idle leg is not NAKed on the first token" for the full two-token
-    // measurement). Leaving this at 1 fails the whole test on every run and
-    // keeps it out of the coverage merge, even though the three bitmap legs
-    // (steps 3/5/6) independently close coverage gap G1. Gated to 0 here so
-    // the test passes and enters the merge; re-enable once the RTL fix lands.
-    localparam bit CHECK_NAK_LEG = 0;
+    // Idle (NAK) leg enabled. With the SOF-gated hub EP1 IN fix, the hub must
+    // NAK the first EP1 IN token once every port-change bit is cleared, and the
+    // leg fails on any returned payload. Set to 0 to skip it.
+    localparam bit CHECK_NAK_LEG = 1;
 
 
     // Transfer timeout for the three POSITIVE EP1 IN legs.
@@ -210,11 +204,23 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
     // in this sequence completes in 2-3 us - so a poll that has not completed
     // in 200 us is not slow, it is broken, and the run should say so and move
     // on rather than hang.
+    // The hub arms EP1 IN only at the next SOF (up to 125 us at HS), and the
+    // first IN after a port change is NAKed, so the timeout must cover at least
+    // one microframe of NAK retries plus margin.
     localparam int unsigned INT_LEG_TIMEOUT_US = 200;
+
+    // Host polling model for an INTERRUPT endpoint: at most ONE IN token per
+    // SOF (microframe), and a slower rate is also legal. The endpoint NAK retry
+    // budget is therefore 0 in the test class, so every do_data_xfer() below
+    // issues exactly one token and a NAK ends it as ABORTED. This loop is what
+    // retries, one token per microframe. INT_POLL_GAP is a little more than one
+    // 125 us HS microframe, so at least one SOF always lies between two tokens.
+    localparam int unsigned INT_POLL_MAX_ATTEMPTS = 4;
+    localparam realtime     INT_POLL_GAP          = 130us;
 
     // Shorter still for the NAK leg: nothing is expected to come back, so this
     // only has to cover the (test-reduced) NAK retry budget being exhausted.
-    localparam int unsigned NAK_LEG_TIMEOUT_US = 300;
+    localparam int unsigned NAK_LEG_TIMEOUT_US = 200;
 
     // Opcode and ack timeout for the MCU STOP handshake at the end of body().
     // The opcode must match MCU_COMMAND_STOP in
@@ -455,6 +461,7 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
         int unsigned     nbytes;
         bit [7:0]        bitmap;
         bit              fail;
+        bit              got_data;
 
         label = {"INT_IN_EP1_", tag};
 
@@ -469,22 +476,43 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
                       label, HUB_ADDR, INT_EP, BITMAP_BYTES, INT_EP_ANCHOR_IDX,
                       INT_LEG_TIMEOUT_US, BITMAP_BIT_PORT1), UVM_LOW)
 
-        do_data_xfer(
-            .agent_h       (host_agent_h),
-            .usb_cfg       (usb_cfg),
-            .xfer_kind     (svt_usb_transfer::INTERRUPT_IN_TRANSFER),
-            .device_addr   (HUB_ADDR),
-            .ep_num        (INT_EP),
-            .byte_count    (BITMAP_BYTES),
-            .ep_anchor_idx (INT_EP_ANCHOR_IDX),
-            .label         (label),
-            .req           (int_in_req),
-            .obj_name      ({label, "_req"}),
-            .timeout_us    (INT_LEG_TIMEOUT_US));
+        // One IN token per microframe. The first token after a port change is
+        // NAKed because the hub arms EP1 IN only at the next SOF; the VIP ends
+        // that transfer as ABORTED (NAK budget 0) and the next attempt, one
+        // microframe later, collects the bitmap.
+        got_data = 1'b0;
+        for (int attempt = 1; attempt <= INT_POLL_MAX_ATTEMPTS && !got_data; attempt++) begin
+            do_data_xfer(
+                .agent_h       (host_agent_h),
+                .usb_cfg       (usb_cfg),
+                .xfer_kind     (svt_usb_transfer::INTERRUPT_IN_TRANSFER),
+                .device_addr   (HUB_ADDR),
+                .ep_num        (INT_EP),
+                .byte_count    (BITMAP_BYTES),
+                .ep_anchor_idx (INT_EP_ANCHOR_IDX),
+                .label         (label),
+                .req           (int_in_req),
+                .obj_name      ({label, "_req"}),
+                .timeout_us    (INT_LEG_TIMEOUT_US));
 
-        `uvm_info(MSG_ID,
-            $sformatf("%s: EXIT EP1 IN poll, xfer_wait_timed_out=%0b.",
-                      label, xfer_wait_timed_out), UVM_LOW)
+            `uvm_info(MSG_ID,
+                $sformatf("%s: EXIT EP1 IN poll attempt %0d/%0d, xfer_wait_timed_out=%0b.",
+                          label, attempt, INT_POLL_MAX_ATTEMPTS, xfer_wait_timed_out),
+                UVM_LOW)
+
+            if (int_in_req != null &&
+                int_in_req.status == svt_usb_transfer::ACCEPT &&
+                int_in_req.payload_byte_count() >= BITMAP_BYTES) begin
+                got_data = 1'b1;
+            end
+            else if (attempt < INT_POLL_MAX_ATTEMPTS) begin
+                `uvm_info(MSG_ID,
+                    $sformatf({"%s: attempt %0d got no data (NAK expected until the ",
+                               "next SOF), waiting one microframe before the next IN."},
+                              label, attempt), UVM_LOW)
+                #(INT_POLL_GAP);
+            end
+        end
 
         // A transfer that ended is not a transfer that succeeded: without this
         // an ABORTED poll would fall through to the payload check and compare
@@ -530,19 +558,9 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
     // Poll EP1 IN ONCE with no change pending, and require that it returns no
     // data.
     //
-    // KNOWN FAILURE AGAINST THE CURRENT RTL
-    //
-    // With every change bit acknowledged - confirmed by GetPortStatus returning
-    // wPortChange = 0x0000 - the hub still answers this IN token with one byte
-    // of 0x00 instead of NAKing. The designer confirmed the required behaviour:
-    // the NAK must already happen on this FIRST token, so no allowance is made
-    // here for draining a buffer that was armed before the change bits were
-    // cleared. This leg is therefore expected to fail until the RTL is fixed.
-    //
-    // An earlier revision polled twice and took the verdict from the second
-    // token, which tolerated a payload on the first one. That tolerance did not
-    // match the specified behaviour and has been removed; CHECK_NAK_LEG can be
-    // set to 0 to drop the leg entirely while the RTL issue is open.
+    // The hub arms EP1 IN only at SOF, so with no change pending the first
+    // token must be NAKed. One token only, as a host sends at most one IN per
+    // microframe. Any returned payload fails the leg.
     //
     // check_xfer_status is deliberately NOT used: a failing transfer status is
     // an expected outcome for a NAKed interrupt IN, so the verdict is taken
@@ -596,8 +614,8 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
                            "(GetPortStatus reported wPortChange = 0). The hub must ",
                            "NAK the first token once the change bits are cleared, so ",
                            "the endpoint is staying armed when it should not be. ",
-                           "KNOWN RTL ISSUE: this leg is expected to fail until the ",
-                           "hub clears the endpoint-active bit."},
+                           "the endpoint is armed only at SOF, so this indicates it ",
+                           "stayed armed after the change bits were cleared."},
                           label, nbytes, int_in_req.payload.data[0]))
         end
         else begin
