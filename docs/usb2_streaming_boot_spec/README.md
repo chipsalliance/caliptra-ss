@@ -340,12 +340,14 @@ Protocol-error encodings are:
 | `0x04` | CRC error on DATA of a claimed USB recovery write |
 | `0xFF` | Invalid IN framing/length or firmware general error |
 
-For a claimed recovery write, a DATA CRC16 failure (or a PHY receive error
-reported by the packet engine as the same DATA CRC error) latches `0x04`.
-This includes DATA retransmissions while the write awaits STATUS. The failed
-attempt is discarded without a handshake or a payload commit, so normal USB
-retry behavior is unchanged. SETUP CRC5, separately reported PID and bit-stuff
-errors, control-read STATUS, and non-OCP traffic do not set `0x04`.
+For a claimed recovery write, a failed DATA completion latches `0x04` only
+when the packet engine (PIE) reports `ERROR_DATA_CRC` (`0101`). This includes
+DATA retransmissions while the write awaits STATUS. The failed attempt is
+discarded without a handshake or a payload commit, so normal USB retry
+behavior is unchanged. A UTMI `RxError` asserted with `RxActive` and `RxValid`
+aborts reception before the CRC16 check and does not itself generate a DATA
+CRC error report. SETUP CRC5, other link errors not reported as
+`ERROR_DATA_CRC`, control-read STATUS, and non-OCP traffic do not set `0x04`.
 
 The first error wins. Only a completed Recovery Agent `DEVICE_STATUS` read
 clears `PROT_ERROR`; firmware/EXT reads are non-destructive. The clear has
@@ -374,9 +376,15 @@ bytes are invisible to the FIFO until the packet:
 - passes link-level validation.
 
 A byte-count mismatch discovered after EOP ACKs the DATA transaction, commits
-no FIFO data, sets error `0x03`, and STALLs the following STATUS stage. A
-CRC-failed or otherwise link-invalid packet is discarded and may be retried
-without modifying the FIFO or setting an OCP protocol error.
+no FIFO data, sets error `0x03`, and STALLs the following STATUS stage.
+
+For a claimed FIFO write, a failed DATA completion reported by the PIE as
+`ERROR_DATA_CRC`, including on a retransmission while the write awaits STATUS,
+latches `DEVICE_STATUS.PROT_ERROR = 0x04` if no earlier error is pending.
+The failed packet is discarded without a handshake or any FIFO payload
+commit, so normal USB retry behavior is unchanged. Other link-invalid DATA
+packets are discarded without committing FIFO data or setting an OCP
+protocol error.
 
 A validated 64-byte packet drains as 16 consecutive DWORD transfers. STATUS
 remains NAK while validation/drain is incomplete. A partial final DWORD uses
