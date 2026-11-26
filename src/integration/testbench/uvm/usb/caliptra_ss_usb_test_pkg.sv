@@ -214,6 +214,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev_hub_port_suspend_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_hub_port_suspend_test.svh"
+  `include "caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake_test.svh"
   `include "caliptra_ss_usb_hs_dev_powerdown_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_powerdown_test.svh"
   `include "caliptra_ss_usb_hs_dev_global_suspend_L2_sequence.svh"

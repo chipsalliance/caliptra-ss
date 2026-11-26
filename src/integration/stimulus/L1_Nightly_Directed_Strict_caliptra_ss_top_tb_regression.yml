@@ -49,6 +49,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_port_suspend/caliptra_ss_usb_hs_dev_hub_port_suspend.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake/caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake.yml
         - ../test_suites/caliptra_ss_usb_hs_clock/caliptra_ss_usb_hs_clock.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_bulk_loopback/caliptra_ss_usb_hs_dev_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_int_loopback/caliptra_ss_usb_hs_dev_int_loopback.yml
