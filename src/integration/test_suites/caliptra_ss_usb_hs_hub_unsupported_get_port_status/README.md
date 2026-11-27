@@ -5,9 +5,14 @@ High Speed, hub only, Directed. Suffix / MSG_ID
 `HUB_UNSUPPORTED_GET_PORT_STATUS`.
 
 A code / branch coverage test for the hub class decoder
-`usb_app_hw_hub.m.vhdl`, written as a host-misbehaviour scenario: fourteen EP0
-control transfers to the hub at address 1, five of which must be STALLed. No
-data endpoint is touched and no device controller is enumerated.
+`usb_app_hw_hub.m.vhdl`, written as a host-misbehaviour scenario: **23 EP0
+control transfers** to the hub at address 1, **ten** of which must be STALLed.
+No data endpoint is touched and no device controller is enumerated.
+
+Despite the name this covers unsupported **port numbers** *and* unsupported
+**feature selectors**, across `GetPortStatus`, `ClearPortFeature`,
+`SetPortFeature` and `SetAndTestPortFeature`. The name is kept because it is
+referenced by the master test list, three regression ymls and the MSG_ID.
 
 | | |
 |---|---|
@@ -61,22 +66,81 @@ stimulus for this file.
 
 ## 3. Step list
 
-| # | Request | Expected | RTL target |
-|---|---|---|---|
-| 1 | `GetPortStatus` wIndex=3 | **STALL** | 141-142, plus the 264 MISSING_ELSE |
-| 2 | `GetPortStatus` wIndex=4 | **STALL** | SETUP mask `0xFFFC`, `usb_ep0_handler` |
-| 3 | `GetPortStatus` wIndex=`0x01FF` | **STALL** | same, upper wIndex byte |
-| 4 | `GetHubStatus` wIndex=0 | COMPLETE, 4 bytes | 262-263, `data_index <= 0` |
-| 5 | `ClearHubFeature` wValue 0 wIndex 0 | COMPLETE no-op | **136-137** |
-| 6 | `SetHubFeature` wValue 0 wIndex 0 | COMPLETE no-op | **169-170** |
-| 7 | `ClearPortFeature(PORT_POWER)` port 1 | COMPLETE no-op | **227-237** |
-| 8 | `ClearPortFeature(C_PORT_CONNECTION)` port 3 | **STALL** | **222-223** + 111-112 |
-| 9 | `SetPortFeature(PORT_ENABLE)` port 1 | COMPLETE | 285-286, arms 11-12 |
-| 10 | `ClearPortFeature(PORT_L1)` port 1 | COMPLETE | **branch hole, 243-247** |
-| 11 | `SetAndTestPortFeature(PORT_L1)` port 1 | COMPLETE, **1 byte** | **branch hole, 305-315** |
-| 12 | `SetAndTestPortFeature` wValue 5 port 1 | **STALL** | 174-177 |
-| 13 | `ClearPortFeature(PORT_ENABLE)` port 1 | COMPLETE | restores step 9 |
-| 14 | `GetPortStatus` port 1 | COMPLETE, 4 bytes | recovery proof |
+`S` = must STALL, `C` = must COMPLETE. See section 3.1: **no two `S` legs are
+ever adjacent.**
+
+| # | | Request | Expected | RTL target |
+|---|---|---------|----------|---|
+| 1 | S | `GetPortStatus` wIndex=3 | **STALL** | 141-142, plus the 264 MISSING_ELSE |
+| 2 | C | `GetHubStatus` wIndex=0 | COMPLETE, 4 B | sep + 262-263 `data_index <= 0` |
+| 3 | S | `GetPortStatus` wIndex=4 | **STALL** | SETUP mask `0xFFFC`, `usb_ep0_handler` |
+| 4 | C | `GetPortStatus` port 1 | COMPLETE, 4 B | sep |
+| 5 | S | `GetPortStatus` wIndex=`0x01FF` | **STALL** | same, upper wIndex byte |
+| 6 | C | `ClearHubFeature` wValue 0 wIndex 0 | COMPLETE no-op | sep + **136-137** |
+| 7 | S | `ClearPortFeature` wValue 5 port 1 | **STALL** | **133-134** + **256-257** |
+| 8 | C | `SetHubFeature` wValue 0 wIndex 0 | COMPLETE no-op | sep + **169-170** |
+| 9 | S | `SetPortFeature` wValue 5 port 1 | **STALL** | **166-167** + **294-295** |
+| 10 | C | `ClearPortFeature(PORT_POWER)` port 1 | COMPLETE no-op | sep + **227-237** |
+| 11 | S | `ClearPortFeature(C_PORT_CONN)` port 3 | **STALL** | **222-223** + 111-112 |
+| 12 | C | `SetPortFeature(PORT_POWER)` port 1 | COMPLETE no-op | sep + **272-284** |
+| 13 | S | `SetPortFeature(PORT_RESET)` port 3 | **STALL**, no reset | **267-268** + 146-147 |
+| 14 | C | `GetPortStatus` port 1 | COMPLETE, 4 B | sep, also shows no reset happened |
+| 15 | S | `ClearPortFeature` wValue 11 port 1 | **STALL** | **133-134**, value- not port-driven |
+| 16 | C | `SetPortFeature(PORT_ENABLE)` port 1 | COMPLETE | sep + 285-286, **arms 17-18** |
+| 17 | C | `ClearPortFeature(PORT_L1)` port 1 | COMPLETE | **branch hole 243-247** |
+| 18 | C | `SetAndTestPortFeature(PORT_L1)` port 1 | COMPLETE, **1 B** | **branch hole 305-315** |
+| 19 | S | `SetAndTestPortFeature` wValue 5 port 1 | **STALL** | 174-177, third ORed term |
+| 20 | C | `GetPortStatus` port 1 | COMPLETE, 4 B | sep |
+| 21 | S | `SetAndTestPortFeature(PORT_L1)` wIndex 0 | **STALL** | 174, first ORed term |
+| 22 | C | `ClearPortFeature(PORT_ENABLE)` port 1 | COMPLETE | sep, restores leg 16 |
+| 23 | C | `GetPortStatus` port 1 | COMPLETE, 4 B | final recovery proof |
+
+Pattern: `S C S C S C S C S C S C S C S C C C S C S C C` - 10 stalls,
+13 completes, zero adjacency.
+
+### 3.1 Interleave rule - keep it when editing
+
+Every `S` leg is immediately followed by a `C` leg. Three reasons, in order of
+how real they are:
+
+- **Proving each stall is fresh, and localising a wedge.** `ep0_class_stall` is
+  combinational and self-clearing (measured in the FSDB: it pulses for a single
+  `ep0_setupdone` and drops). A `C` leg in between gives a measured
+  stall -> no-stall -> stall edge pattern instead of a flat run, and a hub that
+  wedges EP0 on one particular stall is caught by the *very next* step, so the
+  failing step number names the culprit.
+- **It removes the mid-flight-sample hazard by construction.**
+  `NOTIFY_USB_TRANSFER_ENDED` is a protocol-layer-wide event, so a caller can
+  consume the pulse of the previous transfer and sample its own transfer while
+  still in flight (`caliptra_ss_usb_base_sequence.svh:550-575`). That hazard
+  "only bites when two control transfers are issued back to back", which is
+  exactly a run of consecutive stall legs.
+- **Reading the previous leg's verdict is NOT a hazard** - `do_control_xfer()`
+  builds a fresh `req` per call and repoints `last_ctrl_seq_item` (base
+  sequence line 346), so no carry-over state exists to go stale.
+
+The dangerous direction was already closed before the interleave: a mid-flight
+sample has `results_status = 0`, so bit 4 is clear and `check_setup_stalled()`
+does **not** count it as a stall - the leg fails loudly rather than passing
+falsely. `check_setup_stalled()` now also names that signature in its own
+branch so a future occurrence self-diagnoses.
+
+### 3.2 The unsupported feature selectors (measured, do not guess)
+
+`wValue` **5** and **11** are used for the reject legs. Both are absent from
+**all four** case statements in the RTL:
+
+| case statement | lines | accepted values |
+|---|---|---|
+| `PROC_CLASS_STALL` Clear | 115-130 | 0,1,2,3,4,8,9,10,16..23 |
+| `PROC_CLASS_STALL` Set | 150-163 | 0,1,2,3,4,8,9,16..22 |
+| `PROC_REQUEST_HANDLING` Clear | 227-255 | same 16 values |
+| `PROC_REQUEST_HANDLING` Set | 272-294 | same 14 values |
+
+So one request covers two arms: the stall process `when others` **and** the
+action process `when others => null`. **Do not substitute 23 (`C_PORT_L1`) or
+10 (`PORT_L1`)** - both are *accepted* by Clear, so the leg would silently stop
+testing the reject path. Re-derive from the RTL before changing these.
 
 `wValue` must be **0** on steps 5 and 6: the `ClearHubFeature` /
 `SetHubFeature` rows carry a wValue mask of `0xFFFE`, so only 0 and 1 match the
@@ -113,8 +177,8 @@ condition is the hole. Measured reachability: `hub_lpm_sup(i)` is driven from
 enumerated and `dev*_lpm_sup` is 0**, which makes the inner condition FALSE and
 takes exactly the uncovered leg.
 
-So: step 9 provides the enable, steps 10-12 take the legs, step 13 takes the
-enable away. **Do not reorder steps 9-13.** Leaving the ports unpowered is also
+So: step 16 provides the enable, steps 17-19 take the legs, step 22 takes the
+enable away. **Do not reorder steps 16-22.** Leaving the ports unpowered is also
 deliberate, for the same reason.
 
 ## 5. Rig: STALL, not silence - so no report catcher
@@ -129,7 +193,7 @@ only `check_setup_stalled()`.
 
 ## 6. State safety
 
-Step 9 is the only leg that changes decoder state and step 13 undoes it. No
+Step 16 is the only leg that changes decoder state and step 22 undoes it. No
 `PORT_RESET` is ever issued on a legal port, so no bus reset is injected into
 USBDC0, and the host only ever talks to address 1, so the device controller is
 never addressed. Step 14 is a legal `GetPortStatus` that must COMPLETE, so a
@@ -177,15 +241,17 @@ First-run checks:
 
 ```
 grep '^UVM_ERROR' vcs_sim.log                            # must be EMPTY (section 5)
-grep 'HUB_UNSUPPORTED_GET_PORT_STATUS' vcs_sim.log        # 14 outcome lines, 5 stalled=1
-grep 'BRANCH HOLE' vcs_sim.log                            # steps 10 and 11 must COMPLETE
-grep 'returned 1 status byte' vcs_sim.log                 # step 11, the cap-1 row
+grep 'HUB_UNSUPPORTED_GET_PORT_STATUS' vcs_sim.log        # 23 outcome lines, 10 stalled=1
+grep 'BRANCH HOLE' vcs_sim.log                            # steps 17 and 18 must COMPLETE
+grep 'returned 1 status byte' vcs_sim.log                 # step 18, the cap-1 row
+grep 'MID-FLIGHT SAMPLE' vcs_sim.log                      # must be EMPTY (section 3.1)
+grep -c 'SEPARATOR' vcs_sim.log                           # the interleave legs
 ```
 
 Then check the coverage report for lines 137 / 170 / 223 / 237 and for the two
 branch rows `CLEAR_FEATURE / 10 / 0` and `SET_AND_TEST / ... / 0`.
 
-If step 11 reports a STALL rather than completing, check that the ports really
+If step 18 reports a STALL rather than completing, check that the ports really
 were left unpowered - a sibling change that enumerates a device controller
 would raise `dev*_lpm_sup` and silently move the branch back to its covered
 leg.
