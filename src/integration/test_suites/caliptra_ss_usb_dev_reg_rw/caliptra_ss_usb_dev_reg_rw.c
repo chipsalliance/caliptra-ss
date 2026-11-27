@@ -79,7 +79,7 @@
 //    checked as a reserved read-as-0 word, and the real UTMI+/ULPI debug
 //    register is exercised on the HUB bank instead. INTSTAT (W1C) and
 //    INTSETSTAT (W1S) are not part of the access-class walk; they are
-//    covered by the dedicated Phase 4 described below.
+//    covered by the dedicated Phase 3 described below.
 //
 //  HUB-BANK RESERVED-BIT RULE (important, differs from the device banks).
 //  The hub register words are NOT a decoded register file; they are entries of
@@ -98,15 +98,23 @@
 //              true reset state.
 //    Phase 2 - RW/RO access-class walk: exercise every field per its access
 //              class as described above.
-//    Phase 3 - indirect ULPI/UTMI+ PHY access walk (HUB bank only, on
+//    Phase 3 - INTSETSTAT / INTSTAT walk (DEV0 and DEV1 only): force INTEN
+//              and INTROUTE to 0, then for each of the 32 bits set it via
+//              INTSETSTAT 0x28, read it back via 0x28 and INTSTAT 0x20,
+//              and clear it via the INTSTAT W1C write.
+//    Phase 4 - indirect ULPI/UTMI+ PHY access walk (HUB bank only, on
 //              SOC_USB_COMBO_HUB_ULPIDEBUG): walking ones/zeros on PHY_ADDR
 //              and PHY_WDATA, both PHY_RW values, each followed by a
 //              PHY_ACCESS launch that must self-clear. PHY_MODE=0 (UTMI)
 //              only; PHY_MODE=1 (ULPI) is waived (no ULPI PHY attached).
-//    Phase 4 - INTSETSTAT / INTSTAT walk (DEV0 and DEV1 only): force INTEN
-//              and INTROUTE to 0, then for each of the 32 bits set it via
-//              INTSETSTAT 0x28, read it back via 0x28 and INTSTAT 0x20,
-//              and clear it via the INTSTAT W1C write.
+//              It first sets HUB_CONTROL.PLL_ON (never restored) to keep the
+//              UTMI clock running, see the Phase 4 comment block.
+//    Phase 5 - HUB_ULPIDEBUG.PHY_MODE[31] register toggle (0 -> 1 -> 0
+//              readback). This MUST be the final check: once PHY_MODE=1 is
+//              captured on the UTMI side, utmi_suspendm is forced to 0, the
+//              VIP stops the UTMI clock and the UTMI-side copy can never
+//              return to 0 (no way back on this UTMI-only integration). That
+//              is why PHY_MODE is ACC_SKIP in the Phase 2 walk.
 //
 //  Address-aliasing RTL hazard honored by construction (see
 //  claude_md/09_usb_hub_composite_migration.md and docs/usb_register_structure.md):
@@ -495,7 +503,7 @@ static const usb_field_t phydebug_fields[] = {
 // EPSKIP field table comment). The device PHYDEBUG word 0x3C is checked as a
 // reserved read-as-0 location because the UTMI+/ULPI debug register MOVED to
 // the hub bank. INTSTAT 0x20 / INTSETSTAT 0x28 (W1C / W1S) are not in this
-// table; they are exercised by check_intsetstat() in Phase 4.
+// table; they are exercised by check_intsetstat() in Phase 3.
 //
 // Reset-value expectation (rst_val / rst_mask) per docs/usb_register_structure.md
 // section 1.1:
@@ -662,7 +670,17 @@ static const usb_field_t hub_lpm_fields[] = {
 //                     PHY transaction and HW then clears the bit and
 //                     overwrites PHY_RDATA (lines 508-509), so it has no
 //                     plain RW behaviour.
-//   PHY_MODE[31]    -> hub_phy_mode      RW
+//   PHY_MODE[31]    -> hub_phy_mode      ACC_SKIP here, toggled in Phase 5:
+//                     structure line 2664 has
+//                     utmi_suspendm <= clock_on when phy_mode = '0' else '0';
+//                     where phy_mode is the UTMI-clock-side copy of this bit.
+//                     Writing 1 is captured while the clock runs, SuspendM
+//                     drops to 0, the VIP stops the UTMI clock, and the later
+//                     write back to 0 can never be captured. The UTMI clock
+//                     then stays off and every Phase 4 PHY_ACCESS launch
+//                     times out. The register-side toggle is therefore only
+//                     checked by usb_hub_phy_mode_toggle_check() (Phase 5),
+//                     after everything that needs the UTMI clock.
 //   [30:26]                              spec-reserved, writable hub storage
 static const usb_field_t hub_phydebug_fields[] = {
     { 0,   8, ACC_RW,   0, "PHY_ADDR"   },
@@ -671,7 +689,7 @@ static const usb_field_t hub_phydebug_fields[] = {
     { 24,  1, ACC_RW,   0, "PHY_RW"     },
     { 25,  1, ACC_SKIP, 0, "PHY_ACCESS" }, // self-clearing start bit; launches a live access
     { 26,  5, ACC_SKIP, 0, "RSVD30_26"  }, // spec-reserved, writable hub storage
-    { 31,  1, ACC_RW,   0, "PHY_MODE"   },
+    { 31,  1, ACC_SKIP, 0, "PHY_MODE"   }, // locks UTMI clock off, see above; Phase 5
 };
 
 // Hub register table. Reset expectations:
@@ -869,7 +887,7 @@ static int check_reg_bank(uint32_t base, const char *bank,
 }
 
 // ---------------------------------------------------------------------------
-// Phase 3: indirect ULPI/UTMI+ PHY access walk (HUB_ULPIDEBUG / C_HUB_PHY, offset
+// Phase 4: indirect ULPI/UTMI+ PHY access walk (HUB_ULPIDEBUG / C_HUB_PHY, offset
 // 0x3C of the hub bank). COVERAGE TARGET: USB_PHY_REGISTER_ACCESS toggle bins
 // on USBREG_PHY_ADDR/WDATA, REG_PHY_ADDR/WDATA/RDATA/MODE/START/WRITE,
 // PHY_READDATA, SYNC_PHY_RDATA/ENDTOGGLE, PHY_ENDTOGGLE, HUB_PHY_RDATA/
@@ -878,20 +896,40 @@ static int check_reg_bank(uint32_t base, const char *bank,
 // (PHY_ACCESS is ACC_SKIP there, see hub_phydebug_fields), so these signals
 // never toggle.
 //
-// HANDSHAKE (verified against RTL, not asserted): hub_phy_start is wired
-// straight from ep0_mem(C_HUB_PHY)(25) (usb_ep0_hub_descr.m.vhdl). In UTMI
-// mode (phy_mode='0', which is what this integration's TB wires up -
-// ULPI_SUPPORT path is unused here) usb_pie.m.vhdl's
+// HANDSHAKE: hub_phy_start is wired straight from ep0_mem(C_HUB_PHY)(25)
+// (usb_ep0_hub_descr.m.vhdl). It is synchronized into the pie_clk domain by
+// usb_synchronizer (sync_phy_start_s/ss/sss, together with
+// sync_phy_mode_ss). In UTMI mode (phy_mode='0' as seen on the pie_clk side;
+// the ULPI_SUPPORT path is unused here) usb_pie.m.vhdl's
 // utmi_ulpi_vendor_specific_clk_proc toggles phy_endtoggle_r on the pie_clk
-// edge immediately following phy_start='1' - i.e. the access completes and
-// hub_phy_endtoggle pulses one pie_clk cycle after PHY_ACCESS is set. Back in
-// usb_ep0_hub_descr.m.vhdl, "if hub_phy_endtoggle = '1'" then loads
-// ep0_mem(C_HUB_PHY)(23 downto 16) from hub_phy_rdata AND clears bit 25
-// (PHY_ACCESS) in the SAME cycle. So PHY_ACCESS is a true one-shot: it is
-// expected to read back 0 on the very next LSU read after the write that set
-// it, with no firmware-visible "launched" window. The poll loop below is a
-// bounded safety net (a few iterations), not a required wait, in case of
-// extra synchronizer latency between the MCU's AXI domain and pie_clk.
+// edge following phy_start='1'. The toggle is synchronized back, and
+// usb_ep0_hub_descr.m.vhdl ("if hub_phy_endtoggle = '1'") loads
+// ep0_mem(C_HUB_PHY)(23 downto 16) from hub_phy_rdata and clears bit 25
+// (PHY_ACCESS) in the same cycle. The round trip is a few pie_clk cycles plus
+// synchronizer latency, which the bounded poll loop below covers.
+//
+// PRECONDITIONS (both required, otherwise PHY_ACCESS never self-clears):
+//   1. pie_clk / UTMI clock must be RUNNING. The TB takes
+//      cptra_ss_usb_utmi_clk_i from the USB VIP, which stops the clock while
+//      UTMI SuspendM is low (as a real UTMI+ PHY does). The SuspendM pin is
+//      driven by the compound structure (line 2664):
+//        utmi_suspendm <= clock_on when phy_mode = '0' else '0';
+//      clock_on is kept high by set_clock_on, which includes usbreg_pll_on
+//      (= hub_pll_on or dev0/dev1 pll_on). usbreg_pll_on also feeds usb_pie
+//      suspendm_nxt. HUB_CONTROL.PLL_ON is therefore set once by
+//      usb_hub_phy_access_prepare() and not restored.
+//   2. The UTMI-side phy_mode copy must be 0, and must NEVER have been 1.
+//      PLL_ON only reaches the SuspendM pin while phy_mode = '0'. A failing
+//      run (PHY_MODE toggled by the Phase 2 walk) showed: USBREG_PHY_MODE
+//      0->1 at ~165.51 us, PHY_MODE 0->1 and UTMI_SUSPENDM 1->0 at ~165.57 us,
+//      UTMI clock stopped; the write back to 0 at ~179.82 us was never
+//      captured (PHY_MODE stuck at 1), so the PLL_ON set at ~179.64 us
+//      (CLOCK_ON=1, SUSPENDM_NXT=1) was masked and all 64 launches timed out.
+//      Writing HUB_ULPIDEBUG = 0 cannot recover this state once the clock is
+//      off. Fix: PHY_MODE[31] is ACC_SKIP in the Phase 2 walk and its bit
+//      toggle is only done in Phase 5, after this sweep.
+// The HUB_ULPIDEBUG = 0 write in usb_hub_phy_access_prepare() only gives the
+// sweep a known starting value; it is not a recovery mechanism.
 //
 // TB CAVEAT (must be reported, not worked around): caliptra_ss_top_tb.sv
 // ties cptra_ss_usb_utmi_vstatus_i to constant 0 ("Not modeled by VIP"). In
@@ -912,11 +950,45 @@ static int check_reg_bank(uint32_t base, const char *bank,
 // ---------------------------------------------------------------------------
 #define USB_HUB_PHY_ACCESS_POLL_MAX   32u
 
+// HUB_CONTROL (C_HUB_CS, hub bank offset 0x30), bit 9 = PLL_ON (hub_pll_on).
+#define USB_HUB_CONTROL_OFFSET        0x30u
+#define USB_HUB_CONTROL_PLL_ON        (1u << 9)
+
+// Number of dummy LSU reads used as a settle delay. Each AXI round trip to the
+// USB block is far longer than one UTMI clock period, so this gives ample
+// margin for SuspendM to rise, the VIP to restart the UTMI clock and the
+// synchronizers to flush (the FSDB shows the clock back ~30 ns after SuspendM).
+#define USB_HUB_PHY_SETTLE_READS      16u
+
+static void usb_hub_phy_settle(uint32_t addr) {
+    for (uint32_t i = 0; i < USB_HUB_PHY_SETTLE_READS; i++)
+        (void)lsu_read_32(addr);
+}
+
+// One-time setup before the PHY access sweep (see PRECONDITIONS above):
+// set HUB_CONTROL.PLL_ON (read-modify-write, other bits untouched so HUB_EN
+// and HUB_DCON stay 0) to keep the UTMI clock running, then write
+// HUB_ULPIDEBUG = 0 (PHY_MODE=0, PHY_ACCESS=0) as a known starting value.
+// PHY_MODE must never have been 1 before this point (see PRECONDITION 2).
+static void usb_hub_phy_access_prepare(uint32_t ulpidebug_addr) {
+    uint32_t ctrl_addr = SOC_USB_COMBO_HUB_BASE_ADDR + USB_HUB_CONTROL_OFFSET;
+    uint32_t ctrl      = lsu_read_32(ctrl_addr);
+
+    lsu_write_32(ctrl_addr, ctrl | USB_HUB_CONTROL_PLL_ON);
+    usb_hub_phy_settle(ctrl_addr);
+
+    lsu_write_32(ulpidebug_addr, 0u);
+    usb_hub_phy_settle(ulpidebug_addr);
+
+    VPRINTF(LOW, "MCU: HUB PLL_ON set (HUB_CONTROL 0x%x -> 0x%x), "
+                 "HUB_ULPIDEBUG cleared, starting PHY access sweep\n",
+            ctrl, lsu_read_32(ctrl_addr));
+}
+
 // Launch one indirect PHY access and wait (bounded) for PHY_ACCESS to
 // self-clear. Returns 1 if the bit failed to clear within the poll bound
-// (reported, not fatal - the handshake is expected to be effectively
-// immediate per the RTL trace above, so this would indicate a real
-// discrepancy worth flagging).
+// (reported, not fatal). With the PRECONDITIONS above met, a timeout here
+// indicates a real discrepancy worth flagging.
 static int usb_hub_phy_launch_access(uint32_t addr, uint8_t phy_addr,
                                      uint8_t phy_wdata, uint8_t phy_rw,
                                      uint8_t phy_mode) {
@@ -949,11 +1021,13 @@ static int usb_hub_phy_launch_access(uint32_t addr, uint8_t phy_addr,
 // basis as the HANDSHAKE comment above), so a PHY_MODE=1 PHY_ACCESS launch
 // can never self-clear - confirmed by a real run (HUB_ULPIDEBUG.PHY_ACCESS
 // did not self-clear, mode=1). This is a chip-level waiver (no ULPI PHY on
-// this integration), not a TB gap or RTL bug. PHY_MODE[31]'s own bit toggle
-// is still covered by the plain RW walk via hub_phydebug_fields above.
+// this integration), not a TB gap or RTL bug. PHY_MODE[31]'s own register
+// bit toggle is covered separately by Phase 5 (usb_hub_phy_mode_toggle_check).
 static int usb_hub_phy_access_sweep(uint32_t addr) {
     int errors = 0;
     const uint8_t mode = 0; // UTMI only; PHY_MODE=1 (ULPI) is waived, see above
+
+    usb_hub_phy_access_prepare(addr);
 
     {
         for (uint8_t rw = 0; rw <= 1; rw++) {
@@ -996,7 +1070,7 @@ static int usb_hub_phy_access_sweep(uint32_t addr) {
 }
 
 // ---------------------------------------------------------------------------
-// Phase 4: INTSETSTAT / INTSTAT
+// Phase 3: INTSETSTAT / INTSTAT
 //
 // RTL usb_reg_if decodes register select "1010" (offset 0x28) as INTSETSTAT:
 //   read  : returns {dev_int_status, frame_int_status, ep_int_status[29:0]}
@@ -1082,6 +1156,44 @@ static int check_intsetstat(uint32_t base, const char *bank) {
     return errs;
 }
 
+// ---------------------------------------------------------------------------
+// Phase 5: HUB_ULPIDEBUG.PHY_MODE[31] register toggle (FINAL check).
+//
+// Register-side check only: the register bit (usbreg_phy_mode / hub_phy_mode)
+// lives on the bus clock, so the readback is valid even after the UTMI clock
+// has stopped. Writing PHY_MODE=1 is expected to lock the UTMI clock off on
+// this UTMI-only integration (see hub_phydebug_fields and the Phase 4
+// PRECONDITIONS), so nothing that needs the UTMI clock may run after this.
+//
+// Sequence: read HUB_ULPIDEBUG, write it back with PHY_MODE=1 and
+// PHY_ACCESS=0 (never launch an access), expect PHY_MODE=1; then write it
+// back with PHY_MODE=0, expect PHY_MODE=0. Returns the number of mismatches.
+// ---------------------------------------------------------------------------
+#define USB_HUB_ULPIDEBUG_PHY_ACCESS  (1u << 25)
+#define USB_HUB_ULPIDEBUG_PHY_MODE    (1u << 31)
+
+static int usb_hub_phy_mode_toggle_check(uint32_t addr) {
+    int errors = 0;
+    uint32_t base = lsu_read_32(addr) & ~USB_HUB_ULPIDEBUG_PHY_ACCESS;
+    uint32_t exp[2] = { 1u, 0u };
+
+    for (uint32_t i = 0; i < 2u; i++) {
+        uint32_t wr = exp[i] ? (base | USB_HUB_ULPIDEBUG_PHY_MODE)
+                             : (base & ~USB_HUB_ULPIDEBUG_PHY_MODE);
+        lsu_write_32(addr, wr);
+        uint32_t rd = (lsu_read_32(addr) & USB_HUB_ULPIDEBUG_PHY_MODE) >> 31;
+        if (rd != exp[i]) {
+            VPRINTF(LOW, "ERROR: HUB HUB_ULPIDEBUG.PHY_MODE ");
+            print_field_bits(31, 1);
+            VPRINTF(LOW, " RW mismatch: wrote 0x%x got 0x%x\n", exp[i], rd);
+            errors++;
+        }
+    }
+    VPRINTF(LOW, "MCU: HUB_ULPIDEBUG.PHY_MODE toggle check done, errors = %d\n",
+            errors);
+    return errors;
+}
+
 void main(void) {
 
     int error_count = 0;
@@ -1126,16 +1238,20 @@ void main(void) {
     error_count += check_reg_bank(SOC_USB_COMBO_HUB_BASE_ADDR, "HUB",
                                   usb_hub_reg_table, USB_HUB_REG_TABLE_LEN);
 
-    // Phase 3: indirect PHY access walk (USB_PHY_REGISTER_ACCESS coverage
-    // target). Runs after the RW/RO walk so any PHY_RDATA value left behind
-    // by check_field_rw()/check_field_ro() is a known starting point, not
-    // relied upon.
-    error_count += usb_hub_phy_access_sweep(SOC_USB_COMBO_HUB_ULPIDEBUG);
-
-    // Phase 4: INTSETSTAT set / INTSTAT clear on the two device banks. The hub
+    // Phase 3: INTSETSTAT set / INTSTAT clear on the two device banks. The hub
     // bank has no interrupt status registers and is not touched here.
     error_count += check_intsetstat(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0");
     error_count += check_intsetstat(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1");
+
+    // Phase 4: indirect PHY access walk (USB_PHY_REGISTER_ACCESS coverage
+    // target). It sets HUB_CONTROL.PLL_ON once to keep the UTMI clock running
+    // and does not restore it. PHY_MODE must still be 0 here (never 1).
+    error_count += usb_hub_phy_access_sweep(SOC_USB_COMBO_HUB_ULPIDEBUG);
+
+    // Phase 5 (LAST): PHY_MODE[31] register toggle. Writing PHY_MODE=1 locks
+    // the UTMI clock off on this integration, so this must stay the final
+    // check.
+    error_count += usb_hub_phy_mode_toggle_check(SOC_USB_COMBO_HUB_ULPIDEBUG);
 
     VPRINTF(LOW, "\nMCU: USB register RW test complete, error_count = %d\n",
 

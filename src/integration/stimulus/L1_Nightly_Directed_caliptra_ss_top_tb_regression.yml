@@ -56,6 +56,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_hub_port_suspend/caliptra_ss_usb_hs_dev_hub_port_suspend: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake/caliptra_ss_usb_hs_dev_hub_port_suspend_remotewake: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_clock/caliptra_ss_usb_hs_clock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_bulk_loopback/caliptra_ss_usb_hs_dev_bulk_loopback: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_int_loopback/caliptra_ss_usb_hs_dev_int_loopback: { weight: 100 }
@@ -122,6 +123,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_int_ep_status_change/caliptra_ss_usb_hs_hub_int_ep_status_change: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_class_req_stall/caliptra_ss_usb_hs_hub_class_req_stall: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_class_req_invalid/caliptra_ss_usb_hs_hub_class_req_invalid: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_unsupported_get_port_status/caliptra_ss_usb_hs_hub_unsupported_get_port_status: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_lock_sticky/smoke_test_fc_pk_lock_sticky: { weight: 100 }
