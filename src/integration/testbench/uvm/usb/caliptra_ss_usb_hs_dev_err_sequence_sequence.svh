@@ -16,7 +16,7 @@
 `define CALIPTRA_SS_USB_HS_DEV_ERR_SEQUENCE_SEQUENCE_SV
 
 // =============================================================================
-// Transaction-sequencing error injection on USBDC0 bulk OUT (High Speed).
+// Transaction-sequencing negative testing on USBDC0 bulk OUT (High Speed).
 //
 // COVERAGE TARGET
 //
@@ -100,7 +100,7 @@ class caliptra_ss_usb_hs_dev_err_sequence_sequence
         bit                   ok;
 
         `uvm_info(MSG_ID,
-            "Starting data-toggle sequencing error injection.", UVM_LOW)
+            "Starting data-toggle sequencing negative testing.", UVM_LOW)
 
         err_inject_bringup(host_agent_h, usb_cfg, MSG_ID, ok);
         if (!ok) return;
@@ -142,7 +142,7 @@ class caliptra_ss_usb_hs_dev_err_sequence_sequence
         request_mcu_stop(MSG_ID);
 
         `uvm_info(MSG_ID,
-            "Data-toggle sequencing error injection sequence complete.", UVM_LOW)
+            "Data-toggle sequencing negative testing sequence complete.", UVM_LOW)
     endtask
 
 endclass

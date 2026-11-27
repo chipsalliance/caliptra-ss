@@ -189,6 +189,7 @@ module caliptra_ss_usb_ocp_rx_drain_unit #(
         .fifo_batch_abort(batch_abort),
         .fifo_batch_reset(fifo_reset),
         .ctrl_length_error(length_error),
+        .ctrl_crc_error(),
         .ocp_path_disable_i(1'b0),
         .ocp_claim_abort_i(claim_abort),
         .fw_protocol_error_req_i(1'b0),

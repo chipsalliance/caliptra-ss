@@ -146,7 +146,7 @@ void main(void) {
     bool     ep2_armed         = false;
     bool     host_stop_seen    = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - ISO out-of-sequence DATA0 (HBW)\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB negative testing - ISO out-of-sequence DATA0 (HBW)\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -244,7 +244,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: ISO out-of-sequence DATA0 (HBW): %d control transfers, %d EP2 OUT completions\n",
             transfers_handled, ep2_completions);
 
-    VPRINTF(LOW, "MCU: USB error injection - halting\n");
+    VPRINTF(LOW, "MCU: USB negative testing - halting\n");
     csr_write_mpmc_halt();
 }
 

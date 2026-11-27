@@ -105,7 +105,7 @@ void main(void) {
     bool     ep2_halted        = false;
     bool     host_stop_seen    = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - ISO endpoint STALL\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB negative testing - ISO endpoint STALL\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -200,7 +200,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: ISO endpoint STALL: %d control transfers, EP2 halted=%d\n",
             transfers_handled, (int)ep2_halted);
 
-    VPRINTF(LOW, "MCU: USB error injection - halting\n");
+    VPRINTF(LOW, "MCU: USB negative testing - halting\n");
     csr_write_mpmc_halt();
 }
 

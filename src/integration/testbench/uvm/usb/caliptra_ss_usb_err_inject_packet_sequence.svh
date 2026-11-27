@@ -262,7 +262,7 @@ class caliptra_ss_usb_err_inject_packet_sequence
                 pid_type_sel = svt_usb_packet::DATA;
             default:
                 `uvm_fatal(msg_id,
-                    $sformatf("Unsupported PID %s for error injection.",
+                    $sformatf("Unsupported PID %s for negative testing.",
                               pid.name()))
         endcase
 

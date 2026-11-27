@@ -16,7 +16,7 @@
 `define CALIPTRA_SS_USB_HS_DEV_ERR_PID_CHECK_DATA_SEQUENCE_SV
 
 // =============================================================================
-// PID check-field error injection on the DATA packet of a bulk OUT to USBDC0
+// PID check-field negative testing on the DATA packet of a bulk OUT to USBDC0
 // (High Speed).
 //
 // COVERAGE TARGET
@@ -61,7 +61,7 @@ class caliptra_ss_usb_hs_dev_err_pid_check_data_sequence
         bit                   ok;
 
         `uvm_info(MSG_ID,
-            "Starting PID check-field error injection on a DATA packet.",
+            "Starting PID check-field negative testing on a DATA packet.",
             UVM_LOW)
 
         err_inject_bringup(host_agent_h, usb_cfg, MSG_ID, ok);
@@ -92,7 +92,7 @@ class caliptra_ss_usb_hs_dev_err_pid_check_data_sequence
         request_mcu_stop(MSG_ID);
 
         `uvm_info(MSG_ID,
-            "PID check-field error injection (DATA packet) sequence complete.",
+            "PID check-field negative testing (DATA packet) sequence complete.",
             UVM_LOW)
     endtask
 

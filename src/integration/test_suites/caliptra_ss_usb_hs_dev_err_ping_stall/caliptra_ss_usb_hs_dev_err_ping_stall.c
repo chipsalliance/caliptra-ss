@@ -85,7 +85,7 @@ void main(void) {
     bool     ep1_halted        = false;
     bool     host_stop_seen    = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - PING to STALLed endpoint\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB negative testing - PING to STALLed endpoint\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -165,7 +165,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: PING to STALLed endpoint: %d control transfers, EP1 halted=%d\n",
             transfers_handled, (int)ep1_halted);
 
-    VPRINTF(LOW, "MCU: USB error injection - halting\n");
+    VPRINTF(LOW, "MCU: USB negative testing - halting\n");
     csr_write_mpmc_halt();
 }
 

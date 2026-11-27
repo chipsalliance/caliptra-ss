@@ -204,7 +204,7 @@ void main(void) {
     bool     ep2_in_armed       = false;
     bool     host_stop_seen     = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB error injection - ISO token-direction mismatch (HBW)\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB negative testing - ISO token-direction mismatch (HBW)\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_hub();
@@ -310,7 +310,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: ISO token-direction mismatch: %d control transfers, %d EP2 OUT completions, %d EP2 IN completions\n",
             transfers_handled, ep2out_completions, ep2in_completions);
 
-    VPRINTF(LOW, "MCU: USB error injection - halting\n");
+    VPRINTF(LOW, "MCU: USB negative testing - halting\n");
     csr_write_mpmc_halt();
 }
 

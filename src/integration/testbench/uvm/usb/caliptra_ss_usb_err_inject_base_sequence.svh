@@ -195,7 +195,7 @@ virtual class caliptra_ss_usb_err_inject_base_sequence
         wait_for_link_enabled(shared_status, "HS host link");
         if (link_wait_timed_out) begin
             `uvm_error(msg_id,
-                "Link never reached ENABLED; abandoning error injection.")
+                "Link never reached ENABLED; abandoning negative testing.")
             return;
         end
 
