@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 386;
+  localparam int USB_PKG_VERSION = 388;
 
 
   import uvm_pkg::*;
@@ -70,6 +70,12 @@ package caliptra_ss_usb_test_pkg;
   // wValue/wIndex toggle patterns, undefined class bRequest codes and a
   // firmware-patched SETUP-row opcode. Must follow its parent.
   `include "caliptra_ss_usb_hs_hub_class_req_invalid_sequence.svh"
+  // GetPortStatus (and friends) on an UNSUPPORTED hub port. Standalone: it
+  // extends the base sequence, NOT class_req_stall, and needs no firmware
+  // SETUP-table patch. Also covers the two usb_app_hw_hub L1 branch holes
+  // (ClearPortFeature(PORT_L1) on a port not in L1, and
+  // SetAndTestPortFeature(PORT_L1) on an enabled port with LPM unsupported).
+  `include "caliptra_ss_usb_hs_hub_unsupported_get_port_status_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -517,6 +523,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_hub_int_ep_status_change_test.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_stall_test.svh"
   `include "caliptra_ss_usb_hs_hub_class_req_invalid_test.svh"
+  `include "caliptra_ss_usb_hs_hub_unsupported_get_port_status_test.svh"
 
   // USBDC1 (device1) replicas of the two remaining hub-descriptor families.
   // Both issue hub-class GET_DESCRIPTOR with wIndex=0, which is a hub-global
