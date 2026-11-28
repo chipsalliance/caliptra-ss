@@ -289,10 +289,10 @@ end :css_mcu0_dccm_enable
 // ICACHE tie offs
  if (pt.ICACHE_WAYPACK == 0 ) begin : VEER_TIE_OFF_PACKED
      `EL2_TIE_OFF_PACKED(cptra_ss_mcu0_el2_mem_export)
- end // VEER_TIE_OFF_UNPACKED
+ end : VEER_TIE_OFF_PACKED
  else begin: VEER_TIE_OFF_UNPACKED
      `EL2_TIE_OFF_NON_PACKED(cptra_ss_mcu0_el2_mem_export)
- end // VEER_TIE_OFF_PACKED
+ end : VEER_TIE_OFF_UNPACKED
 
 // ICACHE DATA
  if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_0
@@ -351,10 +351,10 @@ end :css_mcu0_dccm_enable
            `EL2_IC_DATA_SRAM(64,68,i,k,cptra_ss_mcu0_el2_mem_export)
          end
       end // else: !if(pt.ICACHE_ECC)
-      end // block: BANKS_WAY
-   end // block: WAYS
+      end : BANKS_WAY
+   end : WAYS
 
- end // block: PACKED_0
+ end : PACKED_0
 
  // WAY PACKED
  else begin : PACKED_10
@@ -366,74 +366,74 @@ end :css_mcu0_dccm_enable
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(8192,284,71,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 7b ecc
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(8192,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_8192
+           end : WAYS
+        end : size_8192
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(4096,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(4096,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_4096
+           end : WAYS
+        end : size_4096
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(2048,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(2048,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_2048
+           end : WAYS
+        end : size_2048
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(1024,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(1024,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_1024
+           end : WAYS
+        end : size_1024
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(512,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(512,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_512
+           end : WAYS
+        end : size_512
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(256,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(256,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_256
+           end : WAYS
+        end : size_256
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(128,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(128,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_128
+           end : WAYS
+        end : size_128
 
         else  begin : size_64
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(64,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(64,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_64
+           end : WAYS
+        end : size_64
        end // if (pt.ICACHE_ECC)
 
      else  begin  : ECC0
@@ -441,77 +441,77 @@ end :css_mcu0_dccm_enable
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(8192,272,68,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 4b parity
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(8192,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_8192
+           end : WAYS
+        end : size_8192
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(4096,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(4096,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_4096
+           end : WAYS
+        end : size_4096
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(2048,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(2048,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_2048
+           end : WAYS
+        end : size_2048
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(1024,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(1024,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_1024
+           end : WAYS
+        end : size_1024
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(512,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(512,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_512
+           end : WAYS
+        end : size_512
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(256,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(256,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_256
+           end : WAYS
+        end : size_256
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(128,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(128,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_128
+           end : WAYS
+        end : size_128
 
         else  begin : size_64
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(64,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
+           end : WAYS
            else   begin : WAYS
               `EL2_PACKED_IC_DATA_SRAM(64,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_64
-     end // block: ECC0
-     end // block: BANKS_WAY
- end // block: PACKED_10
+           end : WAYS
+        end : size_64
+     end : ECC0
+     end : BANKS_WAY
+ end : PACKED_10
 
 
 // ICACHE TAG
@@ -541,160 +541,160 @@ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
         if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
                  `EL2_IC_TAG_SRAM(4096,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 4096)
-   end // block: WAYS
- end // block: PACKED_11
+   end : WAYS
+ end : PACKED_11
 
  else begin : PACKED_1
     if (pt.ICACHE_ECC) begin  : ECC1
       if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(32,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(32,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       end // if (pt.ICACHE_TAG_DEPTH == 32
 
       if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(64,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(64,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_64
+        end : WAYS
+      end : size_64
 
       if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(128,104,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
+      end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(128,52,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
+      end : WAYS
 
-      end // block: size_128
+      end : size_128
 
       if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(256,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(256,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_256
+        end : WAYS
+      end : size_256
 
       if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(512,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(512,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_512
+        end : WAYS
+      end : size_512
 
       if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
          if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(1024,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(1024,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_1024
+        end : WAYS
+      end : size_1024
 
       if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(2048,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(2048,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_2048
+        end : WAYS
+      end : size_2048
 
       if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(4096,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(4096,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_4096
-   end // block: ECC1
+        end : WAYS
+      end : size_4096
+   end : ECC1
 
    else  begin : ECC0
       if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(32,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(32,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       end // if (pt.ICACHE_TAG_DEPTH == 32
 
       if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(64,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(64,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_64
+        end : WAYS
+      end : size_64
 
       if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(128,88,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
+      end : WAYS
       else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(128,44,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
+      end : WAYS
 
-      end // block: size_128
+      end : size_128
 
       if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(256,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(256,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_256
+        end : WAYS
+      end : size_256
 
       if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(512,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(512,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_512
+        end : WAYS
+      end : size_512
 
       if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
          if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(1024,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(1024,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_1024
+        end : WAYS
+      end : size_1024
 
       if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(2048,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(2048,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_2048
+        end : WAYS
+      end : size_2048
 
       if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(4096,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
+        end : WAYS
        else begin : WAYS
                  `EL2_IC_TAG_PACKED_SRAM(4096,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_4096
-   end // block: ECC0
-end // block: PACKED_1
+        end : WAYS
+      end : size_4096
+   end : ECC0
+end : PACKED_1
 // end ICACHE TAG
 
 endmodule

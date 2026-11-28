@@ -60,7 +60,7 @@ module mci_lcc_st_trans_tb
  begin : clk_gen
    #5;
    clk = !clk;
- end // clk_gen
+ end : clk_gen
 
  // Reset logic
  initial begin

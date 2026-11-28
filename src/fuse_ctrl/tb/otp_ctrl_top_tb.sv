@@ -247,7 +247,7 @@ module otp_ctrl_top_tb
         begin : clk_gen
             #CLK_HALF_PERIOD
             clk_tb = !clk_tb;
-        end // clk_gen
+        end : clk_gen
     `endif
 
     //----------------------------------------------------------------
@@ -277,7 +277,7 @@ module otp_ctrl_top_tb
             
             $display("");
         end
-    endtask // reset_dut
+    endtask : reset_dut
 
     //----------------------------------------------------------------
     // init_sim()
@@ -377,7 +377,7 @@ module otp_ctrl_top_tb
                 $display("* TESTCASE FAILED");
             end
         end
-    endtask // display_test_result
+    endtask : display_test_result
 
     //-----------------------------------------------------------------
     // init_parition()
@@ -580,7 +580,7 @@ module otp_ctrl_top_tb
             disable fork;
         end
 
-endmodule // otp_ctrl_top_tb
+endmodule : otp_ctrl_top_tb
 
 //======================================================================
 // EOF otp_ctrl_top_tb.sv

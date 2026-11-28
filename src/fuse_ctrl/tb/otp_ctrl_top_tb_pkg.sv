@@ -164,7 +164,7 @@ package otp_ctrl_top_tb_pkg;
             $display("TB WARNING. Address %s is not found in csr reg name -> address map. Returning 0", name);
             return 0;
         end
-    endfunction // get_addr
+    endfunction : get_addr
 
     function strq_t get_dai_regnames();
         strq_t dai_regs;
